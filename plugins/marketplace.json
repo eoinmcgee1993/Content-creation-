@@ -1,0 +1,20 @@
+{
+  "registry": [
+    {
+      "id": "pacifio/ui",
+      "package": "pacifio_ui",
+      "version": "1.0.0",
+      "description": "Terminal and HTML UI components for the content creation platform.",
+      "entry": "plugins.pacifio_ui.PacifioUIPlugin",
+      "installed": true
+    },
+    {
+      "id": "atlas@atlas-ui",
+      "package": "atlas_ui",
+      "version": "1.0.0",
+      "description": "Atlas UI integration — dashboard, metrics, and structured layout components.",
+      "entry": "plugins.atlas_ui.AtlasUIPlugin",
+      "installed": true
+    }
+  ]
+}
