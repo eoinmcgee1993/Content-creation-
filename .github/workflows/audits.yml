@@ -1,0 +1,35 @@
+name: audits
+
+on:
+  push:
+    paths:
+      - "audits/**"
+      - ".github/workflows/audits.yml"
+  pull_request:
+    paths:
+      - "audits/**"
+      - ".github/workflows/audits.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install -r audits/requirements.txt
+      - name: Run audit test suite
+        run: pytest audits/tests -q
+      - name: Smoke-test report generation
+        run: |
+          python -m audits \
+            --ads audits/sample_data/sample_ads.csv \
+            --seo audits/sample_data/sample_gsc.csv \
+            --brand acme --client "CI Smoke" --out /tmp/ci_report
+          test -f /tmp/ci_report.md
+          test -f /tmp/ci_report.pdf
