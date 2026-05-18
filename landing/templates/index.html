@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Find Where Your Ad Spend & SEO Are Leaking | Free AI Account Health Check</title>
+  <meta name="description" content="Get a free 250-point AI Account Health Check — a rule-based audit of your paid ads and Google Search Console data showing exactly where revenue is leaking.">
+  <link rel="stylesheet" href="{{ url_for('static_files', name='style.css') }}">
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <p class="eyebrow">Free AI Account Health Check</p>
+      <h1>See exactly where your ad spend and organic traffic are leaking.</h1>
+      <p class="sub">
+        We run a 250-point, rule-based audit across your paid-ads export and
+        Google Search Console data, then hand you a scored report: wasted spend,
+        sub-break-even ROAS, CPA outliers, keyword cannibalization, and
+        striking-distance ranking wins — with a modeled monthly recovery figure.
+      </p>
+
+      <div class="value">
+        <div><span class="num">250+</span><span>checks per account</span></div>
+        <div><span class="num">$/mo</span><span>modeled leakage</span></div>
+        <div><span class="num">0–100</span><span>health score</span></div>
+      </div>
+
+      {% if error %}<p class="err" role="alert">{{ error }}</p>{% endif %}
+
+      <form class="capture" method="post" action="{{ url_for('subscribe') }}">
+        <input type="hidden" name="source" value="landing">
+        <label>
+          Work email
+          <input type="email" name="email" required autocomplete="email"
+                 placeholder="you@company.com">
+        </label>
+        <label>
+          Website or ad account <span class="opt">(optional)</span>
+          <input type="text" name="website" placeholder="company.com">
+        </label>
+        <label>
+          Monthly ad spend <span class="opt">(optional)</span>
+          <select name="monthly_ad_spend">
+            <option value="">Prefer not to say</option>
+            <option>Under $5k</option>
+            <option>$5k–$25k</option>
+            <option>$25k–$100k</option>
+            <option>$100k+</option>
+          </select>
+        </label>
+        <button type="submit">Get my free sample report &rarr;</button>
+        <p class="fineprint">
+          Instant sample report on the next page, plus we'll follow up with a
+          personalized audit offer. No spam — unsubscribe anytime.
+        </p>
+      </form>
+    </section>
+
+    <section class="proof">
+      <h2>What you get</h2>
+      <ul>
+        <li><strong>Instant:</strong> a sanitized sample "AI Account Health
+          Check" so you see the exact deliverable before sharing any data.</li>
+        <li><strong>Personalized follow-up:</strong> run it on your real
+          30-day export and get your own scored report.</li>
+        <li><strong>Honest by design:</strong> every report includes its
+          methodology and limits — leakage figures are directional models,
+          not guarantees.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
