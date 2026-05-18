@@ -17,12 +17,21 @@ from flask import (
     url_for,
 )
 
+from .email_sync import provider_name, sync_subscriber
 from .freebie import build_freebie
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 LEADS_PATH = os.environ.get("LEADS_PATH", os.path.join(BASE_DIR, "leads.csv"))
-LEADS_FIELDS = ["timestamp", "email", "website", "monthly_ad_spend", "source"]
+LEADS_FIELDS = [
+    "timestamp",
+    "email",
+    "website",
+    "monthly_ad_spend",
+    "source",
+    "provider",
+    "provider_synced",
+]
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -56,6 +65,12 @@ def create_app() -> Flask:
                 "index.html", error="Please enter a valid email address."
             ), 400
 
+        synced, detail = sync_subscriber(
+            email, {"website": website, "monthly_ad_spend": spend}
+        )
+        if not synced and detail not in ("disabled",):
+            app.logger.warning("email provider sync failed: %s", detail)
+
         _record_lead(
             {
                 "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -63,6 +78,8 @@ def create_app() -> Flask:
                 "website": website,
                 "monthly_ad_spend": spend,
                 "source": request.form.get("source", "landing") or "landing",
+                "provider": provider_name() or "none",
+                "provider_synced": "yes" if synced else detail,
             }
         )
         return redirect(url_for("thanks"))

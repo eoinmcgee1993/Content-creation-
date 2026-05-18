@@ -35,6 +35,39 @@ Override the location with the `LEADS_PATH` environment variable.
 To follow up, import `leads.csv` into your email tool / CRM, or wire
 `POST /subscribe` to an email platform later.
 
+## Auto-deliver the freebie via an email platform (optional)
+
+By default the app only stores leads locally. To automatically add
+subscribers to Mailchimp or MailerLite — so their **welcome automation**
+delivers the sample report and follow-up sequence — set env vars before
+starting the app:
+
+Mailchimp:
+
+```bash
+export EMAIL_PROVIDER=mailchimp
+export MAILCHIMP_API_KEY=xxxxxxxx-us21      # datacenter taken from suffix
+export MAILCHIMP_LIST_ID=abc123
+export MAILCHIMP_TAG=audit-lead             # optional
+```
+
+MailerLite:
+
+```bash
+export EMAIL_PROVIDER=mailerlite
+export MAILERLITE_API_KEY=xxxxxxxx
+export MAILERLITE_GROUP_ID=123456           # optional
+```
+
+Then, in the platform, build an automation triggered by that tag/group
+that emails the sample report and your follow-up sequence. The app's
+job is only to add the contact; the platform owns delivery (better
+deliverability than emailing attachments directly).
+
+Sync is **best-effort**: it runs after the local CSV write, never blocks
+or fails lead capture, and the outcome is logged in the `provider_synced`
+column. Keys are read from the environment only — never committed.
+
 ## Deploy
 
 Any host that runs a Flask/WSGI app works (Render, Railway, Fly, a VM
