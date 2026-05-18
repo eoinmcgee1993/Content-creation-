@@ -11,3 +11,5 @@ build/
 landing/leads.csv
 # Generated freebie artifacts
 landing/static/sample-audit-report.*
+# Generated, per-campaign sales sheet
+sales/sales-sheet.pdf

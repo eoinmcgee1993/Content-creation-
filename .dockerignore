@@ -1,0 +1,16 @@
+.git
+.github
+**/__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+*.egg-info
+dist
+build
+.env
+landing/leads.csv
+landing/static/sample-audit-report.*
+reports
+*.md
+!landing/README.md
+sales
