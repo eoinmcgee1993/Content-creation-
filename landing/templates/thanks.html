@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your sample audit report is ready</title>
+  <link rel="stylesheet" href="{{ url_for('static_files', name='style.css') }}">
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero center">
+      <p class="eyebrow">You're in</p>
+      <h1>Your sample AI Account Health Check is ready.</h1>
+      <p class="sub">
+        This is the exact format you'll receive for your own account. Download
+        it, then reply to our follow-up email with a 30-day export and we'll
+        run a personalized audit.
+      </p>
+
+      <div class="downloads">
+        {% if formats.pdf %}
+          <a class="btn" href="{{ url_for('download', name=formats.pdf) }}">
+            Download sample report (PDF)
+          </a>
+        {% endif %}
+        {% if formats.md %}
+          <a class="btn ghost" href="{{ url_for('download', name=formats.md) }}">
+            Download as Markdown
+          </a>
+        {% endif %}
+      </div>
+
+      <p class="fineprint">
+        The sample uses anonymized data. Your personalized report will reflect
+        your real account.
+      </p>
+      <p><a class="back" href="{{ url_for('index') }}">&larr; Back</a></p>
+    </section>
+  </main>
+</body>
+</html>
