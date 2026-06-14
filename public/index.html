@@ -1,410 +1,572 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flappy Ploy - Soi 6 Edition</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #111;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            touch-action: none;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flappy Ploy – Soi 6 Edition</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Boogaloo&family=Inter:wght@400;700&display=swap');
 
-        #game-container {
-            position: relative;
-            width: 400px;
-            height: 600px;
-            box-shadow: 0 0 30px rgba(255, 0, 128, 0.4);
-            overflow: hidden;
-            image-rendering: -webkit-optimize-contrast;
-        }
+    :root {
+      --pink:   #ff007f;
+      --cyan:   #00e5ff;
+      --yellow: #ffeb3b;
+      --purple: #2b1055;
+      --dark:   #0d0d0d;
+    }
 
-        canvas {
-            display: block;
-            background: #2b1055;
-        }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.85);
-            color: white;
-            text-align: center;
-            z-index: 10;
-        }
+    html { scroll-behavior: smooth; }
 
-        .active { display: flex; }
+    body {
+      background: var(--dark);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
 
-        h1 {
-            font-size: 42px;
-            margin: 0 0 5px 0;
-            color: #ff007f;
-            text-shadow: 0 0 10px #ff007f, 2px 2px 0px #fff;
-        }
+    /* ── NEON TEXT HELPERS ── */
+    .neon-pink  { color: var(--pink);  text-shadow: 0 0 8px var(--pink),  0 0 20px var(--pink),  0 0 50px var(--pink); }
+    .neon-cyan  { color: var(--cyan);  text-shadow: 0 0 8px var(--cyan),  0 0 20px var(--cyan),  0 0 50px var(--cyan); }
+    .neon-yellow{ color: var(--yellow);text-shadow: 0 0 8px var(--yellow),0 0 20px var(--yellow),0 0 50px var(--yellow);}
 
-        p { font-size: 18px; margin-bottom: 20px; color: #aaa; }
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      background: radial-gradient(ellipse at top, #1a0b2e 0%, #0d0d0d 70%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow: hidden;
+    }
 
-        .customizer {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 25px;
-            width: 80%;
-        }
+    /* animated neon street lights */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(90deg, transparent, transparent 120px, rgba(255,0,127,0.04) 121px),
+        repeating-linear-gradient(180deg, transparent, transparent 80px, rgba(0,229,255,0.03) 81px);
+      pointer-events: none;
+    }
 
-        .upload-btn {
-            background: #1a0b2e;
-            border: 2px solid #00e5ff;
-            color: #00e5ff;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-        }
+    .street-sign {
+      font-family: 'Boogaloo', cursive;
+      font-size: clamp(12px, 2vw, 16px);
+      letter-spacing: 4px;
+      color: var(--cyan);
+      text-shadow: 0 0 6px var(--cyan);
+      border: 2px solid var(--cyan);
+      box-shadow: 0 0 10px var(--cyan), inset 0 0 10px rgba(0,229,255,0.1);
+      padding: 6px 20px;
+      border-radius: 4px;
+      margin-bottom: 24px;
+      animation: flicker 4s infinite;
+    }
 
-        .upload-btn:active {
-            background: #00e5ff;
-            color: #000;
-        }
+    @keyframes flicker {
+      0%,19%,21%,23%,25%,54%,56%,100% { opacity: 1; }
+      20%,22%,24%,55% { opacity: 0.4; }
+    }
 
-        .play-button {
-            padding: 15px 50px;
-            font-size: 26px;
-            font-weight: bold;
-            background: #ffeb3b;
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 6px 0 #bcae24;
-        }
+    .hero-title {
+      font-family: 'Boogaloo', cursive;
+      font-size: clamp(56px, 14vw, 120px);
+      line-height: 1;
+      letter-spacing: -2px;
+      margin-bottom: 8px;
+      animation: pulse-pink 3s ease-in-out infinite;
+    }
 
-        .play-button:active {
-            transform: translateY(6px);
-            box-shadow: 0 0px 0 #bcae24;
-        }
+    @keyframes pulse-pink {
+      0%,100% { text-shadow: 0 0 10px var(--pink), 0 0 30px var(--pink), 0 0 80px var(--pink), 4px 4px 0 #fff; }
+      50%      { text-shadow: 0 0 5px var(--pink), 0 0 15px var(--pink), 0 0 40px var(--pink), 4px 4px 0 #fff; }
+    }
 
-        #score-hud {
-            position: absolute;
-            top: 20px;
-            width: 100%;
-            text-align: center;
-            font-size: 40px;
-            font-weight: bold;
-            color: white;
-            text-shadow: 2px 2px 4px #000;
-            z-index: 5;
-            pointer-events: none;
-            display: none;
-        }
-    </style>
+    .hero-sub {
+      font-family: 'Boogaloo', cursive;
+      font-size: clamp(18px, 4vw, 28px);
+      margin-bottom: 32px;
+      color: #ccc;
+      max-width: 600px;
+    }
+
+    .hero-sub span { color: var(--yellow); }
+
+    /* game preview canvas box */
+    .game-preview {
+      width: min(320px, 85vw);
+      height: min(480px, 127.5vw);
+      border: 3px solid var(--pink);
+      box-shadow: 0 0 20px var(--pink), 0 0 60px rgba(255,0,127,0.3);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 40px;
+      background: var(--purple);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .game-preview iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      pointer-events: none;
+    }
+
+    .preview-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(43,16,85,0.7);
+      font-family: 'Boogaloo', cursive;
+      font-size: 22px;
+      color: var(--cyan);
+      text-shadow: 0 0 8px var(--cyan);
+      letter-spacing: 2px;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .preview-overlay .demo-note {
+      font-size: 13px;
+      color: #aaa;
+      text-shadow: none;
+      letter-spacing: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* ── CTA BOX ── */
+    .cta-box {
+      background: rgba(255,255,255,0.04);
+      border: 2px solid var(--pink);
+      box-shadow: 0 0 30px rgba(255,0,127,0.2);
+      border-radius: 16px;
+      padding: 36px 40px;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+    }
+
+    .price-tag {
+      font-family: 'Boogaloo', cursive;
+      font-size: 64px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .price-sub {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 24px;
+    }
+
+    .price-sub s { color: #555; }
+
+    .buy-btn {
+      display: block;
+      width: 100%;
+      padding: 18px;
+      font-family: 'Boogaloo', cursive;
+      font-size: 28px;
+      letter-spacing: 1px;
+      background: var(--yellow);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 8px 0 #bcae24;
+      transition: transform 0.1s, box-shadow 0.1s;
+      margin-bottom: 14px;
+    }
+
+    .buy-btn:hover  { transform: translateY(-2px); box-shadow: 0 10px 0 #bcae24; }
+    .buy-btn:active { transform: translateY(8px);  box-shadow: 0 0   0 #bcae24; }
+
+    .secure-note {
+      font-size: 12px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .secure-note svg { fill: #555; }
+
+    /* ── FEATURES ── */
+    .section {
+      padding: 80px 20px;
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .section-title {
+      font-family: 'Boogaloo', cursive;
+      font-size: clamp(32px, 6vw, 52px);
+      margin-bottom: 48px;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(0,229,255,0.2);
+      border-radius: 12px;
+      padding: 28px 20px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--cyan);
+      box-shadow: 0 0 20px rgba(0,229,255,0.2);
+    }
+
+    .feature-icon { font-size: 40px; margin-bottom: 12px; }
+
+    .feature-card h3 {
+      font-family: 'Boogaloo', cursive;
+      font-size: 22px;
+      color: var(--cyan);
+      margin-bottom: 8px;
+    }
+
+    .feature-card p { font-size: 14px; color: #999; line-height: 1.6; }
+
+    /* ── REVIEWS ── */
+    .reviews {
+      background: rgba(255,0,127,0.04);
+      border-top: 1px solid rgba(255,0,127,0.15);
+      border-bottom: 1px solid rgba(255,0,127,0.15);
+      padding: 80px 20px;
+    }
+
+    .reviews-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .reviews-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-top: 48px;
+    }
+
+    .review-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,0,127,0.2);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: left;
+    }
+
+    .stars { color: var(--yellow); font-size: 18px; margin-bottom: 10px; }
+
+    .review-text {
+      font-size: 14px;
+      color: #ccc;
+      line-height: 1.6;
+      margin-bottom: 14px;
+      font-style: italic;
+    }
+
+    .reviewer {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .reviewer strong { color: var(--cyan); }
+
+    /* ── FAQ ── */
+    .faq-list { text-align: left; max-width: 640px; margin: 0 auto; }
+
+    .faq-item {
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 20px 0;
+    }
+
+    .faq-q {
+      font-family: 'Boogaloo', cursive;
+      font-size: 20px;
+      color: var(--yellow);
+      margin-bottom: 8px;
+    }
+
+    .faq-a { font-size: 14px; color: #999; line-height: 1.7; }
+
+    /* ── BOTTOM CTA ── */
+    .bottom-cta {
+      background: radial-gradient(ellipse at bottom, #1a0b2e 0%, #0d0d0d 70%);
+      padding: 100px 20px;
+      text-align: center;
+    }
+
+    .bottom-cta h2 {
+      font-family: 'Boogaloo', cursive;
+      font-size: clamp(36px, 7vw, 64px);
+      margin-bottom: 12px;
+    }
+
+    .bottom-cta p { color: #888; margin-bottom: 40px; font-size: 16px; }
+
+    .buy-btn-large {
+      display: inline-block;
+      padding: 20px 60px;
+      font-family: 'Boogaloo', cursive;
+      font-size: 32px;
+      background: var(--yellow);
+      color: #000;
+      border-radius: 12px;
+      text-decoration: none;
+      box-shadow: 0 8px 0 #bcae24;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .buy-btn-large:hover  { transform: translateY(-2px); box-shadow: 0 10px 0 #bcae24; }
+    .buy-btn-large:active { transform: translateY(8px);  box-shadow: 0 0   0 #bcae24; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 30px 20px;
+      font-size: 12px;
+      color: #333;
+      border-top: 1px solid #1a1a1a;
+    }
+
+    footer a { color: #555; text-decoration: none; }
+
+    /* ── NEON DIVIDER ── */
+    .neon-divider {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--pink), var(--cyan), var(--pink), transparent);
+      box-shadow: 0 0 10px var(--pink);
+      margin: 0;
+    }
+
+    /* scroll fade-in */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+    /* mobile tweaks */
+    @media (max-width: 480px) {
+      .cta-box { padding: 28px 20px; }
+      .price-tag { font-size: 52px; }
+    }
+  </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <canvas id="gameCanvas" width="400" height="600"></canvas>
-        <div id="score-hud">0</div>
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section class="hero">
+  <div class="street-sign">★ SOI 6 DIGITAL DISTRICT ★</div>
 
-        <div id="start-screen" class="ui-layer active">
-            <h1>FLAPPY PLOY</h1>
-            <p>Load your images from your gallery!</p>
+  <h1 class="hero-title neon-pink">FLAPPY<br>PLOY</h1>
 
-            <div class="customizer">
-                <label class="upload-btn">
-                    1. Select Soi 6 Background 🌃
-                    <input type="file" id="upload-bg" accept="image/*" style="display: none;">
-                </label>
-                <label class="upload-btn">
-                    2. Select Ploy's Face 👩
-                    <input type="file" id="upload-ploy" accept="image/*" style="display: none;">
-                </label>
-                <label class="upload-btn">
-                    3. Select Grabbing Hands 🖐️
-                    <input type="file" id="upload-hands" accept="image/*" style="display: none;">
-                </label>
-            </div>
+  <p class="hero-sub">
+    The only mobile game where <span>avoiding grabbing hands</span><br>
+    is both the gameplay <em>and</em> the life skill.
+  </p>
 
-            <button id="start-btn" class="play-button">PLAY</button>
-            <a id="download-btn" href="index.html" download="flappy-ploy.html"
-               style="margin-top:14px;font-size:13px;color:#555;text-decoration:none;letter-spacing:0.5px;">
-                &#x2B07; Download game file
-            </a>
-        </div>
-
-        <div id="game-over-screen" class="ui-layer">
-            <h1 style="color: #ff3333; text-shadow: 0 0 10px #ff3333;">GRABBED!</h1>
-            <p style="color: white;">Score: <span id="final-score">0</span><br>Best: <span id="best-score">0</span></p>
-            <button id="restart-btn" class="play-button">RETRY</button>
-        </div>
+  <!-- Live game preview -->
+  <div class="game-preview">
+    <iframe src="game.html" title="Flappy Ploy Preview" loading="lazy"></iframe>
+    <div class="preview-overlay">
+      🎮 LIVE DEMO
+      <span class="demo-note">Tap below to own it forever</span>
     </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box fade-in">
+    <div class="price-tag neon-yellow">฿299</div>
+    <p class="price-sub">One-time. No subscription. No grabbing. <s>฿999</s></p>
+    <a id="buy-btn-hero" href="STRIPE_PAYMENT_LINK" class="buy-btn">
+      🛺 BUY &amp; DOWNLOAD NOW
+    </a>
+    <div class="secure-note">
+      <svg width="12" height="14" viewBox="0 0 12 14"><path d="M6 0L0 2.5V7c0 3.6 2.6 6.9 6 7.8C9.4 13.9 12 10.6 12 7V2.5L6 0z"/></svg>
+      Secure payment via Stripe &nbsp;·&nbsp; Instant download
+    </div>
+  </div>
+</section>
+
+<div class="neon-divider"></div>
+
+<!-- ═══════════════════ FEATURES ═══════════════════ -->
+<section class="section fade-in">
+  <h2 class="section-title neon-cyan">What You Get for <span class="neon-yellow">฿299</span></h2>
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <h3>Play Anywhere</h3>
+      <p>Single HTML file. Open it in any browser, on any device, forever. No app store, no updates, no data collected.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🖼️</div>
+      <h3>Custom Images</h3>
+      <p>Load photos from your gallery — Ploy's face, your favourite Soi 6 background, whoever's hands you're dodging.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏆</div>
+      <h3>High Score Glory</h3>
+      <p>Your personal best is saved locally. Brag rights on the barstool are extra — but they are yours.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎵</div>
+      <h3>8-Bit Sound FX</h3>
+      <p>Retro beeps, boops, and a devastating game-over tone that perfectly captures the feeling of Soi 6 at 2am.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🚫</div>
+      <h3>Zero Ads. Ever.</h3>
+      <p>No popups. No paywalls. No "watch an ad to continue." You paid once. That's it.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Instant Download</h3>
+      <p>One file, ~25KB, downloaded to your phone in seconds. Share it with your mates. They'll love it.</p>
+    </div>
+  </div>
+</section>
+
+<div class="neon-divider"></div>
+
+<!-- ═══════════════════ REVIEWS ═══════════════════ -->
+<section class="reviews fade-in">
+  <div class="reviews-inner">
+    <h2 class="section-title neon-pink">What The Locals Are Saying</h2>
+    <div class="reviews-grid">
+      <div class="review-card">
+        <div class="stars">★★★★★</div>
+        <p class="review-text">"I've been training for this game my whole Pattaya holiday. Finally, a skill that transfers to real life."</p>
+        <p class="reviewer"><strong>Dave from Lancashire</strong> · Bar Stool #3, Soi 6</p>
+      </div>
+      <div class="review-card">
+        <div class="stars">★★★★★</div>
+        <p class="review-text">"My high score is 47. My wife thinks I've been learning Thai. Do not tell her."</p>
+        <p class="reviewer"><strong>Klaus M.</strong> · Pattaya, 3rd visit this year</p>
+      </div>
+      <div class="review-card">
+        <div class="stars">★★★★☆</div>
+        <p class="review-text">"Put my girlfriend's photo as the background. Lost all my lives in 4 seconds. Accurate."</p>
+        <p class="reviewer"><strong>Anonymous</strong> · Somewhere on Beach Road</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="neon-divider"></div>
+
+<!-- ═══════════════════ FAQ ═══════════════════ -->
+<section class="section fade-in">
+  <h2 class="section-title neon-yellow">Questions We've Actually Been Asked</h2>
+  <div class="faq-list">
+    <div class="faq-item">
+      <p class="faq-q">Is this an NFT?</p>
+      <p class="faq-a">No. It is a funny HTML file you play in your browser. It does not live on the blockchain. Nobody is getting rich here except possibly Ploy.</p>
+    </div>
+    <div class="faq-item">
+      <p class="faq-q">Do I need WiFi to play?</p>
+      <p class="faq-a">Once downloaded — no. Perfect for long-haul flights when you'd rather not think about going home.</p>
+    </div>
+    <div class="faq-item">
+      <p class="faq-q">Can I put my own face as Ploy?</p>
+      <p class="faq-a">100%. Load any image from your gallery. We will not judge. We probably can't.</p>
+    </div>
+    <div class="faq-item">
+      <p class="faq-q">What if I don't like it?</p>
+      <p class="faq-a">It's 299 baht — that's two cocktails on Soi 6. Live a little. But if you genuinely hate it, email us and we'll sort you out.</p>
+    </div>
+    <div class="faq-item">
+      <p class="faq-q">Is this appropriate for children?</p>
+      <p class="faq-a">The game? Yes. Explaining why it's called "Soi 6 Edition"? That's a parenting challenge we cannot help you with.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ BOTTOM CTA ═══════════════════ -->
+<div class="neon-divider"></div>
+<section class="bottom-cta fade-in">
+  <h2 class="neon-pink">Stop Dodging.<br>Start Playing.</h2>
+  <p>One file. One price. Infinite embarrassment potential.</p>
+  <a id="buy-btn-bottom" href="STRIPE_PAYMENT_LINK" class="buy-btn-large neon-yellow">
+    GET IT FOR ฿299 →
+  </a>
+  <br><br>
+  <p style="font-size:13px;color:#444;">Instant download after payment · Stripe secured · One-time payment</p>
+</section>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer>
+  <p>© 2026 Flappy Ploy – Soi 6 Edition &nbsp;·&nbsp;
+     <a href="mailto:eoinmcgee1993@gmail.com">Contact</a> &nbsp;·&nbsp;
+     <a href="game.html">Play Free Demo</a>
+  </p>
+</footer>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+  // ── Scroll fade-in ──
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.15 }
+  );
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-    const startScreen = document.getElementById('start-screen');
-    const gameOverScreen = document.getElementById('game-over-screen');
-    const scoreHud = document.getElementById('score-hud');
-    const finalScoreText = document.getElementById('final-score');
-    const bestScoreText = document.getElementById('best-score');
-    const startBtn = document.getElementById('start-btn');
-    const restartBtn = document.getElementById('restart-btn');
-
-    let frames = 0;
-    let score = 0;
-    let highScore = localStorage.getItem('ployHighScore') || 0;
-
-    const state = { current: 0, getReady: 0, game: 1, over: 2 };
-
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playSound(frequency, type, duration) {
-        if(audioCtx.state === 'suspended') audioCtx.resume();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.type = type;
-        oscillator.frequency.value = frequency;
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.start();
-        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-        oscillator.stop(audioCtx.currentTime + duration);
-    }
-
-    const imgBg = new Image();
-    const imgPloy = new Image();
-    const imgHand = new Image();
-
-    function setupUploader(inputId, imageObj, buttonLabel) {
-        document.getElementById(inputId).addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    imageObj.src = event.target.result;
-                    e.target.parentElement.innerHTML = "✅ Loaded: " + file.name + `<input type="file" id="${inputId}" accept="image/*" style="display: none;">`;
-                    setupUploader(inputId, imageObj, buttonLabel);
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-    }
-
-    setupUploader('upload-bg', imgBg, '1. Select Soi 6 Background 🌃');
-    setupUploader('upload-ploy', imgPloy, "2. Select Ploy's Face 👩");
-    setupUploader('upload-hands', imgHand, '3. Select Grabbing Hands 🖐️');
-
-    const bg = {
-        x: 0, y: 0, w: canvas.width, h: canvas.height, moveSpeed: 1.2,
-        draw: function() {
-            if (imgBg.src && imgBg.complete && imgBg.naturalWidth !== 0) {
-                ctx.drawImage(imgBg, this.x, this.y, this.w, this.h);
-                ctx.drawImage(imgBg, this.x + this.w, this.y, this.w, this.h);
-            } else {
-                ctx.fillStyle = "#1a0b2e";
-                ctx.fillRect(this.x, 0, this.w, this.h);
-                ctx.fillRect(this.x + this.w, 0, this.w, this.h);
-            }
-        },
-        update: function() {
-            if(state.current === state.game) {
-                this.x = (this.x - this.moveSpeed) % this.w;
-            }
-        }
-    };
-
-    const ploy = {
-        x: 80, y: 250,
-        radius: 26,
-        velocity: 0, gravity: 0.25, flapStrength: 5.5, angle: 0,
-
-        draw: function() {
-            ctx.save();
-            ctx.translate(this.x, this.y);
-
-            this.angle = this.velocity < 0 ? -0.2 : 0.3;
-            ctx.rotate(this.angle);
-
-            if (imgPloy.src && imgPloy.complete && imgPloy.naturalWidth !== 0) {
-                ctx.drawImage(imgPloy, -this.radius * 1.5, -this.radius * 1.5, this.radius * 3, this.radius * 3);
-            } else {
-                ctx.fillStyle = "#ffeb3b";
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            ctx.restore();
-        },
-        flap: function() {
-            this.velocity = -this.flapStrength;
-            playSound(300, 'sine', 0.1);
-        },
-        update: function() {
-            if(state.current === state.getReady) {
-                this.y = 250 + Math.cos(frames/10) * 5;
-            } else {
-                this.velocity += this.gravity;
-                this.y += this.velocity;
-
-                if(this.y + this.radius >= canvas.height) {
-                    this.y = canvas.height - this.radius;
-                    if(state.current === state.game) triggerGameOver();
-                }
-                if(this.y - this.radius <= 0) {
-                    this.y = this.radius;
-                    this.velocity = 0;
-                }
-            }
-        },
-        reset: function() {
-            this.y = 250;
-            this.velocity = 0;
-        }
-    };
-
-    const obstacles = {
-        items: [],
-        width: 60,
-        gap: 150,
-        moveSpeed: 3,
-
-        draw: function() {
-            for(let i = 0; i < this.items.length; i++) {
-                let p = this.items[i];
-
-                if (imgHand.src && imgHand.complete && imgHand.naturalWidth !== 0) {
-                    ctx.save();
-                    ctx.translate(p.x + this.width / 2, p.top / 2);
-                    ctx.scale(1, -1);
-                    ctx.drawImage(imgHand, -this.width / 2, -p.top / 2, this.width, p.top);
-                    ctx.restore();
-
-                    ctx.drawImage(imgHand, p.x, p.bottom, this.width, canvas.height - p.bottom);
-                } else {
-                    ctx.fillStyle = "#00e5ff";
-                    ctx.fillRect(p.x, 0, this.width, p.top);
-                    ctx.fillRect(p.x, p.bottom, this.width, canvas.height - p.bottom);
-                }
-            }
-        },
-        update: function() {
-            if(state.current !== state.game) return;
-
-            if(frames % 90 === 0) {
-                let topPosition = Math.max(50, Math.random() * (canvas.height - this.gap - 100));
-                this.items.push({ x: canvas.width, top: topPosition, bottom: topPosition + this.gap, passed: false });
-            }
-
-            for(let i = 0; i < this.items.length; i++) {
-                let p = this.items[i];
-                p.x -= this.moveSpeed;
-
-                let testX = ploy.x;
-                let testYTop = ploy.y;
-                let testYBot = ploy.y;
-
-                if (ploy.x < p.x) testX = p.x;
-                else if (ploy.x > p.x + this.width) testX = p.x + this.width;
-
-                if (ploy.y < p.top) testYTop = p.top;
-                if (ploy.y > p.bottom) testYBot = p.bottom;
-
-                let distXTop = ploy.x - testX;
-                let distYTop = ploy.y - testYTop;
-                let distXBot = ploy.x - testX;
-                let distYBot = ploy.y - testYBot;
-
-                let distanceTop = Math.sqrt((distXTop*distXTop) + (distYTop*distYTop));
-                let distanceBot = Math.sqrt((distXBot*distXBot) + (distYBot*distYBot));
-
-                if (distanceTop <= ploy.radius || distanceBot <= ploy.radius) {
-                    triggerGameOver();
-                }
-
-                if(p.x + this.width < ploy.x && !p.passed) {
-                    score++; p.passed = true; scoreHud.innerText = score;
-                    playSound(600, 'square', 0.1);
-                    if(score > highScore) {
-                        highScore = score;
-                        localStorage.setItem('ployHighScore', highScore);
-                    }
-                }
-
-                if(p.x + this.width < 0) {
-                    this.items.shift();
-                    i--;
-                }
-            }
-        },
-        reset: function() {
-            this.items = [];
-        }
-    };
-
-    function triggerGameOver() {
-        state.current = state.over;
-        playSound(100, 'sawtooth', 0.5);
-        scoreHud.style.display = 'none';
-        finalScoreText.innerText = score;
-        bestScoreText.innerText = highScore;
-        gameOverScreen.classList.add('active');
-    }
-
-    function handleInput(e) {
-        if (e.target.id === 'upload-bg' || e.target.id === 'upload-ploy' || e.target.id === 'upload-hands') return;
-
-        if(state.current === state.getReady) {
-            state.current = state.game;
-            startScreen.classList.remove('active');
-            scoreHud.style.display = 'block';
-            ploy.flap();
-        } else if(state.current === state.game) {
-            ploy.flap();
-        }
-    }
-
-    canvas.addEventListener('mousedown', handleInput);
-    canvas.addEventListener('touchstart', handleInput);
-    document.addEventListener('keydown', function(evt) { if(evt.code === 'Space') handleInput(evt); });
-
-    startBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        handleInput(e);
-    });
-
-    restartBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        ploy.reset(); obstacles.reset(); score = 0; scoreHud.innerText = score;
-        gameOverScreen.classList.remove('active'); state.current = state.getReady;
-        startScreen.classList.add('active');
-    });
-
-    function loop() {
-        ctx.fillStyle = "#2b1055"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        bg.update(); bg.draw();
-        obstacles.update(); obstacles.draw();
-        ploy.update(); ploy.draw();
-        frames++; requestAnimationFrame(loop);
-    }
-    loop();
-
+  // ── After Stripe redirect: show download modal ──
+  if(new URLSearchParams(window.location.search).get('paid') === '1') {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;
+      align-items:center;justify-content:center;z-index:999;padding:20px;
+    `;
+    modal.innerHTML = `
+      <div style="background:#1a0b2e;border:3px solid #00e5ff;
+                  box-shadow:0 0 40px #00e5ff;border-radius:16px;
+                  padding:40px;text-align:center;max-width:400px;width:100%;">
+        <div style="font-size:60px;margin-bottom:16px;">🎉</div>
+        <h2 style="font-family:'Boogaloo',cursive;font-size:36px;color:#00e5ff;
+                   text-shadow:0 0 10px #00e5ff;margin-bottom:12px;">
+          Payment Confirmed!
+        </h2>
+        <p style="color:#aaa;margin-bottom:28px;font-size:15px;line-height:1.6;">
+          You absolute legend. Your copy of Flappy Ploy is ready.<br>
+          Download the game file below — it's yours forever.
+        </p>
+        <a href="game.html" download="flappy-ploy.html"
+           style="display:block;padding:16px;background:#ffeb3b;color:#000;
+                  font-family:'Boogaloo',cursive;font-size:26px;border-radius:10px;
+                  text-decoration:none;box-shadow:0 6px 0 #bcae24;margin-bottom:16px;">
+          ⬇ Download Flappy Ploy
+        </a>
+        <button onclick="this.closest('div').parentElement.remove()"
+                style="background:none;border:none;color:#555;cursor:pointer;font-size:13px;">
+          close
+        </button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
 </script>
 </body>
 </html>

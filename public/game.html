@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flappy Ploy - Soi 6 Edition</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            box-shadow: 0 0 30px rgba(255, 0, 128, 0.4);
+            overflow: hidden;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        canvas {
+            display: block;
+            background: #2b1055;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .active { display: flex; }
+
+        h1 {
+            font-size: 42px;
+            margin: 0 0 5px 0;
+            color: #ff007f;
+            text-shadow: 0 0 10px #ff007f, 2px 2px 0px #fff;
+        }
+
+        p { font-size: 18px; margin-bottom: 20px; color: #aaa; }
+
+        .customizer {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+            width: 80%;
+        }
+
+        .upload-btn {
+            background: #1a0b2e;
+            border: 2px solid #00e5ff;
+            color: #00e5ff;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .upload-btn:active {
+            background: #00e5ff;
+            color: #000;
+        }
+
+        .play-button {
+            padding: 15px 50px;
+            font-size: 26px;
+            font-weight: bold;
+            background: #ffeb3b;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #bcae24;
+        }
+
+        .play-button:active {
+            transform: translateY(6px);
+            box-shadow: 0 0px 0 #bcae24;
+        }
+
+        #score-hud {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px #000;
+            z-index: 5;
+            pointer-events: none;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <div id="score-hud">0</div>
+
+        <div id="start-screen" class="ui-layer active">
+            <h1>FLAPPY PLOY</h1>
+            <p>Load your images from your gallery!</p>
+
+            <div class="customizer">
+                <label class="upload-btn">
+                    1. Select Soi 6 Background 🌃
+                    <input type="file" id="upload-bg" accept="image/*" style="display: none;">
+                </label>
+                <label class="upload-btn">
+                    2. Select Ploy's Face 👩
+                    <input type="file" id="upload-ploy" accept="image/*" style="display: none;">
+                </label>
+                <label class="upload-btn">
+                    3. Select Grabbing Hands 🖐️
+                    <input type="file" id="upload-hands" accept="image/*" style="display: none;">
+                </label>
+            </div>
+
+            <button id="start-btn" class="play-button">PLAY</button>
+            <a id="download-btn" href="index.html" download="flappy-ploy.html"
+               style="margin-top:14px;font-size:13px;color:#555;text-decoration:none;letter-spacing:0.5px;">
+                &#x2B07; Download game file
+            </a>
+        </div>
+
+        <div id="game-over-screen" class="ui-layer">
+            <h1 style="color: #ff3333; text-shadow: 0 0 10px #ff3333;">GRABBED!</h1>
+            <p style="color: white;">Score: <span id="final-score">0</span><br>Best: <span id="best-score">0</span></p>
+            <button id="restart-btn" class="play-button">RETRY</button>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const scoreHud = document.getElementById('score-hud');
+    const finalScoreText = document.getElementById('final-score');
+    const bestScoreText = document.getElementById('best-score');
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+
+    let frames = 0;
+    let score = 0;
+    let highScore = localStorage.getItem('ployHighScore') || 0;
+
+    const state = { current: 0, getReady: 0, game: 1, over: 2 };
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(frequency, type, duration) {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        oscillator.stop(audioCtx.currentTime + duration);
+    }
+
+    const imgBg = new Image();
+    const imgPloy = new Image();
+    const imgHand = new Image();
+
+    function setupUploader(inputId, imageObj, buttonLabel) {
+        document.getElementById(inputId).addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imageObj.src = event.target.result;
+                    e.target.parentElement.innerHTML = "✅ Loaded: " + file.name + `<input type="file" id="${inputId}" accept="image/*" style="display: none;">`;
+                    setupUploader(inputId, imageObj, buttonLabel);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    setupUploader('upload-bg', imgBg, '1. Select Soi 6 Background 🌃');
+    setupUploader('upload-ploy', imgPloy, "2. Select Ploy's Face 👩");
+    setupUploader('upload-hands', imgHand, '3. Select Grabbing Hands 🖐️');
+
+    const bg = {
+        x: 0, y: 0, w: canvas.width, h: canvas.height, moveSpeed: 1.2,
+        draw: function() {
+            if (imgBg.src && imgBg.complete && imgBg.naturalWidth !== 0) {
+                ctx.drawImage(imgBg, this.x, this.y, this.w, this.h);
+                ctx.drawImage(imgBg, this.x + this.w, this.y, this.w, this.h);
+            } else {
+                ctx.fillStyle = "#1a0b2e";
+                ctx.fillRect(this.x, 0, this.w, this.h);
+                ctx.fillRect(this.x + this.w, 0, this.w, this.h);
+            }
+        },
+        update: function() {
+            if(state.current === state.game) {
+                this.x = (this.x - this.moveSpeed) % this.w;
+            }
+        }
+    };
+
+    const ploy = {
+        x: 80, y: 250,
+        radius: 26,
+        velocity: 0, gravity: 0.25, flapStrength: 5.5, angle: 0,
+
+        draw: function() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+
+            this.angle = this.velocity < 0 ? -0.2 : 0.3;
+            ctx.rotate(this.angle);
+
+            if (imgPloy.src && imgPloy.complete && imgPloy.naturalWidth !== 0) {
+                ctx.drawImage(imgPloy, -this.radius * 1.5, -this.radius * 1.5, this.radius * 3, this.radius * 3);
+            } else {
+                ctx.fillStyle = "#ffeb3b";
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        },
+        flap: function() {
+            this.velocity = -this.flapStrength;
+            playSound(300, 'sine', 0.1);
+        },
+        update: function() {
+            if(state.current === state.getReady) {
+                this.y = 250 + Math.cos(frames/10) * 5;
+            } else {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+
+                if(this.y + this.radius >= canvas.height) {
+                    this.y = canvas.height - this.radius;
+                    if(state.current === state.game) triggerGameOver();
+                }
+                if(this.y - this.radius <= 0) {
+                    this.y = this.radius;
+                    this.velocity = 0;
+                }
+            }
+        },
+        reset: function() {
+            this.y = 250;
+            this.velocity = 0;
+        }
+    };
+
+    const obstacles = {
+        items: [],
+        width: 60,
+        gap: 150,
+        moveSpeed: 3,
+
+        draw: function() {
+            for(let i = 0; i < this.items.length; i++) {
+                let p = this.items[i];
+
+                if (imgHand.src && imgHand.complete && imgHand.naturalWidth !== 0) {
+                    ctx.save();
+                    ctx.translate(p.x + this.width / 2, p.top / 2);
+                    ctx.scale(1, -1);
+                    ctx.drawImage(imgHand, -this.width / 2, -p.top / 2, this.width, p.top);
+                    ctx.restore();
+
+                    ctx.drawImage(imgHand, p.x, p.bottom, this.width, canvas.height - p.bottom);
+                } else {
+                    ctx.fillStyle = "#00e5ff";
+                    ctx.fillRect(p.x, 0, this.width, p.top);
+                    ctx.fillRect(p.x, p.bottom, this.width, canvas.height - p.bottom);
+                }
+            }
+        },
+        update: function() {
+            if(state.current !== state.game) return;
+
+            if(frames % 90 === 0) {
+                let topPosition = Math.max(50, Math.random() * (canvas.height - this.gap - 100));
+                this.items.push({ x: canvas.width, top: topPosition, bottom: topPosition + this.gap, passed: false });
+            }
+
+            for(let i = 0; i < this.items.length; i++) {
+                let p = this.items[i];
+                p.x -= this.moveSpeed;
+
+                let testX = ploy.x;
+                let testYTop = ploy.y;
+                let testYBot = ploy.y;
+
+                if (ploy.x < p.x) testX = p.x;
+                else if (ploy.x > p.x + this.width) testX = p.x + this.width;
+
+                if (ploy.y < p.top) testYTop = p.top;
+                if (ploy.y > p.bottom) testYBot = p.bottom;
+
+                let distXTop = ploy.x - testX;
+                let distYTop = ploy.y - testYTop;
+                let distXBot = ploy.x - testX;
+                let distYBot = ploy.y - testYBot;
+
+                let distanceTop = Math.sqrt((distXTop*distXTop) + (distYTop*distYTop));
+                let distanceBot = Math.sqrt((distXBot*distXBot) + (distYBot*distYBot));
+
+                if (distanceTop <= ploy.radius || distanceBot <= ploy.radius) {
+                    triggerGameOver();
+                }
+
+                if(p.x + this.width < ploy.x && !p.passed) {
+                    score++; p.passed = true; scoreHud.innerText = score;
+                    playSound(600, 'square', 0.1);
+                    if(score > highScore) {
+                        highScore = score;
+                        localStorage.setItem('ployHighScore', highScore);
+                    }
+                }
+
+                if(p.x + this.width < 0) {
+                    this.items.shift();
+                    i--;
+                }
+            }
+        },
+        reset: function() {
+            this.items = [];
+        }
+    };
+
+    function triggerGameOver() {
+        state.current = state.over;
+        playSound(100, 'sawtooth', 0.5);
+        scoreHud.style.display = 'none';
+        finalScoreText.innerText = score;
+        bestScoreText.innerText = highScore;
+        gameOverScreen.classList.add('active');
+    }
+
+    function handleInput(e) {
+        if (e.target.id === 'upload-bg' || e.target.id === 'upload-ploy' || e.target.id === 'upload-hands') return;
+
+        if(state.current === state.getReady) {
+            state.current = state.game;
+            startScreen.classList.remove('active');
+            scoreHud.style.display = 'block';
+            ploy.flap();
+        } else if(state.current === state.game) {
+            ploy.flap();
+        }
+    }
+
+    canvas.addEventListener('mousedown', handleInput);
+    canvas.addEventListener('touchstart', handleInput);
+    document.addEventListener('keydown', function(evt) { if(evt.code === 'Space') handleInput(evt); });
+
+    startBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        handleInput(e);
+    });
+
+    restartBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        ploy.reset(); obstacles.reset(); score = 0; scoreHud.innerText = score;
+        gameOverScreen.classList.remove('active'); state.current = state.getReady;
+        startScreen.classList.add('active');
+    });
+
+    function loop() {
+        ctx.fillStyle = "#2b1055"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        bg.update(); bg.draw();
+        obstacles.update(); obstacles.draw();
+        ploy.update(); ploy.draw();
+        frames++; requestAnimationFrame(loop);
+    }
+    loop();
+
+</script>
+</body>
+</html>
