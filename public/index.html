@@ -4,11 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flappy Ploy – Soi 6 Edition</title>
-  <script async src="https://js.stripe.com/v3/buy-button.js"></script>
-  <style>
-    stripe-buy-button { display: block; }
-    .stripe-wrap { margin-bottom: 14px; }
-  </style>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Boogaloo&family=Inter:wght@400;700&display=swap');
 
@@ -406,12 +401,9 @@
   <div class="cta-box fade-in">
     <div class="price-tag neon-yellow">฿299</div>
     <p class="price-sub">One-time. No subscription. No grabbing. <s>฿999</s></p>
-    <div class="stripe-wrap">
-      <stripe-buy-button
-        buy-button-id="buy_btn_1Ti32cF1FdEsYK5ESWONOTxo"
-        publishable-key="pk_live_51T1zS9F1FdEsYK5EfDLiWm1UpAhmM0mQSJzZlYaMffKhTfYAAwCHSYOVOvoFzwprFySv31NiT8v5tIcMEzZvkKtN00si5s62gD"
-      ></stripe-buy-button>
-    </div>
+    <a id="buy-btn-hero" href="https://buy.stripe.com/5kQ3cv5HM4S9a4o5ikc7u0a" class="buy-btn" target="_blank" rel="noopener">
+      🛺 BUY &amp; DOWNLOAD NOW
+    </a>
     <div class="secure-note">
       <svg width="12" height="14" viewBox="0 0 12 14"><path d="M6 0L0 2.5V7c0 3.6 2.6 6.9 6 7.8C9.4 13.9 12 10.6 12 7V2.5L6 0z"/></svg>
       Secure payment via Stripe &nbsp;·&nbsp; Instant download
@@ -518,10 +510,9 @@
 <section class="bottom-cta fade-in">
   <h2 class="neon-pink">Stop Dodging.<br>Start Playing.</h2>
   <p>One file. One price. Infinite embarrassment potential.</p>
-  <stripe-buy-button
-    buy-button-id="buy_btn_1Ti32cF1FdEsYK5ESWONOTxo"
-    publishable-key="pk_live_51T1zS9F1FdEsYK5EfDLiWm1UpAhmM0mQSJzZlYaMffKhTfYAAwCHSYOVOvoFzwprFySv31NiT8v5tIcMEzZvkKtN00si5s62gD"
-  ></stripe-buy-button>
+  <a id="buy-btn-bottom" href="https://buy.stripe.com/5kQ3cv5HM4S9a4o5ikc7u0a" class="buy-btn-large neon-yellow" target="_blank" rel="noopener">
+    GET IT FOR ฿299 →
+  </a>
   <br><br>
   <p style="font-size:13px;color:#444;">Instant download after payment · Stripe secured · One-time payment</p>
 </section>
