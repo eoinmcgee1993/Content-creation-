@@ -13,3 +13,10 @@ landing/leads.csv
 landing/static/sample-audit-report.*
 # Generated, per-campaign sales sheet
 sales/sales-sheet.pdf
+
+# Clearmark pipeline outputs — never commit live or dry-run output CSVs.
+# The resume logic keys on email address: if a mock dry-run row sits in the
+# output file, the live run skips that email and leaves fake findings in place.
+# Always use a fresh filename (e.g. batch_00_live.csv) for real runs.
+*_ready.csv
+*_live.csv
