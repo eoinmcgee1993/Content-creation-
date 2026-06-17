@@ -1,6 +1,6 @@
-id,client,campaign,monthly_spend,clicks,conversions,revenue,target_cpa
-1,AcmeCo,Brand Search,1800,2100,140,21000,15.00
-2,AcmeCo,Generic Search,9200,1550,18,3600,80.00
-3,BetaCorp,Retargeting,3500,890,45,8100,75.00
-4,BetaCorp,Prospecting,12000,2200,28,4900,200.00
-5,GammaSaaS,Branded Keywords,2100,1800,95,18000,25.00
+email,first_name,last_name,company,city,vertical
+info@brightsmiledental.ie,Jane,Doe,Bright Smile Dental,Dublin,Dentist
+reception@mccarthylegal.ie,Tom,McCarthy,McCarthy Legal,Cork,Solicitor
+hello@galwayosteopathy.ie,Sarah,O'Brien,Galway Osteopathy,Galway,Osteopath
+admin@limerickphysio.ie,Mike,Ryan,Limerick Physio,Limerick,Physiotherapist
+info@kilkennychiro.ie,Ann,Walsh,Kilkenny Chiropractic,Kilkenny,Chiropractor

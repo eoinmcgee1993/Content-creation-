@@ -1,4 +1,4 @@
-id,client,campaign,monthly_spend,clicks,conversions,revenue,target_cpa,cpa,roas,conv_rate_pct,clearmark_status,clearmark_reason
-1,AcmeCo,Brand Search,1800,2100,140,21000,15.00,12.86,11.67,6.67,CLEAR,all checks passed
-2,AcmeCo,Generic Search,9200,1550,18,3600,80.00,511.11,0.39,1.16,HOLD,ROAS 0.39× below minimum 2.00×; CPA $511.11 exceeds target $80.00
-3,BetaCorp,Retargeting,3500,890,45,8100,75.00,77.78,2.31,5.06,HOLD,CPA $77.78 exceeds target $75.00
+email,greeting,company,city,vertical,score,finding,competitor,scanned_at
+info@brightsmiledental.ie,Hi there,Bright Smile Dental,Dublin,Dentist,28,"When someone in Dublin asks ChatGPT for a dentist provider, Bright Smile Dental does not come up. A competitor does, which means those enquiries are going elsewhere.",a larger dentist group nearby,2026-06-17T01:21:48+00:00
+reception@mccarthylegal.ie,Hi there,McCarthy Legal,Cork,Solicitor,28,"When someone in Cork asks ChatGPT for a solicitor provider, McCarthy Legal does not come up. A competitor does, which means those enquiries are going elsewhere.",a larger solicitor group nearby,2026-06-17T01:21:48+00:00
+hello@galwayosteopathy.ie,Hi there,Galway Osteopathy,Galway,Osteopath,28,"When someone in Galway asks ChatGPT for a osteopath provider, Galway Osteopathy does not come up. A competitor does, which means those enquiries are going elsewhere.",a larger osteopath group nearby,2026-06-17T01:21:48+00:00
