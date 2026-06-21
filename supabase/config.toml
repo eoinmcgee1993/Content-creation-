@@ -1,0 +1,9 @@
+[project]
+# Replace with your real Supabase project ref (found in Project Settings → General)
+project_id = "<YOUR_SUPABASE_PROJECT_ID>"
+
+[functions.build-digital-asset]
+verify_jwt = false   # Called by database webhook (service-role bearer token)
+
+[functions.fulfill-order]
+verify_jwt = false   # Called by checkout platform webhook
