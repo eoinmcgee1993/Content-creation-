@@ -1,0 +1,79 @@
+name: Deploy SOI DOG PRO
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    name: Full deploy (Supabase + Functions + optional EAS)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies (soi-dog-pro)
+        working-directory: soi-dog-pro
+        run: |
+          npm ci
+
+      - name: Create .env from secrets
+        run: |
+          echo "Creating soi-dog-pro/.env from repository secrets"
+          cat > soi-dog-pro/.env <<EOF
+          EXPO_PUBLIC_SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          EOF
+
+      - name: Install Supabase CLI
+        run: |
+          npm i -g supabase
+
+      - name: Supabase login
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase login --token "$SUPABASE_ACCESS_TOKEN"
+
+      - name: Push Supabase DB migrations
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "Pushing Supabase DB migrations (supabase/migrations/)"
+          supabase db push --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Set Supabase function secrets (Stripe)
+        if: ${{ secrets.STRIPE_SECRET_KEY != '' }}
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: |
+          echo "Setting Stripe secret for Supabase Functions"
+          supabase secrets set STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY" --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Deploy Stripe Edge Function
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "Deploying stripe-create-payment-intent function"
+          supabase functions deploy stripe-create-payment-intent --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Optional: EAS build (android + ios)
+        if: ${{ secrets.EAS_TOKEN != '' }}
+        env:
+          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
+        working-directory: soi-dog-pro
+        run: |
+          npm i -g eas-cli
+          echo "Running EAS build (android + ios)"
+          eas build --platform all --non-interactive
