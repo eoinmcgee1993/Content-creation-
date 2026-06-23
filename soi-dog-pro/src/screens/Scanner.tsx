@@ -78,7 +78,7 @@ export function ScannerScreen() {
       <CameraView ref={cameraRef} style={styles.camera} facing="back">
         {/* AI status badge */}
         <View style={styles.badge}>
-          <View style={[styles.badgeDot, { backgroundColor: ready ? '#00e5ff' : '#ff6d00' }]} />
+          <View style={[styles.badgeDot, { backgroundColor: ready ? '#FF6835' : '#888888' }]} />
           <Text style={styles.badgeText}>
             {modelLoading ? 'Loading AI…' : modelError ? 'AI Error' : 'AI Ready'}
           </Text>
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a0a' },
   camera: { flex: 1 },
   permText: { color: '#fff', textAlign: 'center', marginTop: 40, fontSize: 16 },
-  permBtn: { color: '#00e5ff', textAlign: 'center', marginTop: 20, fontSize: 16 },
+  permBtn: { color: '#FF6835', textAlign: 'center', marginTop: 20, fontSize: 16 },
   badge: {
     position: 'absolute',
     top: 16,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 24,
     height: 24,
-    borderColor: '#00e5ff',
+    borderColor: '#FF6835',
     borderWidth: 3,
   },
   topLeft: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },

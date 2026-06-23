@@ -34,7 +34,7 @@ export function MissionDashboard() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#00e5ff" style={{ marginTop: 40 }} />
+        <ActivityIndicator color="#FF6835" style={{ marginTop: 40 }} />
       </SafeAreaView>
     );
   }
@@ -53,7 +53,7 @@ export function MissionDashboard() {
           <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={styles.stat}>
-          <Text style={[styles.statValue, { color: '#00e5ff' }]}>{activeMissions}</Text>
+          <Text style={[styles.statValue, { color: '#FF6835' }]}>{activeMissions}</Text>
           <Text style={styles.statLabel}>Active</Text>
         </View>
         <View style={styles.stat}>
@@ -71,7 +71,7 @@ export function MissionDashboard() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => { setRefreshing(true); loadData(); }}
-            tintColor="#00e5ff"
+            tintColor="#FF6835"
           />
         }
         ListEmptyComponent={
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  title: { color: '#00e5ff', fontSize: 20, fontWeight: '800', letterSpacing: 1.5 },
+  title: { color: '#FF6835', fontSize: 20, fontWeight: '800', letterSpacing: 1.5 },
   subtitle: { color: '#666', fontSize: 12, marginTop: 2 },
   statsRow: {
     flexDirection: 'row',

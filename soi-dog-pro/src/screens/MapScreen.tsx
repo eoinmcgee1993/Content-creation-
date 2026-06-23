@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: '#0a0a0a',
   },
-  title: { color: '#00e5ff', fontSize: 20, fontWeight: '800', letterSpacing: 1.5 },
+  title: { color: '#FF6835', fontSize: 20, fontWeight: '800', letterSpacing: 1.5 },
   subtitle: { color: '#666', fontSize: 12, marginTop: 2 },
   map: { flex: 1 },
   callout: {
@@ -85,11 +85,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     borderWidth: 1,
-    borderColor: '#00e5ff',
+    borderColor: '#FF6835',
     minWidth: 140,
   },
   calloutTitle: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  calloutPct: { color: '#00e5ff', fontSize: 12, marginTop: 4 },
+  calloutPct: { color: '#FF6835', fontSize: 12, marginTop: 4 },
   modalBackdrop: { flex: 1 },
   sheet: {
     backgroundColor: '#111',
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: { color: '#666', fontSize: 12, marginBottom: 8, letterSpacing: 1 },
   donateBtn: {
-    backgroundColor: '#00e5ff',
+    backgroundColor: '#FF6835',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',

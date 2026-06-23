@@ -36,11 +36,11 @@ export function missionsToMapPins(missions: Mission[]): MissionPin[] {
 export function pinColor(status: Mission['status']): string {
   switch (status) {
     case 'active':
-      return '#00e5ff';
+      return '#00A6FB';
     case 'completed':
       return '#00c853';
     case 'paused':
-      return '#ff6d00';
+      return '#888888';
   }
 }
 

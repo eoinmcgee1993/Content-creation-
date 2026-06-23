@@ -69,14 +69,14 @@ const styles = StyleSheet.create({
   },
   tabIcon: { fontSize: 20 },
   tabLabel: { color: '#555', fontSize: 11, marginTop: 3 },
-  tabLabelActive: { color: '#00e5ff' },
+  tabLabelActive: { color: '#FF6835' },
   tabIndicator: {
     position: 'absolute',
     top: 0,
     left: '25%',
     right: '25%',
     height: 2,
-    backgroundColor: '#00e5ff',
+    backgroundColor: '#FF6835',
     borderRadius: 1,
   },
 });
