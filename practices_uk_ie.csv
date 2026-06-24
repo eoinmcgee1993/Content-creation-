@@ -1,0 +1,6 @@
+id,practice_name,first_name,last_name,location,country,niche,website,ad_platform,observation,est_monthly_spend
+1,Smiles Dental,Sarah,O'Brien,Dublin,IE,dental,smilesdental.ie,Google Ads,three generic keyword groups all pointing to the homepage with no negative keyword list,900
+2,Highland Physio,James,MacAllister,Edinburgh,UK,physiotherapy,highlandphysio.co.uk,Meta Ads,same two creatives running for 94 days with CTR down 40% in the last 30 days and no audience refresh,1400
+3,Clear Vision Opticians,Niamh,Walsh,Cork,IE,optometry,clearvisionopticians.ie,Google Ads,broad-match brand terms bidding against own organic results — estimated 30% avoidable wasted spend,600
+4,Barrhead Dental,Callum,Stewart,Glasgow,UK,dental,barrheadental.co.uk,Google Ads,no conversion tracking set up so smart bidding is running fully blind with no cost-per-lead signal,750
+5,Capital Physio,Emma,Byrne,Dublin,IE,physiotherapy,capitalphysio.ie,,ranking position 12 for 'physio Dublin' (2400 monthly searches) — one title-tag change from page 1,0
