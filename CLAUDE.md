@@ -63,3 +63,50 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+## 5. Project overview
+
+What this is: (fill in: one or two sentences, what it does and who it serves.)
+Stack: (fill in: hosting, database, payments, email, automation.)
+Live at: (fill in: url)
+Current focus: (fill in: the one milestone you are working toward right now.)
+
+## 6. Architecture rules
+
+- Database access lives in (fill in: location). The UI never queries the database directly.
+- Business logic lives in (fill in: location). Keep it out of view files and edge functions where possible.
+- Server side secrets never touch client code. They live only in (fill in: location).
+- Shared helpers live in (fill in: location). Search before adding a helper; do not duplicate one that already exists.
+
+## 7. Coding standards
+
+- Language and framework: (fill in.)
+- Formatting: (fill in.)
+- Naming: (fill in.)
+- Comments explain why, not what. Keep functions small and single purpose.
+
+## 8. Validation (must pass before any task is complete)
+
+Run every command below and confirm all pass before treating work as done.
+
+```
+(fill in: lint command)
+(fill in: test command)
+(fill in: build command)
+(fill in: type or schema check)
+```
+
+If a command does not exist yet, say so rather than skipping it.
+
+## 9. Task handling
+
+Work toward one milestone at a time.
+
+1. Restate the milestone and its success condition in one line before starting.
+2. Implement the smallest complete version that meets that condition.
+3. Run the validation list in section 8.
+4. Stop, summarize what changed, and wait for review before the next milestone.
+
+Governing rule: ship before build. A working, shipped, smaller version beats an unshipped larger one.
