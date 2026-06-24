@@ -28,5 +28,5 @@ Output format:
 - Worth fixing: real issues that are not blockers.
 - Minor: small suggestions, kept brief.
 
-If you find nothing blocking, say so in one line. Keep the whole report tight.
+If there are no findings at all, say so in one line. Otherwise emit all three sections; omit a section only when it is empty. Keep the whole report tight.
 Use standard punctuation only: commas, colons, parentheses, semicolons.
