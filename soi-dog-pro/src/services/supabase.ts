@@ -30,7 +30,6 @@ export async function fetchActiveMissions(): Promise<Mission[]> {
   const { data, error } = await supabase
     .from('missions')
     .select('*')
-    .eq('status', 'active')
     .order('created_at', { ascending: false });
 
   if (error) throw error;

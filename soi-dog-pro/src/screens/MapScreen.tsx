@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Modal, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
-import { PATTAYA_REGION, DUMMY_PATTAYA_PINS, MissionPin, pinColor } from '../services/maps';
+import { PATTAYA_REGION, MissionPin, pinColor, missionsToMapPins } from '../services/maps';
+import { fetchActiveMissions } from '../services/supabase';
 import { MissionCard } from '../components/MissionCard';
 
 export function MapScreen() {
   const [selectedPin, setSelectedPin] = useState<MissionPin | null>(null);
-  const pins = DUMMY_PATTAYA_PINS;
+  const [pins, setPins] = useState<MissionPin[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchActiveMissions()
+      .then((missions) => setPins(missionsToMapPins(missions)))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
+      {loading && (
+        <ActivityIndicator color="#FF6835" style={{ position: 'absolute', top: 80, alignSelf: 'center', zIndex: 10 }} />
+      )}
       <View style={styles.header}>
         <Text style={styles.title}>SOI DOG PRO</Text>
         <Text style={styles.subtitle}>Pattaya Mission Grid</Text>

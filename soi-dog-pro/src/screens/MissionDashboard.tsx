@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { DUMMY_PATTAYA_PINS, MissionPin } from '../services/maps';
+import { MissionPin, missionsToMapPins } from '../services/maps';
+import { fetchActiveMissions } from '../services/supabase';
 import { MissionCard } from '../components/MissionCard';
 
 export function MissionDashboard() {
@@ -16,11 +17,16 @@ export function MissionDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  function loadData() {
-    // Using dummy data; swap for fetchActiveMissions() once Supabase is wired
-    setPins(DUMMY_PATTAYA_PINS);
-    setLoading(false);
-    setRefreshing(false);
+  async function loadData() {
+    try {
+      const missions = await fetchActiveMissions();
+      setPins(missionsToMapPins(missions));
+    } catch (err) {
+      console.error('Failed to load missions:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }
 
   useEffect(() => { loadData(); }, []);
