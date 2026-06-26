@@ -6,7 +6,7 @@ const config = getDefaultConfig(__dirname);
 // Metro can't handle the dynamic import, so resolve it to an empty module.
 const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (moduleName === '@opentelemetry/api') {
+  if (moduleName === '@opentelemetry/api' || moduleName === 'react-native-fs') {
     return { type: 'empty' };
   }
   return originalResolveRequest
