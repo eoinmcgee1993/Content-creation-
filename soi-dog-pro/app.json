@@ -29,7 +29,11 @@
       "permissions": [
         "CAMERA",
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ],
       "config": {
         "googleMaps": {
@@ -46,9 +50,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "dfa5e624-37a9-4f7f-8e05-1267b17ef740"
+        "projectId": "5a17390f-e425-4a47-bdc8-15cf30342388"
       }
     },
-    "owner": "eoinmcgee1993"
+    "owner": "mcgeezerrs-team"
   }
 }
