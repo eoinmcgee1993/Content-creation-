@@ -6,3 +6,6 @@ web-build/
 *.log
 ios/
 android/
+
+# Google Play service account key (never commit)
+google-service-account.json
