@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GATES UNBOUND // SECURE TERMINAL</title>
+  <meta name="description" content="Transmission intercepted. Intelligence briefings for operators, not users." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --green: #22c55e; }
+    body { font-family: 'Montserrat', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* CRT scanline overlay */
+    .scanlines::before {
+      content: "";
+      position: fixed; inset: 0; z-index: 50; pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px,
+        rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 3px);
+      mix-blend-mode: multiply;
+    }
+
+    /* Caret */
+    .caret::after {
+      content: "_"; color: var(--green);
+      animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* Glitch title */
+    .glitch { position: relative; }
+    .glitch::before, .glitch::after {
+      content: attr(data-text); position: absolute; inset: 0;
+      clip-path: inset(0 0 0 0);
+    }
+    .glitch::before { left: 2px; text-shadow: -1px 0 #16a34a; animation: glitch-a 2.6s infinite linear alternate-reverse; }
+    .glitch::after  { left: -2px; text-shadow: -1px 0 #4ade80; animation: glitch-b 1.9s infinite linear alternate-reverse; }
+    @keyframes glitch-a {
+      0%{clip-path:inset(0 0 92% 0)} 20%{clip-path:inset(40% 0 40% 0)}
+      40%{clip-path:inset(80% 0 5% 0)} 60%{clip-path:inset(20% 0 60% 0)}
+      80%{clip-path:inset(60% 0 20% 0)} 100%{clip-path:inset(0 0 92% 0)}
+    }
+    @keyframes glitch-b {
+      0%{clip-path:inset(85% 0 0 0)} 25%{clip-path:inset(10% 0 70% 0)}
+      50%{clip-path:inset(55% 0 25% 0)} 75%{clip-path:inset(30% 0 50% 0)}
+      100%{clip-path:inset(85% 0 0 0)}
+    }
+
+    /* Line-by-line reveal */
+    .reveal { opacity: 0; transform: translateY(6px); animation: rise .5s ease forwards; }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+  </style>
+</head>
+<body class="bg-black text-zinc-100 antialiased scanlines selection:bg-green-500 selection:text-black">
+  <main class="max-w-2xl mx-auto min-h-screen px-6 py-16 sm:py-24 flex flex-col">
+
+    <!-- Status bar -->
+    <header class="mono text-xs text-zinc-500 flex items-center justify-between border-b border-zinc-900 pb-3 reveal" style="animation-delay:.05s">
+      <span class="flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+        SECURE CHANNEL // OPEN
+      </span>
+      <span class="hidden sm:inline">NODE: GATES_UNBOUND</span>
+    </header>
+
+    <!-- Boot line -->
+    <p class="mono text-green-500 text-xs sm:text-sm mt-8 reveal caret" style="animation-delay:.2s">
+      &gt; incoming_signal --decrypt --priority=high
+    </p>
+
+    <!-- Headline -->
+    <section class="mt-8 space-y-6 flex-1">
+      <h1 class="glitch mono text-3xl sm:text-5xl font-bold tracking-tight text-green-400 reveal"
+          data-text="TRANSMISSION INTERCEPTED" style="animation-delay:.45s">
+        TRANSMISSION INTERCEPTED
+      </h1>
+
+      <p class="text-lg sm:text-xl text-zinc-200 leading-relaxed reveal" style="animation-delay:.7s">
+        Three invisible systems are shaping your attention, your ownership, and
+        your politics right now. You were never meant to see them.
+      </p>
+
+      <p class="text-zinc-400 leading-relaxed reveal" style="animation-delay:.9s">
+        Drop your email and we decrypt <span class="mono text-green-400">Transmission&nbsp;001</span>
+        directly to your terminal &mdash; the full intelligence briefing on the
+        architecture of control, and the first move out of it.
+      </p>
+
+      <!-- Negative space: what this is NOT -->
+      <ul class="mono text-sm text-zinc-500 space-y-2 border-l border-zinc-800 pl-4 reveal" style="animation-delay:1.05s">
+        <li>// not another conspiracy community</li>
+        <li>// no outrage farming</li>
+        <li>// signal only. operators only.</li>
+      </ul>
+    </section>
+
+    <!-- Capture form -->
+    <section class="mt-12 reveal" style="animation-delay:1.2s">
+      <form id="intercept-form" class="space-y-3">
+        <label for="email" class="mono text-xs text-zinc-500 block">&gt; enter_credentials:</label>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input id="email" name="email" type="email" required autocomplete="email"
+                 placeholder="operator@domain.com"
+                 class="mono flex-1 bg-zinc-950 border border-zinc-800 focus:border-green-500 focus:ring-0 outline-none px-4 py-3 text-zinc-100 placeholder-zinc-600 rounded-md transition" />
+          <button type="submit"
+                  class="mono font-bold bg-green-500 hover:bg-green-400 text-black px-6 py-3 rounded-md transition active:scale-[0.98] whitespace-nowrap">
+            DECRYPT 001
+          </button>
+        </div>
+        <p id="form-status" class="mono text-xs h-4" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <footer class="mono text-[10px] text-zinc-600 mt-16 pt-6 border-t border-zinc-900 reveal" style="animation-delay:1.35s">
+      GATES UNBOUND // EST. SIGNAL &mdash; you are the raw material, until you aren't.
+    </footer>
+  </main>
+
+  <script>
+    // -- Optional Supabase capture ---------------------------------------
+    // Matches the repo pattern (see storefront/index.html). Fill these in to
+    // persist emails to a `waitlist` table via the public anon key. Leave as
+    // placeholders and the form will still route the operator to the briefing.
+    const SUPABASE_URL      = "https://<YOUR_SUPABASE_PROJECT_ID>.supabase.co";
+    const SUPABASE_ANON_KEY = "<YOUR_SUPABASE_ANON_KEY>";
+    const TRANSMISSION_URL  = "./intercept/001.html";
+
+    const form   = document.getElementById("intercept-form");
+    const status = document.getElementById("form-status");
+
+    function configured() {
+      return !SUPABASE_URL.includes("<YOUR_") && !SUPABASE_ANON_KEY.includes("<YOUR_");
+    }
+
+    async function persist(email) {
+      if (!configured()) return; // no-op until credentials are set
+      await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({ email, source: "transmission-001" }),
+      });
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      status.className = "mono text-xs h-4 text-zinc-400";
+      status.textContent = "> establishing secure connection...";
+      try {
+        await persist(email);
+        status.className = "mono text-xs h-4 text-green-400";
+        status.textContent = "> access granted. rerouting to 001...";
+        setTimeout(() => { window.location.href = TRANSMISSION_URL; }, 900);
+      } catch (err) {
+        // Capture failed (network / config) — don't trap the operator.
+        status.className = "mono text-xs h-4 text-green-400";
+        status.textContent = "> access granted. rerouting to 001...";
+        setTimeout(() => { window.location.href = TRANSMISSION_URL; }, 900);
+      }
+    });
+  </script>
+</body>
+</html>
