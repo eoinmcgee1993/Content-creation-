@@ -39,7 +39,8 @@
         "googleMaps": {
           "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
         }
-      }
+      },
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/logo.png"
