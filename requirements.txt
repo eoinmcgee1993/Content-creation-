@@ -1,1 +1,2 @@
 openai>=1.0.0
+nautilus_trader>=1.221.0
