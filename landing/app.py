@@ -22,6 +22,10 @@ from .freebie import build_freebie
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+# Where the generated freebie report is written. Defaults to STATIC_DIR so
+# container/VM hosts are unaffected; serverless hosts (read-only app dir) set
+# FREEBIE_OUT to a writable path such as /tmp.
+GEN_DIR = os.environ.get("FREEBIE_OUT", STATIC_DIR)
 LEADS_PATH = os.environ.get("LEADS_PATH", os.path.join(BASE_DIR, "leads.csv"))
 LEADS_FIELDS = [
     "timestamp",
@@ -48,7 +52,7 @@ def _record_lead(row: dict[str, str]) -> None:
 
 def create_app() -> Flask:
     app = Flask(__name__, static_folder=None)
-    freebie_formats = build_freebie(STATIC_DIR)
+    freebie_formats = build_freebie(GEN_DIR)
 
     @app.route("/")
     def index():
@@ -92,7 +96,7 @@ def create_app() -> Flask:
     def download(name: str):
         if name not in freebie_formats.values():
             abort(404)
-        return send_from_directory(STATIC_DIR, name, as_attachment=True)
+        return send_from_directory(GEN_DIR, name, as_attachment=True)
 
     @app.route("/static/<path:name>")
     def static_files(name: str):

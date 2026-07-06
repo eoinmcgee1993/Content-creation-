@@ -1,1 +1,4 @@
 openai>=1.0.0
+# Runtime deps for the landing app (api/index.py) on Vercel's Python runtime.
+flask>=3.0.0
+reportlab>=4.0.0
