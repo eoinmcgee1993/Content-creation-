@@ -1,7 +1,7 @@
 [build]
   base    = "trading-dashboard"
   command = "npm ci && npm run build"
-  publish = "dist"
+  publish = "trading-dashboard/dist"
 
 [build.environment]
   NODE_VERSION = "20"
