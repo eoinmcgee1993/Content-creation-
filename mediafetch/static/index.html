@@ -56,6 +56,7 @@
     <p class="sub">Paste an Instagram reel or post link to save the video.</p>
     <input id="url" type="url" inputmode="url" autocomplete="off" placeholder="https://www.instagram.com/reel/..." />
     <button id="go">Download</button>
+    <button id="unlock" style="display:none">Unlock — Subscribe</button>
     <div id="status" class="status"></div>
     <div class="foot">Only download content you own or have permission to use.</div>
   </div>
@@ -63,9 +64,50 @@
   <script>
     const urlInput = document.getElementById('url');
     const btn = document.getElementById('go');
+    const unlockBtn = document.getElementById('unlock');
     const status = document.getElementById('status');
+    let hasAccess = true;
 
     function setStatus(msg, cls) { status.className = 'status' + (cls ? ' ' + cls : ''); status.innerHTML = msg; }
+
+    // Reflect paywall state: show the download button when the user has access,
+    // otherwise show the subscribe button.
+    async function refreshAccess() {
+      try {
+        const cfg = await (await fetch('/api/config')).json();
+        hasAccess = cfg.hasAccess;
+        btn.style.display = hasAccess ? 'block' : 'none';
+        unlockBtn.style.display = (cfg.paymentsEnabled && !hasAccess) ? 'block' : 'none';
+      } catch (e) { /* leave defaults */ }
+    }
+
+    async function startCheckout() {
+      unlockBtn.disabled = true;
+      setStatus('<span class="spinner"></span>Opening checkout…');
+      try {
+        const { url } = await (await fetch('/api/checkout', { method: 'POST' })).json();
+        if (url) { window.location.href = url; return; }
+        setStatus('Could not start checkout.', 'error');
+      } catch (e) { setStatus('Could not start checkout.', 'error'); }
+      finally { unlockBtn.disabled = false; }
+    }
+
+    // Returning from Stripe Checkout: activate access, then clean the URL.
+    async function maybeActivate() {
+      const params = new URLSearchParams(location.search);
+      const sid = params.get('session_id');
+      if (!sid) return;
+      setStatus('<span class="spinner"></span>Activating…');
+      try {
+        const res = await fetch('/api/activate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sid })
+        });
+        if (res.ok) setStatus('Subscription active ✓', 'ok');
+        else setStatus((await res.json()).detail || 'Activation failed.', 'error');
+      } catch (e) { setStatus('Activation failed.', 'error'); }
+      history.replaceState({}, '', '/');
+    }
 
     async function download() {
       const url = urlInput.value.trim();
@@ -78,6 +120,11 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url })
         });
+        if (res.status === 402) {
+          await refreshAccess();
+          setStatus('Subscribe to download.', 'error');
+          return;
+        }
         if (!res.ok) {
           let detail = 'Download failed.';
           try { detail = (await res.json()).detail || detail; } catch (e) {}
@@ -104,7 +151,10 @@
     }
 
     btn.addEventListener('click', download);
+    unlockBtn.addEventListener('click', startCheckout);
     urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') download(); });
+
+    (async () => { await maybeActivate(); await refreshAccess(); })();
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});

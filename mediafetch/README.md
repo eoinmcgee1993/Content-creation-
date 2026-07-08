@@ -21,15 +21,45 @@ uvicorn app:app --reload --port 8000
 
 Open http://localhost:8000 and paste an Instagram reel/post URL.
 
-## Deploy (Render)
+## Paywall (selling access)
 
-Create a new **Web Service** pointing at this repo with:
+The app runs **open** with no config. Set these env vars to gate downloads
+behind a Stripe Checkout subscription (no database needed):
+
+| Variable | Purpose |
+|---|---|
+| `STRIPE_SECRET_KEY` | Stripe secret key (`sk_live_…` / `sk_test_…`) |
+| `STRIPE_PRICE_ID` | recurring price id for the subscription |
+| `APP_SECRET` | random string used to sign access cookies |
+| `ACCESS_DAYS` | access granted per activation (default 31) |
+| `APP_BASE_URL` | public URL for Checkout redirects (else request origin) |
+
+Flow: user taps **Unlock → Subscribe** → Stripe Checkout → on return the app
+verifies the session and sets a signed, expiring access cookie. `/api/download`
+requires that cookie while payments are enabled.
+
+> The access cookie is per-device. Paying once and logging in across devices
+> needs real accounts (email/magic-link + a datastore such as Supabase) — a
+> planned follow-up, not part of V1.
+
+## Deploy
+
+Any host that runs a Python process or a container works.
+
+**Render / Railway / Fly (buildpack):**
 
 - Root directory: `mediafetch`
-- Build command: `pip install -r requirements.txt`
-- Start command: `uvicorn app:app --host 0.0.0.0 --port $PORT`
+- Build: `pip install -r requirements.txt`
+- Start: `uvicorn app:app --host 0.0.0.0 --port $PORT`
+- Add the Stripe env vars above to enable the paywall.
 
-Any host that runs a Python process works (Render, Railway, Fly.io, a VPS).
+**Docker** (portable to any container host):
+
+```bash
+cd mediafetch
+docker build -t mediafetch .
+docker run -p 8000:8000 -e APP_SECRET=... -e STRIPE_SECRET_KEY=... -e STRIPE_PRICE_ID=... mediafetch
+```
 
 ## Known constraints
 
