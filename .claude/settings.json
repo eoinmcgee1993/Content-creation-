@@ -9,5 +9,17 @@
       "type": "http",
       "url": "https://api.muapi.ai/mcp"
     }
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/setup.sh\""
+          }
+        ]
+      }
+    ]
   }
 }
