@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash scripts/setup.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/setup.sh\""
           }
         ]
       }
