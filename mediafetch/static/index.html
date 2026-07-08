@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>MediaFetch — Reel Downloader</title>
+  <meta name="theme-color" content="#0f0f14" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <style>
+    :root { --bg:#0f0f14; --card:#1a1a24; --fg:#f5f5f7; --muted:#9a9aa8; --accent:#e1306c; --accent2:#833ab4; }
+    * { box-sizing: border-box; }
+    body {
+      margin:0; min-height:100dvh; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      background:var(--bg); color:var(--fg);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:24px calc(24px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
+    }
+    .card {
+      width:100%; max-width:420px; background:var(--card); border-radius:20px;
+      padding:28px 22px; box-shadow:0 20px 60px rgba(0,0,0,.4);
+    }
+    .logo {
+      width:56px; height:56px; border-radius:16px; margin:0 auto 16px;
+      background:linear-gradient(135deg,var(--accent2),var(--accent));
+      display:flex; align-items:center; justify-content:center; font-size:28px;
+    }
+    h1 { font-size:22px; text-align:center; margin:0 0 4px; }
+    p.sub { text-align:center; color:var(--muted); margin:0 0 22px; font-size:14px; }
+    input {
+      width:100%; padding:15px 16px; border-radius:12px; border:1px solid #2c2c3a;
+      background:#12121a; color:var(--fg); font-size:16px; outline:none;
+    }
+    input:focus { border-color:var(--accent); }
+    button {
+      width:100%; margin-top:12px; padding:15px; border:0; border-radius:12px;
+      background:linear-gradient(135deg,var(--accent2),var(--accent)); color:#fff;
+      font-size:16px; font-weight:600; cursor:pointer; transition:opacity .15s;
+    }
+    button:disabled { opacity:.55; cursor:default; }
+    .status { margin-top:16px; text-align:center; font-size:14px; min-height:20px; }
+    .status.error { color:#ff6b6b; }
+    .status.ok { color:#4ade80; }
+    .spinner {
+      display:inline-block; width:16px; height:16px; border:2px solid #ffffff55;
+      border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-3px; margin-right:8px;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .foot { margin-top:22px; text-align:center; color:var(--muted); font-size:12px; line-height:1.5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">⬇︎</div>
+    <h1>MediaFetch</h1>
+    <p class="sub">Paste an Instagram reel or post link to save the video.</p>
+    <input id="url" type="url" inputmode="url" autocomplete="off" placeholder="https://www.instagram.com/reel/..." />
+    <button id="go">Download</button>
+    <button id="unlock" style="display:none">Unlock — Subscribe</button>
+    <div id="status" class="status"></div>
+    <div class="foot">Only download content you own or have permission to use.</div>
+  </div>
+
+  <script>
+    const urlInput = document.getElementById('url');
+    const btn = document.getElementById('go');
+    const unlockBtn = document.getElementById('unlock');
+    const status = document.getElementById('status');
+    let hasAccess = true;
+
+    function setStatus(msg, cls) { status.className = 'status' + (cls ? ' ' + cls : ''); status.innerHTML = msg; }
+
+    // Reflect paywall state: show the download button when the user has access,
+    // otherwise show the subscribe button.
+    async function refreshAccess() {
+      try {
+        const cfg = await (await fetch('/api/config')).json();
+        hasAccess = cfg.hasAccess;
+        btn.style.display = hasAccess ? 'block' : 'none';
+        unlockBtn.style.display = (cfg.paymentsEnabled && !hasAccess) ? 'block' : 'none';
+      } catch (e) { /* leave defaults */ }
+    }
+
+    async function startCheckout() {
+      unlockBtn.disabled = true;
+      setStatus('<span class="spinner"></span>Opening checkout…');
+      try {
+        const { url } = await (await fetch('/api/checkout', { method: 'POST' })).json();
+        if (url) { window.location.href = url; return; }
+        setStatus('Could not start checkout.', 'error');
+      } catch (e) { setStatus('Could not start checkout.', 'error'); }
+      finally { unlockBtn.disabled = false; }
+    }
+
+    // Returning from Stripe Checkout: activate access, then clean the URL.
+    async function maybeActivate() {
+      const params = new URLSearchParams(location.search);
+      const sid = params.get('session_id');
+      if (!sid) return;
+      setStatus('<span class="spinner"></span>Activating…');
+      try {
+        const res = await fetch('/api/activate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sid })
+        });
+        if (res.ok) setStatus('Subscription active ✓', 'ok');
+        else setStatus((await res.json()).detail || 'Activation failed.', 'error');
+      } catch (e) { setStatus('Activation failed.', 'error'); }
+      history.replaceState({}, '', '/');
+    }
+
+    async function download() {
+      const url = urlInput.value.trim();
+      if (!url) { setStatus('Paste a link first.', 'error'); return; }
+      btn.disabled = true;
+      setStatus('<span class="spinner"></span>Fetching…');
+      try {
+        const res = await fetch('/api/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        if (res.status === 402) {
+          await refreshAccess();
+          setStatus('Subscribe to download.', 'error');
+          return;
+        }
+        if (!res.ok) {
+          let detail = 'Download failed.';
+          try { detail = (await res.json()).detail || detail; } catch (e) {}
+          setStatus(detail, 'error');
+          return;
+        }
+        const blob = await res.blob();
+        const dispo = res.headers.get('Content-Disposition') || '';
+        const match = dispo.match(/filename="?([^"]+)"?/);
+        const name = match ? match[1] : 'video.mp4';
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+        setStatus('Saved ✓', 'ok');
+      } catch (e) {
+        setStatus('Network error. Try again.', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    btn.addEventListener('click', download);
+    unlockBtn.addEventListener('click', startCheckout);
+    urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') download(); });
+
+    (async () => { await maybeActivate(); await refreshAccess(); })();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
