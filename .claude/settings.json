@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pip install -q -r requirements.txt"
+            "command": "bash scripts/setup.sh"
           }
         ]
       }
