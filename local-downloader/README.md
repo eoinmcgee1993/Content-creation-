@@ -31,6 +31,26 @@ cd local-downloader
 - `--fast-update` means re-running only downloads posts you don't already have.
 - Files land in `local-downloader/downloads/<profile>/`.
 
+## Batch download specific reels/posts (no login)
+
+To grab a handful of specific videos instead of a whole profile, use
+`batch_download.sh`. Individual public posts don't require a login.
+
+```bash
+pip install yt-dlp   # once
+
+# URLs as arguments:
+./batch_download.sh \
+  https://www.instagram.com/reel/AAAA/ \
+  https://www.instagram.com/reel/BBBB/
+
+# ...or one URL per line in a file:
+./batch_download.sh urls.txt
+```
+
+Files land in `local-downloader/downloads/batch/`. Already-downloaded videos
+are skipped, so you can re-run a growing list safely.
+
 ## Notes
 
 - Your password is entered locally and is **not** stored — instaloader saves a
