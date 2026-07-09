@@ -16,36 +16,22 @@
       display:flex; flex-direction:column; align-items:center; justify-content:center;
       padding:24px calc(24px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
     }
-    .card {
-      width:100%; max-width:420px; background:var(--card); border-radius:20px;
-      padding:28px 22px; box-shadow:0 20px 60px rgba(0,0,0,.4);
-    }
-    .logo {
-      width:56px; height:56px; border-radius:16px; margin:0 auto 16px;
-      background:linear-gradient(135deg,var(--accent2),var(--accent));
-      display:flex; align-items:center; justify-content:center; font-size:28px;
-    }
+    .card { width:100%; max-width:420px; background:var(--card); border-radius:20px; padding:28px 22px; box-shadow:0 20px 60px rgba(0,0,0,.4); }
+    .logo { width:56px; height:56px; border-radius:16px; margin:0 auto 16px; background:linear-gradient(135deg,var(--accent2),var(--accent)); display:flex; align-items:center; justify-content:center; font-size:28px; }
     h1 { font-size:22px; text-align:center; margin:0 0 4px; }
     p.sub { text-align:center; color:var(--muted); margin:0 0 22px; font-size:14px; }
-    input {
-      width:100%; padding:15px 16px; border-radius:12px; border:1px solid #2c2c3a;
-      background:#12121a; color:var(--fg); font-size:16px; outline:none;
-    }
+    input { width:100%; padding:15px 16px; border-radius:12px; border:1px solid #2c2c3a; background:#12121a; color:var(--fg); font-size:16px; outline:none; }
     input:focus { border-color:var(--accent); }
-    button {
-      width:100%; margin-top:12px; padding:15px; border:0; border-radius:12px;
-      background:linear-gradient(135deg,var(--accent2),var(--accent)); color:#fff;
-      font-size:16px; font-weight:600; cursor:pointer; transition:opacity .15s;
-    }
+    button { width:100%; margin-top:12px; padding:15px; border:0; border-radius:12px; background:linear-gradient(135deg,var(--accent2),var(--accent)); color:#fff; font-size:16px; font-weight:600; cursor:pointer; transition:opacity .15s; }
+    button.ghost { background:transparent; border:1px solid #2c2c3a; color:var(--muted); }
     button:disabled { opacity:.55; cursor:default; }
     .status { margin-top:16px; text-align:center; font-size:14px; min-height:20px; }
     .status.error { color:#ff6b6b; }
     .status.ok { color:#4ade80; }
-    .spinner {
-      display:inline-block; width:16px; height:16px; border:2px solid #ffffff55;
-      border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-3px; margin-right:8px;
-    }
+    .row { margin-top:10px; text-align:center; font-size:13px; color:var(--muted); }
+    .spinner { display:inline-block; width:16px; height:16px; border:2px solid #ffffff55; border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-3px; margin-right:8px; }
     @keyframes spin { to { transform:rotate(360deg); } }
+    .hidden { display:none !important; }
     .foot { margin-top:22px; text-align:center; color:var(--muted); font-size:12px; line-height:1.5; }
   </style>
 </head>
@@ -54,111 +40,142 @@
     <div class="logo">⬇︎</div>
     <h1>MediaFetch</h1>
     <p class="sub">Paste an Instagram reel or post link to save the video.</p>
-    <input id="url" type="url" inputmode="url" autocomplete="off" placeholder="https://www.instagram.com/reel/..." />
-    <button id="go">Download</button>
-    <button id="unlock" style="display:none">Unlock — Subscribe</button>
+
+    <!-- Login (accounts mode, signed out) -->
+    <div id="loginBox" class="hidden">
+      <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" />
+      <button id="sendLink">Email me a login link</button>
+    </div>
+
+    <!-- Downloader -->
+    <div id="appBox" class="hidden">
+      <input id="url" type="url" inputmode="url" autocomplete="off" placeholder="https://www.instagram.com/reel/..." />
+      <button id="go">Download</button>
+      <button id="unlock" class="hidden">Unlock — Subscribe</button>
+      <div id="who" class="row hidden"><span id="whoEmail"></span> · <a href="#" id="signout" style="color:var(--accent)">sign out</a></div>
+    </div>
+
     <div id="status" class="status"></div>
     <div class="foot">Only download content you own or have permission to use.</div>
   </div>
 
-  <script>
-    const urlInput = document.getElementById('url');
-    const btn = document.getElementById('go');
-    const unlockBtn = document.getElementById('unlock');
-    const status = document.getElementById('status');
-    let hasAccess = true;
+  <script type="module">
+    const $ = (id) => document.getElementById(id);
+    const status = $('status');
+    const setStatus = (m, c) => { status.className = 'status' + (c ? ' ' + c : ''); status.innerHTML = m; };
+    const show = (el, on) => el.classList.toggle('hidden', !on);
 
-    function setStatus(msg, cls) { status.className = 'status' + (cls ? ' ' + cls : ''); status.innerHTML = msg; }
+    let cfg = { mode: 'open', hasAccess: true };
+    let supa = null;       // supabase client (accounts mode)
+    let session = null;    // supabase session (accounts mode)
 
-    // Reflect paywall state: show the download button when the user has access,
-    // otherwise show the subscribe button.
-    async function refreshAccess() {
-      try {
-        const cfg = await (await fetch('/api/config')).json();
-        hasAccess = cfg.hasAccess;
-        btn.style.display = hasAccess ? 'block' : 'none';
-        unlockBtn.style.display = (cfg.paymentsEnabled && !hasAccess) ? 'block' : 'none';
-      } catch (e) { /* leave defaults */ }
+    async function api(path, opts = {}) {
+      const headers = Object.assign({}, opts.headers || {});
+      if (session?.access_token) headers['Authorization'] = 'Bearer ' + session.access_token;
+      return fetch(path, Object.assign({}, opts, { headers }));
     }
 
+    // ---- Downloader ----
+    async function download() {
+      const url = $('url').value.trim();
+      if (!url) { setStatus('Paste a link first.', 'error'); return; }
+      $('go').disabled = true;
+      setStatus('<span class="spinner"></span>Fetching…');
+      try {
+        const res = await api('/api/download', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url })
+        });
+        if (res.status === 401) { await render(); setStatus('Please sign in.', 'error'); return; }
+        if (res.status === 402) { await refresh(); setStatus('Subscribe to download.', 'error'); return; }
+        if (!res.ok) { let d = 'Download failed.'; try { d = (await res.json()).detail || d; } catch (e) {} setStatus(d, 'error'); return; }
+        const blob = await res.blob();
+        const dispo = res.headers.get('Content-Disposition') || '';
+        const m = dispo.match(/filename="?([^"]+)"?/);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = m ? m[1] : 'video.mp4';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+        setStatus('Saved ✓', 'ok');
+      } catch (e) { setStatus('Network error. Try again.', 'error'); }
+      finally { $('go').disabled = false; }
+    }
+
+    // ---- Subscribe ----
     async function startCheckout() {
-      unlockBtn.disabled = true;
+      $('unlock').disabled = true;
       setStatus('<span class="spinner"></span>Opening checkout…');
       try {
-        const { url } = await (await fetch('/api/checkout', { method: 'POST' })).json();
+        const r = await api('/api/checkout', { method: 'POST' });
+        if (r.status === 401) { await render(); setStatus('Please sign in first.', 'error'); return; }
+        const { url } = await r.json();
         if (url) { window.location.href = url; return; }
         setStatus('Could not start checkout.', 'error');
       } catch (e) { setStatus('Could not start checkout.', 'error'); }
-      finally { unlockBtn.disabled = false; }
+      finally { $('unlock').disabled = false; }
     }
 
-    // Returning from Stripe Checkout: activate access, then clean the URL.
-    async function maybeActivate() {
-      const params = new URLSearchParams(location.search);
-      const sid = params.get('session_id');
-      if (!sid) return;
+    // ---- Paywall (cookie) return ----
+    async function maybeActivateCookie() {
+      const sid = new URLSearchParams(location.search).get('session_id');
+      if (!sid || cfg.mode !== 'paywall') return;
       setStatus('<span class="spinner"></span>Activating…');
       try {
-        const res = await fetch('/api/activate', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: sid })
-        });
-        if (res.ok) setStatus('Subscription active ✓', 'ok');
-        else setStatus((await res.json()).detail || 'Activation failed.', 'error');
+        const res = await fetch('/api/activate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: sid }) });
+        setStatus(res.ok ? 'Subscription active ✓' : ((await res.json()).detail || 'Activation failed.'), res.ok ? 'ok' : 'error');
       } catch (e) { setStatus('Activation failed.', 'error'); }
       history.replaceState({}, '', '/');
     }
 
-    async function download() {
-      const url = urlInput.value.trim();
-      if (!url) { setStatus('Paste a link first.', 'error'); return; }
-      btn.disabled = true;
-      setStatus('<span class="spinner"></span>Fetching…');
-      try {
-        const res = await fetch('/api/download', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-        if (res.status === 402) {
-          await refreshAccess();
-          setStatus('Subscribe to download.', 'error');
-          return;
-        }
-        if (!res.ok) {
-          let detail = 'Download failed.';
-          try { detail = (await res.json()).detail || detail; } catch (e) {}
-          setStatus(detail, 'error');
-          return;
-        }
-        const blob = await res.blob();
-        const dispo = res.headers.get('Content-Disposition') || '';
-        const match = dispo.match(/filename="?([^"]+)"?/);
-        const name = match ? match[1] : 'video.mp4';
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = name;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(a.href);
-        setStatus('Saved ✓', 'ok');
-      } catch (e) {
-        setStatus('Network error. Try again.', 'error');
-      } finally {
-        btn.disabled = false;
+    // ---- Accounts (Supabase magic link) ----
+    async function initSupabase() {
+      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+      supa = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+      const { data } = await supa.auth.getSession();
+      session = data.session;
+      supa.auth.onAuthStateChange((_e, s) => { session = s; render(); });
+    }
+    async function sendLink() {
+      const email = $('email').value.trim();
+      if (!email) { setStatus('Enter your email.', 'error'); return; }
+      $('sendLink').disabled = true;
+      const { error } = await supa.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin } });
+      $('sendLink').disabled = false;
+      setStatus(error ? error.message : 'Check your email for the login link.', error ? 'error' : 'ok');
+    }
+    async function signOut() { await supa.auth.signOut(); session = null; render(); }
+
+    // ---- Config + render ----
+    async function refresh() {
+      try { cfg = await (await api('/api/config')).json(); } catch (e) {}
+    }
+    async function render() {
+      await refresh();
+      const signedIn = cfg.mode !== 'accounts' || !!session;
+      show($('loginBox'), cfg.mode === 'accounts' && !signedIn);
+      show($('appBox'), signedIn);
+      if (signedIn) {
+        show($('go'), cfg.hasAccess);
+        show($('unlock'), cfg.paymentsEnabled && !cfg.hasAccess);
+        show($('who'), cfg.mode === 'accounts' && !!session);
+        if (session) $('whoEmail').textContent = session.user?.email || '';
       }
     }
 
-    btn.addEventListener('click', download);
-    unlockBtn.addEventListener('click', startCheckout);
-    urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') download(); });
+    // ---- Boot ----
+    (async () => {
+      await refresh();
+      if (cfg.mode === 'accounts') { await initSupabase(); }
+      await maybeActivateCookie();
+      await render();
+    })();
 
-    (async () => { await maybeActivate(); await refreshAccess(); })();
+    $('go').addEventListener('click', download);
+    $('unlock').addEventListener('click', startCheckout);
+    $('sendLink').addEventListener('click', sendLink);
+    $('signout').addEventListener('click', (e) => { e.preventDefault(); signOut(); });
+    $('url').addEventListener('keydown', (e) => { if (e.key === 'Enter') download(); });
+    $('email').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendLink(); });
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
-    }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   </script>
 </body>
 </html>
