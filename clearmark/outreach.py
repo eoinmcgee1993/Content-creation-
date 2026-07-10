@@ -9,7 +9,7 @@ import sys
 import textwrap
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).parent
+_REPO_ROOT = Path(__file__).parent.parent
 _TEMPLATE_PATH = _REPO_ROOT / "sales" / "cold-outreach.md"
 
 
