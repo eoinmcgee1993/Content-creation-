@@ -1,4 +1,11 @@
-"""AI copy generator powered by the OpenAI API."""
+"""AI copy generator powered by the Kimi K2 cloud model via Ollama.
+
+Ollama exposes an OpenAI-compatible API, so the OpenAI SDK talks to it
+unchanged — we only point it at Ollama's endpoint and model. Defaults target a
+local Ollama daemon (which proxies `:cloud` models once you've run
+`ollama signin`). Override the env vars below to use Ollama Cloud directly
+(`https://ollama.com/v1` + an API key) or to fall back to OpenAI.
+"""
 
 import os
 
@@ -6,7 +13,12 @@ from openai import OpenAI
 
 from platforms import Platform
 
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+# Local Ollama ignores the API key; the placeholder keeps the SDK happy.
+MODEL = os.environ.get("LLM_MODEL", "kimi-k2.7-code:cloud")
+client = OpenAI(
+    base_url=os.environ.get("LLM_BASE_URL", "http://localhost:11434/v1"),
+    api_key=os.environ.get("LLM_API_KEY", "ollama"),
+)
 
 
 def generate_copy(product_description: str, platform: Platform) -> dict[str, str]:
@@ -25,7 +37,7 @@ def generate_copy(product_description: str, platform: Platform) -> dict[str, str
     )
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=300,
         temperature=0.7,
