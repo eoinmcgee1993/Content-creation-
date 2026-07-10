@@ -7,6 +7,10 @@ This repo is wired for it in [`.claude/settings.json`](../.claude/settings.json)
 the `open-video` server (remote, URL type) and the `open-video-upload` helper
 (local uploads). Restart Claude Code after cloning so both entries load.
 
+Usage guidance for the toolset lives in the
+[`open-video` skill](../.claude/skills/open-video/SKILL.md) — workflows for
+uploads, branding, hosting, analytics, and monetization.
+
 ## Install
 
 ### Cursor / Claude Code / Windsurf (url type)
