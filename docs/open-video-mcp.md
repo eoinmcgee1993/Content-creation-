@@ -31,6 +31,24 @@ Use if Custom Connectors is unavailable. Requires Node.js.
 { "mcpServers": { "open-video": { "command": "npx", "args": ["-y", "mcp-remote", "https://mcp.open.video/mcp"] } } }
 ```
 
+### Claude mobile / claude.ai (Custom Connector)
+
+The `.claude/settings.json` config is for the desktop CLI only — it does not
+apply on mobile. On the Claude app (or claude.ai in a browser) connect open.video
+as a Custom Connector instead:
+
+1. Claude app → profile/menu → **Settings** → **Connectors**
+2. **Add custom connector** → Name: `open.video`, URL: `https://mcp.open.video`
+3. Save → **Connect** → sign in / authorize (OAuth runs automatically)
+4. In a chat, ask "list my open.video channels" to confirm
+
+If "Add custom connector" isn't available in the mobile app, do steps 1–3 once
+at **claude.ai in a browser** — connectors sync to your account and then work in
+the mobile app too.
+
+Note: local video file uploads are desktop-only (they need the Upload Helper).
+From mobile, use URL uploads (`sourceUrl`) with a public video link.
+
 ## Auth
 
 OAuth is automatic for Custom Connectors. For other clients, call
