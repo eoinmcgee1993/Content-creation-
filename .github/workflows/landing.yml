@@ -31,4 +31,6 @@ jobs:
         run: |
           python -c "from landing.freebie import build_freebie; \
             print(build_freebie('landing/static'))"
-          test -f landing/static/sample-audit-report.pdf
+          test -f landing/static/sample-audit-report.pd
+
+          control + space
