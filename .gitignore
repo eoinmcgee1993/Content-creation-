@@ -13,3 +13,5 @@ landing/leads.csv
 landing/static/sample-audit-report.*
 # Generated, per-campaign sales sheet
 sales/sales-sheet.pdf
+# Downloaded media artifacts
+downloads/

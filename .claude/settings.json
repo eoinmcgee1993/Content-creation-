@@ -4,6 +4,30 @@
       "command": "notebooklm-mcp",
       "args": [],
       "env": {}
+    },
+    "muapi": {
+      "type": "http",
+      "url": "https://api.muapi.ai/mcp"
+    },
+    "open-video": {
+      "type": "http",
+      "url": "https://mcp.open.video/mcp"
+    },
+    "open-video-upload": {
+      "command": "npx",
+      "args": ["-y", "open-video-upload-helper"]
     }
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/setup.sh\""
+          }
+        ]
+      }
+    ]
   }
 }

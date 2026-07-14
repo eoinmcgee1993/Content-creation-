@@ -31,3 +31,36 @@ services:
         sync: false
       - key: MAILERLITE_GROUP_ID
         sync: false
+
+  # MediaFetch — installable reel-downloader PWA (optional Stripe paywall).
+  - type: web
+    name: mediafetch
+    runtime: python
+    plan: starter
+    rootDir: mediafetch
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: APP_SECRET
+        generateValue: true       # Render generates a random signing secret
+      - key: STRIPE_SECRET_KEY
+        sync: false               # set to enable the paywall
+      - key: STRIPE_PRICE_ID
+        sync: false               # subscription price id
+      - key: APP_BASE_URL
+        sync: false               # your public mediafetch URL
+      # Accounts tier (optional): cross-device login via Supabase + Stripe.
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
