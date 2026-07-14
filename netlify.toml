@@ -1,6 +1,10 @@
 [build]
   base    = "trading-dashboard"
   command = "npm ci && npm run build"
+
+
+
+
   publish = "trading-dashboard/dist"
 
 [build.environment]
@@ -10,3 +14,5 @@
   from   = "/*"
   to     = "/index.html"
   status = 200
+  is:pr state:open -label:bug
+  

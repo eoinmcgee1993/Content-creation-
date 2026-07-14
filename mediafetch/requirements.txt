@@ -1,0 +1,7 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+yt-dlp>=2025.1.1
+cffi>=1.16
+stripe>=9.0
+pyjwt>=2.8
+httpx>=0.27
