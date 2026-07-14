@@ -21,10 +21,16 @@ uvicorn app:app --reload --port 8000
 
 Open http://localhost:8000 and paste an Instagram reel/post URL.
 
-## Paywall (selling access)
+## Access tiers (selling access)
 
-The app runs **open** with no config. Set these env vars to gate downloads
-behind a Stripe Checkout subscription (no database needed):
+The app auto-selects a tier from its env vars — most capable first:
+
+### 1. Open (default)
+No config. Downloads are unrestricted. Good for local development.
+
+### 2. Paywall (Stripe only, per-device)
+Gate downloads behind a Stripe Checkout subscription, tracked by a signed
+cookie — **no database**.
 
 | Variable | Purpose |
 |---|---|
@@ -34,13 +40,35 @@ behind a Stripe Checkout subscription (no database needed):
 | `ACCESS_DAYS` | access granted per activation (default 31) |
 | `APP_BASE_URL` | public URL for Checkout redirects (else request origin) |
 
-Flow: user taps **Unlock → Subscribe** → Stripe Checkout → on return the app
-verifies the session and sets a signed, expiring access cookie. `/api/download`
-requires that cookie while payments are enabled.
+Flow: **Unlock → Subscribe** → Checkout → on return the app sets a signed,
+expiring cookie. Access is per-device.
 
-> The access cookie is per-device. Paying once and logging in across devices
-> needs real accounts (email/magic-link + a datastore such as Supabase) — a
-> planned follow-up, not part of V1.
+### 3. Accounts (Supabase + Stripe, cross-device)
+Real logins via **Supabase magic link**, with a per-user subscription so a
+customer pays once and uses it on any device. Enabled when the Stripe vars
+above **and** all of these are set:
+
+| Variable | Purpose |
+|---|---|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_ANON_KEY` | public anon key (sent to the browser for login) |
+| `SUPABASE_JWT_SECRET` | verifies user access tokens (Project Settings → API) |
+| `SUPABASE_SERVICE_ROLE_KEY` | writes subscription rows from the webhook |
+| `STRIPE_WEBHOOK_SECRET` | signing secret for `POST /api/stripe/webhook` |
+
+Setup:
+1. Apply the migration `supabase/migrations/002_mediafetch_subscriptions.sql`
+   (creates `public.mediafetch_subscriptions` with per-user RLS).
+2. In Stripe, add a webhook to `https://<your-app>/api/stripe/webhook` for
+   `checkout.session.completed`, `customer.subscription.updated`,
+   `customer.subscription.deleted`; put its signing secret in
+   `STRIPE_WEBHOOK_SECRET`.
+3. In Supabase Auth, add your app URL to the allowed redirect URLs.
+
+Flow: user enters email → magic-link login → **Subscribe** → Checkout. The
+webhook writes the subscription to Supabase; `/api/download` allows the user
+while their subscription is active. The browser loads `@supabase/supabase-js`
+from a CDN, so the deployed host needs outbound access to `cdn.jsdelivr.net`.
 
 ## Deploy
 
