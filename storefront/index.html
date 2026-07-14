@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Systems Storefront</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-zinc-100 font-sans antialiased">
+  <div class="max-w-xl mx-auto min-h-screen px-6 py-24 flex flex-col justify-between">
+    <div class="space-y-12">
+
+      <!-- Pipeline status badge -->
+      <div class="inline-flex items-center gap-2 border border-zinc-800 bg-zinc-900/50 px-3 py-1 rounded-full">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-xs font-mono tracking-wider text-zinc-400 uppercase">Product Pipeline Active</span>
+      </div>
+
+      <!-- Dynamic header — populated by JS -->
+      <div class="space-y-4">
+        <h1 id="product-title" class="text-xs font-mono uppercase tracking-widest text-indigo-400"></h1>
+        <h2 id="main-headline" class="text-3xl sm:text-4xl font-extrabold tracking-tight leading-none text-zinc-50">
+          Sourcing digital workspace architectures&hellip;
+        </h2>
+      </div>
+
+      <!-- Transformation bullets — populated by JS -->
+      <ul id="points-container" class="space-y-4 border-l border-zinc-800 pl-4 text-zinc-400 text-sm sm:text-base">
+      </ul>
+    </div>
+
+    <!-- Checkout block — populated by JS -->
+    <div class="mt-16 pt-8 border-t border-zinc-900 space-y-4">
+      <div class="flex items-center justify-between font-mono text-sm">
+        <span class="text-zinc-500">Asset Cost Framework:</span>
+        <span id="price-tag" class="text-xl font-bold text-emerald-400">$0.00</span>
+      </div>
+      <a id="action-cta" href="#"
+         class="block w-full text-center bg-zinc-100 text-zinc-950 hover:bg-zinc-200 font-bold py-4 px-6 rounded-xl transition duration-150 transform active:scale-[0.98]">
+        Download System Layout
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Replace the two placeholder values below with your real Supabase credentials.
+    // These are the public anon key (safe to expose in client HTML) and project URL.
+    const SUPABASE_URL     = "https://<YOUR_SUPABASE_PROJECT_ID>.supabase.co";
+    const SUPABASE_ANON_KEY = "<YOUR_SUPABASE_ANON_KEY>";
+
+    async function renderPage() {
+      const slug = new URLSearchParams(window.location.search).get("p");
+      if (!slug) return;
+
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/sales_funnels?slug=eq.${encodeURIComponent(slug)}&select=*`,
+          { headers: { apikey: SUPABASE_ANON_KEY } }
+        );
+        const rows = await res.json();
+        if (!rows || rows.length === 0) return;
+
+        const d = rows[0];
+
+        document.getElementById("product-title").textContent = d.product_name;
+        document.getElementById("main-headline").textContent = d.headline;
+        document.getElementById("price-tag").textContent =
+          `$${(d.price_cents / 100).toFixed(2)}`;
+
+        document.getElementById("action-cta").href =
+          `${d.checkout_url}?custom_data[slug]=${encodeURIComponent(d.slug)}`;
+
+        document.getElementById("points-container").innerHTML =
+          d.transformation_bullets
+            .map(b => `
+              <li class="flex items-start gap-3">
+                <span class="text-emerald-500 font-bold select-none">✓</span>
+                <span>${b}</span>
+              </li>`)
+            .join("");
+      } catch (err) {
+        console.error("Database connection failure", err);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", renderPage);
+  </script>
+</body>
+</html>

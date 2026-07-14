@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f1a" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <title>DigiKim</title>
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --card: #151a2b;
+      --card-2: #1c2335;
+      --text: #e7ecf5;
+      --muted: #93a0b8;
+      --accent: #6ea8ff;
+      --accent-2: #a78bff;
+      --border: #2a3350;
+      --ok: #3ddc97;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
+    header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+    header img { width: 40px; height: 40px; border-radius: 10px; }
+    h1 { font-size: 22px; margin: 0; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+    label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
+    textarea, input, select {
+      width: 100%; background: var(--card); color: var(--text);
+      border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+      font: inherit; outline: none;
+    }
+    textarea { min-height: 84px; resize: vertical; }
+    textarea:focus, input:focus, select:focus { border-color: var(--accent); }
+    .row { display: flex; gap: 10px; }
+    .row > * { flex: 1; }
+    button {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b0f1a; font-weight: 700; border: 0; border-radius: 12px;
+      padding: 14px 16px; font-size: 16px; cursor: pointer; width: 100%;
+      margin-top: 16px;
+    }
+    button:disabled { opacity: 0.55; cursor: default; }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px; margin-top: 14px;
+    }
+    .card h3 { margin: 0 0 4px; font-size: 16px; }
+    .card .aud { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+    .field { margin-top: 10px; }
+    .field .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .field .v { font-size: 15px; margin-top: 2px; white-space: pre-wrap; }
+    a { color: var(--accent); }
+    details { margin-top: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--card-2); }
+    summary { cursor: pointer; padding: 12px 14px; font-size: 14px; color: var(--muted); }
+    details[open] { padding-bottom: 12px; }
+    details .body { padding: 0 14px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .err { color: #ff8f8f; font-size: 14px; margin-top: 12px; white-space: pre-wrap; }
+    .spin { display: inline-block; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #0b0f1a; border-radius: 50%; animation: s .7s linear infinite; vertical-align: -2px; }
+    @keyframes s { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="./icon.svg" alt="DigiKim" />
+      <div>
+        <h1>DigiKim</h1>
+        <p class="sub">Find where to launch — copy by Kimi&nbsp;K2</p>
+      </div>
+    </header>
+
+    <label for="product">Describe your product</label>
+    <textarea id="product" placeholder="e.g. An open-source CLI that turns terminal recordings into shareable GIFs"></textarea>
+
+    <div class="row">
+      <div>
+        <label for="top">Platforms</label>
+        <select id="top">
+          <option value="2">Top 2</option>
+          <option value="3" selected>Top 3</option>
+          <option value="4">All 4</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="go">Generate launch copy</button>
+    <div id="error" class="err" hidden></div>
+    <div id="results"></div>
+
+    <details id="settings">
+      <summary>⚙︎ Settings (Ollama key &amp; model)</summary>
+      <div class="body">
+        <label for="key">Ollama API key</label>
+        <input id="key" type="password" placeholder="Stored only on this device" autocomplete="off" />
+        <label for="model">Model</label>
+        <input id="model" type="text" />
+        <label for="base">API base URL</label>
+        <input id="base" type="text" />
+        <p class="muted">Get a key at <a href="https://ollama.com/settings/keys" target="_blank" rel="noopener">ollama.com/settings/keys</a>. Nothing here leaves your device except calls to the API base URL.</p>
+      </div>
+    </details>
+  </div>
+
+  <script>
+    // --- Config (persisted in localStorage) ---
+    const DEFAULTS = { model: "kimi-k2.7-code:cloud", base: "https://ollama.com/v1" };
+    const cfg = {
+      key:   localStorage.getItem("digikim.key")   || "",
+      model: localStorage.getItem("digikim.model") || DEFAULTS.model,
+      base:  localStorage.getItem("digikim.base")  || DEFAULTS.base,
+    };
+    const $ = (id) => document.getElementById(id);
+    $("key").value = cfg.key; $("model").value = cfg.model; $("base").value = cfg.base;
+    for (const f of ["key", "model", "base"]) {
+      $(f).addEventListener("input", (e) => {
+        cfg[f] = e.target.value.trim();
+        localStorage.setItem("digikim." + f, cfg[f]);
+      });
+    }
+
+    // --- Platforms (ported from launchwhere/platforms.py) ---
+    const PLATFORMS = [
+      { name: "Product Hunt", url: "https://www.producthunt.com",
+        audience: "early adopters, tech enthusiasts, investors",
+        bestFor: ["SaaS", "mobile apps", "developer tools", "productivity"],
+        copyStyle: "catchy, benefit-driven, emoji-friendly", titleLen: 60, taglineLen: 120 },
+      { name: "Hacker News (Show HN)", url: "https://news.ycombinator.com",
+        audience: "developers, engineers, technical founders",
+        bestFor: ["developer tools", "open source", "infrastructure", "AI/ML"],
+        copyStyle: "honest, technical, minimal hype", titleLen: 80, taglineLen: 300 },
+      { name: "IndieHackers", url: "https://www.indiehackers.com",
+        audience: "bootstrappers, indie founders, solopreneurs",
+        bestFor: ["SaaS", "no-code", "side projects", "B2B tools"],
+        copyStyle: "story-driven, revenue-focused, authentic", titleLen: 70, taglineLen: 200 },
+      { name: "Reddit", url: "https://www.reddit.com",
+        audience: "niche communities, power users",
+        bestFor: ["consumer apps", "games", "hobby tools", "community products"],
+        copyStyle: "conversational, community-first, no hard sell", titleLen: 100, taglineLen: 400 },
+    ];
+
+    function scorePlatforms(desc) {
+      const kws = desc.toLowerCase().split(/\s+/).filter(Boolean);
+      return PLATFORMS
+        .map((p) => ({ p, score: kws.reduce((n, kw) =>
+          n + (p.bestFor.some((t) => t.toLowerCase().includes(kw)) ? 1 : 0), 0) }))
+        .sort((a, b) => b.score - a.score);
+    }
+
+    // --- Kimi K2 call (OpenAI-compatible; mirrors generator.py prompt) ---
+    async function generateCopy(desc, p) {
+      const prompt =
+        "You are a launch copywriter expert.\n\n" +
+        `Product: ${desc}\n\n` +
+        `Platform: ${p.name}\n` +
+        `Audience: ${p.audience}\n` +
+        `Copy style: ${p.copyStyle}\n\n` +
+        `Write a launch title (max ${p.titleLen} chars) and a tagline ` +
+        `(max ${p.taglineLen} chars) for this product on ${p.name}.\n\n` +
+        "Respond in this exact format:\nTITLE: <title>\nTAGLINE: <tagline>";
+
+      const res = await fetch(cfg.base.replace(/\/$/, "") + "/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfg.key },
+        body: JSON.stringify({
+          model: cfg.model,
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 300, temperature: 0.7,
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      const data = await res.json();
+      const raw = data.choices?.[0]?.message?.content || "";
+      let title = "", tagline = "";
+      for (const line of raw.split("\n")) {
+        if (line.startsWith("TITLE:")) title = line.slice(6).trim();
+        else if (line.startsWith("TAGLINE:")) tagline = line.slice(8).trim();
+      }
+      return { title: title || raw.trim(), tagline };
+    }
+
+    // --- UI ---
+    const results = $("results"), errBox = $("error"), goBtn = $("go");
+
+    function showError(msg) { errBox.textContent = msg; errBox.hidden = false; }
+
+    goBtn.addEventListener("click", async () => {
+      errBox.hidden = true; results.innerHTML = "";
+      const desc = $("product").value.trim();
+      if (!desc) { showError("Describe your product first."); return; }
+      if (!cfg.key) { showError("Add your Ollama API key in Settings below."); $("settings").open = true; return; }
+
+      const ranked = scorePlatforms(desc).slice(0, parseInt($("top").value, 10));
+      goBtn.disabled = true; goBtn.innerHTML = 'Generating <span class="spin"></span>';
+
+      for (const { p } of ranked) {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML =
+          `<h3>${p.name}</h3><p class="aud">${p.audience} · <a href="${p.url}" target="_blank" rel="noopener">visit</a></p>` +
+          `<div class="muted">Writing copy <span class="spin"></span></div>`;
+        results.appendChild(card);
+        try {
+          const c = await generateCopy(desc, p);
+          card.innerHTML =
+            `<h3>${p.name}</h3><p class="aud">${p.audience} · <a href="${p.url}" target="_blank" rel="noopener">visit</a></p>` +
+            `<div class="field"><div class="k">Title</div><div class="v">${escapeHtml(c.title)}</div></div>` +
+            `<div class="field"><div class="k">Tagline</div><div class="v">${escapeHtml(c.tagline)}</div></div>`;
+        } catch (e) {
+          const hint = (e instanceof TypeError)
+            ? "\n\nThis is likely a browser CORS block on the API. See digikim/README.md for the serverless-proxy fallback, then set the proxy URL as the API base URL in Settings."
+            : "";
+          card.innerHTML = `<h3>${p.name}</h3><div class="err">${escapeHtml(e.message)}${escapeHtml(hint)}</div>`;
+        }
+      }
+      goBtn.disabled = false; goBtn.textContent = "Generate launch copy";
+    });
+
+    function escapeHtml(s) {
+      return (s || "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+    }
+  </script>
+</body>
+</html>

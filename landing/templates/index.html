@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clearmark — Verify Your Answer Engine Presence</title>
+  <meta name="description" content="See exactly which AI engines cite your brand — and which don't. Clearmark's AEP dashboard tracks your Answer Engine Presence across ChatGPT, Claude, Gemini, and Perplexity.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static_files', name='style.css') }}">
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#" class="brand">CLEARMARK</a>
+      <div class="nav-links">
+        <a href="#findings">How It Works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#verify" class="btn">Verify Now</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="wrap">
+      <p class="eyebrow">ANSWER ENGINE PRESENCE MONITORING</p>
+      <h1 class="serif">Your brand is either<br>cited by AI — or it isn't.</h1>
+      <p class="hero-sub">
+        Verify your Answer Engine Presence. See where AI cites your brand and where it doesn't.
+      </p>
+
+      {% if error %}<p class="err" role="alert">{{ error }}</p>{% endif %}
+
+      <form class="hero-capture" method="post" action="{{ url_for('subscribe') }}" id="verify">
+        <input type="hidden" name="source" value="clearmark-hero">
+        <div class="hero-form-row">
+          <input type="email" name="email" required autocomplete="email"
+                 placeholder="you@company.com" class="hero-input">
+          <button type="submit" class="btn">Verify Now &rarr;</button>
+        </div>
+        <p class="fineprint">Free for your first domain. No card required.</p>
+      </form>
+
+      <!-- Hero Dashboard -->
+      <div class="hero-dashboard">
+
+        <!-- AEP Gauge Card -->
+        <div class="card aep-card">
+          <p class="micro-label">AEP SCORE</p>
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 200 118" width="200" height="118" class="gauge-svg" aria-label="AEP Score: 73 out of 100">
+              <!-- Track arc -->
+              <path d="M 20 108 A 80 80 0 0 1 180 108"
+                fill="none" stroke="#1e2d45" stroke-width="14" stroke-linecap="round"/>
+              <!-- Fill arc — 73% of π×80 ≈ 183.5 -->
+              <path d="M 20 108 A 80 80 0 0 1 180 108"
+                fill="none" stroke="#06d4f8" stroke-width="14" stroke-linecap="round"
+                stroke-dasharray="183.5 1000"/>
+              <text x="100" y="92" text-anchor="middle"
+                font-family="JetBrains Mono, monospace"
+                font-size="38" font-weight="700" fill="#06d4f8">73</text>
+              <text x="100" y="110" text-anchor="middle"
+                font-family="Inter, sans-serif"
+                font-size="10" letter-spacing="0.12em" fill="#64748b">/ 100 AEP</text>
+            </svg>
+          </div>
+          <div class="aep-engines">
+            <span class="engine-tag cited">ChatGPT ✓</span>
+            <span class="engine-tag cited">Claude ✓</span>
+            <span class="engine-tag">Gemini</span>
+            <span class="engine-tag cited">Perplexity ✓</span>
+          </div>
+          <p class="card-body">37 of 40 tested queries returned a citation to your domain.</p>
+        </div>
+
+        <!-- Verified Badge Card — dark slate background, green only for icon/status -->
+        <div class="card verified-card">
+          <div class="verified-header">
+            <span class="verified-icon">✓</span>
+            <div>
+              <p class="verified-title">Verified by Clearmark</p>
+              <p class="verified-domain">clearmark.pro</p>
+            </div>
+          </div>
+          <div class="verified-stats">
+            <div class="stat">
+              <span class="stat-num">37<span class="stat-unit">/40</span></span>
+              <span class="stat-label">ENGINES CITING</span>
+            </div>
+            <div class="stat">
+              <span class="stat-num">92<span class="stat-pct">%</span></span>
+              <span class="stat-label">CITATION ACCURACY</span>
+            </div>
+          </div>
+          <pre class="mono-block"><code><span class="mono-key">domain</span>: clearmark.pro
+<span class="mono-key">last_verified</span>: 2026-06-23
+<span class="mono-key">engines_tested</span>: 40
+<span class="mono-key">aep_score</span>: <span class="mono-val">73</span>
+<span class="mono-key">status</span>: <span class="mono-verified">VERIFIED</span></code></pre>
+        </div>
+
+      </div><!-- /.hero-dashboard -->
+    </div>
+  </section>
+
+  <!-- TECHNICAL FINDINGS -->
+  <section class="section findings-section" id="findings">
+    <div class="wrap">
+      <p class="eyebrow">TECHNICAL FINDINGS</p>
+      <h2 class="serif">Precision diagnostic.<br>Not a vanity metric.</h2>
+      <p class="section-sub">Each Clearmark report maps your brand's citation footprint across 40+ AI query patterns — scoring each engine on coverage, accuracy, and context fidelity.</p>
+
+      <div class="findings-grid">
+
+        <div class="card finding-card">
+          <div class="finding-icon">◈</div>
+          <h3>Citation Coverage</h3>
+          <p class="card-body">We test 40 representative queries per engine — branded, navigational, and topical. Your AEP score reflects the percentage of queries where your domain appears in the generated answer.</p>
+          <pre class="mono-block"><code><span class="mono-comment"># Sample finding</span>
+query: "best AEP monitoring tools"
+engine: ChatGPT-4o
+cited: <span class="mono-verified">true</span>
+accuracy: <span class="mono-val">0.94</span>
+context: "comprehensive"</code></pre>
+        </div>
+
+        <div class="card finding-card">
+          <div class="finding-icon">◆</div>
+          <h3>Hallucination Detection</h3>
+          <p class="card-body">AI engines sometimes cite your brand with incorrect claims — wrong pricing, outdated product names, or fabricated features. We flag every hallucination and score citation accuracy separately from coverage.</p>
+          <pre class="mono-block"><code><span class="mono-comment"># Hallucination flag</span>
+engine: Gemini-1.5
+claim: "pricing at $9/mo"
+actual: "$29/mo"
+severity: <span class="mono-warn">HIGH</span>
+action: "Update schema.org"</code></pre>
+        </div>
+
+        <div class="card finding-card">
+          <div class="finding-icon">◇</div>
+          <h3>Competitive Gap Analysis</h3>
+          <p class="card-body">See exactly where competitors are cited instead of you — broken down by engine, query type, and topic cluster. Clearmark identifies the specific content gaps your AEP strategy needs to close.</p>
+          <pre class="mono-block"><code><span class="mono-comment"># Gap report</span>
+topic: "AEP auditing tools"
+your_citations: <span class="mono-val">3</span>
+competitor_citations: <span class="mono-val">12</span>
+gap_delta: <span class="mono-warn">-9</span>
+priority: "HIGH"</code></pre>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="section pricing-section" id="pricing">
+    <div class="wrap">
+      <p class="eyebrow">PRICING</p>
+      <h2 class="serif">Start free. Scale as you grow.</h2>
+      <p class="section-sub">Every plan includes full AEP scoring, citation coverage maps, and hallucination detection. No exports locked behind an enterprise gate.</p>
+
+      <div class="pricing-grid">
+
+        <div class="card tier-card">
+          <p class="tier-name">Starter</p>
+          <p class="tier-price">Free</p>
+          <p class="tier-cadence">forever</p>
+          <ul class="tier-features">
+            <li>1 domain verified</li>
+            <li>Monthly AEP snapshots</li>
+            <li>4 AI engines monitored</li>
+            <li>10 query patterns</li>
+            <li>Email report delivery</li>
+          </ul>
+          <a href="#verify" class="btn btn-ghost">Start Free &rarr;</a>
+        </div>
+
+        <div class="card tier-card tier-featured">
+          <p class="tier-badge micro-label">MOST POPULAR</p>
+          <p class="tier-name">Pro</p>
+          <p class="tier-price">$49<span class="tier-per">/mo</span></p>
+          <p class="tier-cadence">per domain</p>
+          <ul class="tier-features">
+            <li>5 domains monitored</li>
+            <li>Weekly AEP tracking</li>
+            <li>12+ AI engines monitored</li>
+            <li>40 query patterns</li>
+            <li>Hallucination alerts</li>
+            <li>Competitive gap analysis</li>
+            <li>API access</li>
+          </ul>
+          <a href="#verify" class="btn">Subscribe Now &rarr;</a>
+        </div>
+
+        <div class="card tier-card">
+          <p class="tier-name">Enterprise</p>
+          <p class="tier-price">Custom</p>
+          <p class="tier-cadence">contact us</p>
+          <ul class="tier-features">
+            <li>Unlimited domains</li>
+            <li>Real-time monitoring</li>
+            <li>All engines + custom</li>
+            <li>500+ query patterns</li>
+            <li>Dedicated Slack channel</li>
+            <li>White-label reports</li>
+            <li>SLA guarantee</li>
+          </ul>
+          <a href="mailto:team@clearmark.pro" class="btn btn-ghost">Contact Sales &rarr;</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="section testimonials-section">
+    <div class="wrap">
+      <p class="eyebrow">WHAT TEAMS SAY</p>
+      <h2 class="serif">Built for the teams who own the answer.</h2>
+
+      <div class="testimonials-grid">
+
+        <div class="card testimonial-card">
+          <p class="testimonial-body">Clearmark showed us that Gemini was citing a competitor for three of our core use cases — with wrong pricing for us. We fixed our structured data and recovered two of those slots in six weeks.</p>
+          <div class="testimonial-author">
+            <span class="testimonial-name">Sarah K.</span>
+            <span class="testimonial-role">Head of Growth · Synthex AI</span>
+          </div>
+        </div>
+
+        <div class="card testimonial-card">
+          <p class="testimonial-body">The hallucination detection alone is worth the Pro plan. ChatGPT was confidently citing an old pricing page we'd deprecated. We'd never have caught it without Clearmark's weekly scan.</p>
+          <div class="testimonial-author">
+            <span class="testimonial-name">Marcus T.</span>
+            <span class="testimonial-role">VP Marketing · Foundry Labs</span>
+          </div>
+        </div>
+
+        <div class="card testimonial-card">
+          <p class="testimonial-body">We run performance reviews against AEP score now alongside SERP rankings. It's the metric our content team actually understands because the gap analysis is brutally clear.</p>
+          <div class="testimonial-author">
+            <span class="testimonial-name">Priya M.</span>
+            <span class="testimonial-role">Content Strategy Lead · Orbital</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="section cta-section">
+    <div class="wrap wrap-narrow center">
+      <p class="eyebrow">GET STARTED</p>
+      <h2 class="serif">Verify your first domain in 60 seconds.</h2>
+      <p class="section-sub">Join 400+ marketing and content teams who've already mapped their Answer Engine Presence.</p>
+      <form class="cta-capture" method="post" action="{{ url_for('subscribe') }}">
+        <input type="hidden" name="source" value="clearmark-cta">
+        <div class="hero-form-row">
+          <input type="email" name="email" required autocomplete="email"
+                 placeholder="you@company.com" class="hero-input">
+          <button type="submit" class="btn">Verify Now &rarr;</button>
+        </div>
+        <p class="fineprint">Free plan. No credit card. Instant report.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <a href="#" class="brand">CLEARMARK</a>
+      <div class="footer-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="mailto:team@clearmark.pro">team@clearmark.pro</a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Clearmark. All rights reserved.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
