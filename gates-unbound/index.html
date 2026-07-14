@@ -121,12 +121,13 @@
   </main>
 
   <script>
-    // -- Optional Supabase capture ---------------------------------------
-    // Matches the repo pattern (see storefront/index.html). Fill these in to
-    // persist emails to a `waitlist` table via the public anon key. Leave as
-    // placeholders and the form will still route the operator to the briefing.
-    const SUPABASE_URL      = "https://<YOUR_SUPABASE_PROJECT_ID>.supabase.co";
-    const SUPABASE_ANON_KEY = "<YOUR_SUPABASE_ANON_KEY>";
+    // -- Supabase waitlist capture ---------------------------------------
+    // Wired to the `gates-unbound` project. The publishable key is public by
+    // design (safe in client HTML). RLS lets it insert into `waitlist` but not
+    // read, so captured emails stay private. Leave the placeholders below in a
+    // fork and the form still routes the operator to the briefing.
+    const SUPABASE_URL      = "https://bznoitwdegzinwjhuoyg.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_QdEUme2hCAPzcKiO2xI-ww_Y1wA69f7";
     const TRANSMISSION_URL  = "./intercept/001.html";
 
     const form   = document.getElementById("intercept-form");
@@ -136,9 +137,11 @@
       return !SUPABASE_URL.includes("<YOUR_") && !SUPABASE_ANON_KEY.includes("<YOUR_");
     }
 
+    // Returns the fetch Response so the caller can inspect res.ok / res.status.
+    // Returns undefined when credentials aren't configured (no-op capture).
     async function persist(email) {
-      if (!configured()) return; // no-op until credentials are set
-      await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
+      if (!configured()) return undefined;
+      return fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
         method: "POST",
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -150,21 +153,40 @@
       });
     }
 
+    function grantAccess() {
+      status.className = "mono text-xs h-4 text-green-400";
+      status.textContent = "> access granted. rerouting to 001...";
+      setTimeout(() => { window.location.href = TRANSMISSION_URL; }, 900);
+    }
+
+    function denyAccess() {
+      status.className = "mono text-xs h-4 text-red-400";
+      status.textContent = "> connection failed. retry transmission.";
+    }
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value.trim();
       status.className = "mono text-xs h-4 text-zinc-400";
       status.textContent = "> establishing secure connection...";
       try {
-        await persist(email);
-        status.className = "mono text-xs h-4 text-green-400";
-        status.textContent = "> access granted. rerouting to 001...";
-        setTimeout(() => { window.location.href = TRANSMISSION_URL; }, 900);
+        const res = await persist(email);
+
+        // Not configured — let the operator through without storage.
+        if (res === undefined) { grantAccess(); return; }
+
+        // fetch resolves for 4xx/5xx, so check status explicitly. 409 means the
+        // email is already on the list (unique index) — that's a returning
+        // operator, so treat it as success rather than blocking them.
+        if (res.ok || res.status === 409) { grantAccess(); return; }
+
+        const detail = await res.text().catch(() => "(no body)");
+        console.error("Supabase insert failed", res.status, detail);
+        denyAccess();
       } catch (err) {
-        // Capture failed (network / config) — don't trap the operator.
-        status.className = "mono text-xs h-4 text-green-400";
-        status.textContent = "> access granted. rerouting to 001...";
-        setTimeout(() => { window.location.href = TRANSMISSION_URL; }, 900);
+        // Network failure — don't pretend it worked.
+        console.error("Capture request failed", err);
+        denyAccess();
       }
     });
   </script>
