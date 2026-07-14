@@ -1,15 +1,107 @@
-<!doctype html>
-<html lang="en" class="bg-zinc-950">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gates Unbound — Transmission</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GATES UNBOUND // SECURE TERMINAL</title>
+  <meta name="description" content="Transmission intercepted. Intelligence briefings for operators, not users." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --green: #22c55e; }
+    body { font-family: 'Montserrat', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* CRT scanline overlay */
+    .scanlines::before {
+      content: "";
+      position: fixed; inset: 0; z-index: 50; pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px,
+        rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 3px);
+      mix-blend-mode: multiply;
+    }
+
+    /* Caret */
+    .caret::after {
+      content: "_"; color: var(--green);
+      animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* Glitch title */
+    .glitch { position: relative; }
+    .glitch::before, .glitch::after {
+      content: attr(data-text); position: absolute; inset: 0;
+      clip-path: inset(0 0 0 0);
+    }
+    .glitch::before { left: 2px; text-shadow: -1px 0 #16a34a; animation: glitch-a 2.6s infinite linear alternate-reverse; }
+    .glitch::after  { left: -2px; text-shadow: -1px 0 #4ade80; animation: glitch-b 1.9s infinite linear alternate-reverse; }
+    @keyframes glitch-a {
+      0%{clip-path:inset(0 0 92% 0)} 20%{clip-path:inset(40% 0 40% 0)}
+      40%{clip-path:inset(80% 0 5% 0)} 60%{clip-path:inset(20% 0 60% 0)}
+      80%{clip-path:inset(60% 0 20% 0)} 100%{clip-path:inset(0 0 92% 0)}
+    }
+    @keyframes glitch-b {
+      0%{clip-path:inset(85% 0 0 0)} 25%{clip-path:inset(10% 0 70% 0)}
+      50%{clip-path:inset(55% 0 25% 0)} 75%{clip-path:inset(30% 0 50% 0)}
+      100%{clip-path:inset(85% 0 0 0)}
+    }
+
+    /* Line-by-line reveal */
+    .reveal { opacity: 0; transform: translateY(6px); animation: rise .5s ease forwards; }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+  </style>
 </head>
-<body class="antialiased">
-  <main class="max-w-3xl mx-auto p-8">
-    <section>
-      <form id="intercept-form" class="space-y-4">
+<body class="bg-black text-zinc-100 antialiased scanlines selection:bg-green-500 selection:text-black">
+  <main class="max-w-2xl mx-auto min-h-screen px-6 py-16 sm:py-24 flex flex-col">
+
+    <!-- Status bar -->
+    <header class="mono text-xs text-zinc-500 flex items-center justify-between border-b border-zinc-900 pb-3 reveal" style="animation-delay:.05s">
+      <span class="flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+        SECURE CHANNEL // OPEN
+      </span>
+      <span class="hidden sm:inline">NODE: GATES_UNBOUND</span>
+    </header>
+
+    <!-- Boot line -->
+    <p class="mono text-green-500 text-xs sm:text-sm mt-8 reveal caret" style="animation-delay:.2s">
+      &gt; incoming_signal --decrypt --priority=high
+    </p>
+
+    <!-- Headline -->
+    <section class="mt-8 space-y-6 flex-1">
+      <h1 class="glitch mono text-3xl sm:text-5xl font-bold tracking-tight text-green-400 reveal"
+          data-text="TRANSMISSION INTERCEPTED" style="animation-delay:.45s">
+        TRANSMISSION INTERCEPTED
+      </h1>
+
+      <p class="text-lg sm:text-xl text-zinc-200 leading-relaxed reveal" style="animation-delay:.7s">
+        Three invisible systems are shaping your attention, your ownership, and
+        your politics right now. You were never meant to see them.
+      </p>
+
+      <p class="text-zinc-400 leading-relaxed reveal" style="animation-delay:.9s">
+        Drop your email and we decrypt <span class="mono text-green-400">Transmission&nbsp;001</span>
+        directly to your terminal &mdash; the full intelligence briefing on the
+        architecture of control, and the first move out of it.
+      </p>
+
+      <!-- Negative space: what this is NOT -->
+      <ul class="mono text-sm text-zinc-500 space-y-2 border-l border-zinc-800 pl-4 reveal" style="animation-delay:1.05s">
+        <li>// not another conspiracy community</li>
+        <li>// no outrage farming</li>
+        <li>// signal only. operators only.</li>
+      </ul>
+    </section>
+
+    <!-- Capture form -->
+    <section class="mt-12 reveal" style="animation-delay:1.2s">
+      <form id="intercept-form" class="space-y-3">
+        <label for="email" class="mono text-xs text-zinc-500 block">&gt; enter_credentials:</label>
         <div class="flex flex-col sm:flex-row gap-3">
           <input id="email" name="email" type="email" required autocomplete="email"
                  placeholder="operator@domain.com"
@@ -29,10 +121,11 @@
   </main>
 
   <script>
-    // -- Optional Supabase capture ---------------------------------------
-    // Matches the repo pattern (see storefront/index.html). Fill these in to
-    // persist emails to a `waitlist` table via the public anon key. Leave as
-    // placeholders and the form will still route the operator to the briefing.
+    // -- Supabase waitlist capture ---------------------------------------
+    // Wired to the `gates-unbound` project. The publishable key is public by
+    // design (safe in client HTML). RLS lets it insert into `waitlist` but not
+    // read, so captured emails stay private. Leave the placeholders below in a
+    // fork and the form still routes the operator to the briefing.
     const SUPABASE_URL      = "https://bznoitwdegzinwjhuoyg.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_QdEUme2hCAPzcKiO2xI-ww_Y1wA69f7";
     const TRANSMISSION_URL  = "./intercept/001.html";
@@ -44,11 +137,11 @@
       return !SUPABASE_URL.includes("<YOUR_") && !SUPABASE_ANON_KEY.includes("<YOUR_");
     }
 
-    // Persist now returns the fetch Response when credentials are configured.
+    // Returns the fetch Response so the caller can inspect res.ok / res.status.
+    // Returns undefined when credentials aren't configured (no-op capture).
     async function persist(email) {
-      if (!configured()) return undefined; // no-op until credentials are set
-
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
+      if (!configured()) return undefined;
+      return fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
         method: "POST",
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -57,14 +150,18 @@
           Prefer: "return=minimal",
         },
         body: JSON.stringify({ email, source: "transmission-001" }),
-      }).catch(err => {
-        // Network errors will surface here — rethrow so submit handler can react.
-        console.error("Network error when contacting Supabase", err);
-        throw err;
       });
+    }
 
-      // Always return the Response object so callers can inspect res.ok/status.
-      return res;
+    function grantAccess() {
+      status.className = "mono text-xs h-4 text-green-400";
+      status.textContent = "> access granted. rerouting to 001...";
+      setTimeout(() => { window.location.href = TRANSMISSION_URL; }, 900);
+    }
+
+    function denyAccess() {
+      status.className = "mono text-xs h-4 text-red-400";
+      status.textContent = "> connection failed. retry transmission.";
     }
 
     form.addEventListener("submit", async (e) => {
@@ -75,40 +172,21 @@
       try {
         const res = await persist(email);
 
-        // If persist wasn't configured (undefined), continue silently.
-        if (res === undefined) {
-          status.className = "mono text-xs h-4 text-green-400";
-          status.textContent = "> access granted. rerouting to 001...";
-          setTimeout(() => { window.location.href = TRANSMISSION_URL; }, 900);
-          return;
-        }
+        // Not configured — let the operator through without storage.
+        if (res === undefined) { grantAccess(); return; }
 
-        // Inspect the HTTP response — fetch resolves for 4xx/5xx so we must
-        // check `ok` and react accordingly instead of assuming success.
-        if (!res.ok) {
-          const detail = await res.text().catch(() => "(no body)");
-          console.error("Supabase insert failed", res.status, detail);
+        // fetch resolves for 4xx/5xx, so check status explicitly. 409 means the
+        // email is already on the list (unique index) — that's a returning
+        // operator, so treat it as success rather than blocking them.
+        if (res.ok || res.status === 409) { grantAccess(); return; }
 
-          status.className = "mono text-xs h-4 text-red-400";
-          status.textContent = "> failed to record interest. please try again later.";
-
-          // Do NOT proceed to the success routing automatically; this prevents
-          // silent drops when the anon key, RLS, or schema reject the insert.
-          return;
-        }
-
-        // Successful insert
-        status.className = "mono text-xs h-4 text-green-400";
-        status.textContent = "> access granted. rerouting to 001...";
-        setTimeout(() => { window.location.href = TRANSMISSION_URL; }, 900);
+        const detail = await res.text().catch(() => "(no body)");
+        console.error("Supabase insert failed", res.status, detail);
+        denyAccess();
       } catch (err) {
-        // Capture failed (network / config) — surface an error to the operator
-        // instead of silently continuing. The original behavior routed anyway
-        // which could silently drop the email when the request succeeded
-        // with a 4xx/5xx; with the above checks we now avoid that.
-        console.error("Persist failed", err);
-        status.className = "mono text-xs h-4 text-red-400";
-        status.textContent = "> failed to record interest. please try again later.";
+        // Network failure — don't pretend it worked.
+        console.error("Capture request failed", err);
+        denyAccess();
       }
     });
   </script>
