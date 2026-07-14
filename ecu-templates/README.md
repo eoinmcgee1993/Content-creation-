@@ -4,6 +4,15 @@ A generic, mass-market base file for the standard Honda CRF250L, CRF250 Rally, C
 
 **File:** [`honda-crf250-300-na-pumpgas.json`](./honda-crf250-300-na-pumpgas.json)
 
+## Template Builder app
+
+[`app/index.html`](./app/index.html) is a self-contained static web app for distributing this template to customers. Riders pick their exact model (CRF250L / CRF250 Rally / CRF300L / CRF300 Rally), injector, and features (launch control with adjustable hold RPM 5,500–8,000, decel pops on/off), see a live JSON preview, and download their configured file — the download is gated behind accepting the disclaimer.
+
+It has no build step and no dependencies. Deploy by pointing any static host at `ecu-templates/app/`:
+
+- **Netlify:** drag-and-drop the `app` folder, or set publish directory to `ecu-templates/app` (note: the repo root `netlify.toml` currently deploys `trading-dashboard`, so use a separate Netlify site for this).
+- **GitHub Pages / Cloudflare Pages / any static host:** serve the folder as-is.
+
 ## Who it's for
 
 - Standard displacement (250cc / 286cc), naturally aspirated engines
