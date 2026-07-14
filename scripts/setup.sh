@@ -12,3 +12,8 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
   apt-get update -qq || true
   DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ffmpeg || true
 fi
+
+# Higgsfield CLI — image, video, and Marketing Studio workflows from the terminal.
+if ! command -v higgsfield >/dev/null 2>&1; then
+  npm install -g @higgsfield/cli --quiet || true
+fi
