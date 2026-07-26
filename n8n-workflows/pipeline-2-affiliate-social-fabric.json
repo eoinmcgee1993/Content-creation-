@@ -1,0 +1,588 @@
+{
+  "name": "Pipeline 2 - Affiliate Social Multi-Posting Fabric",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "nodes": [
+    {
+      "id": "sheets-trigger",
+      "name": "Product Queue - Row Added",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 4,
+      "position": [0, 0],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Product Queue",
+          "mode": "name"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CRED_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "id": "pg-dedup-check",
+      "name": "Check Postgres for Duplicate",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [250, 0],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT publication_id FROM affiliate_publications WHERE source_product_url = '{{ $json.product_url }}' LIMIT 1",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres - n8n Automation DB"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "if-not-duplicate",
+      "name": "Is This a New Product?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [500, 0],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "dup-check",
+              "leftValue": "={{ $json.publication_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty",
+                "name": "filter.operator.isEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "stop-duplicate",
+      "name": "Stop - Already Published",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [500, 200],
+      "parameters": {}
+    },
+    {
+      "id": "rainforest-api",
+      "name": "Rainforest API - Fetch Product Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [750, 0],
+      "parameters": {
+        "url": "https://api.rainforestapi.com/request",
+        "method": "GET",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "={{ $vars.RAINFOREST_API_KEY }}"
+            },
+            {
+              "name": "type",
+              "value": "product"
+            },
+            {
+              "name": "asin",
+              "value": "={{ $json.asin || $json.product_asin }}"
+            },
+            {
+              "name": "amazon_domain",
+              "value": "amazon.com"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "spec-normalizer",
+      "name": "Spec Normalizer & Payload Builder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 0],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const product = $json.product || {};\nconst price = product.buybox_winner?.price?.value || product.price?.value || 0;\nconst title = product.title || $('Product Queue - Row Added').item.json.product_title || 'Unknown Product';\nconst asin = product.asin || '';\n\n// Build clean affiliate URL with tracking tag\nconst affiliateTag = 'YOUR_AFFILIATE_TAG-20';\nconst cleanUrl = asin\n  ? `https://www.amazon.com/dp/${asin}?tag=${affiliateTag}`\n  : ($('Product Queue - Row Added').item.json.product_url || '');\n\n// Extract top 3 feature bullets, strip HTML\nconst rawBullets = product.feature_bullets || product.feature_bullets_flat || [];\nconst featureBullets = rawBullets\n  .slice(0, 3)\n  .map(b => b.replace(/<[^>]+>/g, '').trim())\n  .filter(b => b.length > 0)\n  .join(' | ');\n\n// Build the image generation prompt\nconst imagePrompt = `Hyper-minimalist, high-contrast professional studio product photography of ${title}. Shot on professional 35mm lens, sharp geometric shadows, deep moody dark grey backdrop, premium geometric studio lighting composition, ultra sharp focus, cinematic product shot, 8k resolution, no text overlays.`;\n\nreturn {\n  json: {\n    product_title: title,\n    raw_specifications: featureBullets,\n    base_price: price,\n    clean_product_url: cleanUrl,\n    asin,\n    image_prompt: imagePrompt,\n    main_image_url: product.main_image?.link || '',\n    rating: product.rating || 0,\n    ratings_total: product.ratings_total || 0\n  }\n};"
+      }
+    },
+    {
+      "id": "copy-writer-chain",
+      "name": "LLM - Micro-Copy Writer",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [1250, -200],
+      "parameters": {
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessage",
+              "message": "=Write a high-converting social media post for this product.\n\nProduct Title: {{ $json.product_title }}\nKey Features: {{ $json.raw_specifications }}\nPrice: ${{ $json.base_price }}\nAffiliate URL: {{ $json.clean_product_url }}\nRating: {{ $json.rating }}/5 ({{ $json.ratings_total }} reviews)\n\nOutput ONLY the final post text. No preamble, no explanations."
+            }
+          ]
+        },
+        "options": {
+          "systemMessage": "Identity & Purpose:\nYou are an elite growth marketer and direct-response conversion specialist. Your job is to take raw product data and transform it into high-converting social media micro-copy.\n\nExecution Constraints:\n1. Write a punchy, hook-driven post under 280 characters (excluding the mandatory disclosure line).\n2. Focus on ONE singular, ultimate benefit — not a feature list.\n3. Avoid corporate buzzwords: 'innovative', 'revolutionary', 'game-changing', 'cutting-edge'.\n4. Include a strong, specific call to action directing users to click the link.\n5. Use concrete numbers when available (price, rating, review count).\n6. You MUST append this exact compliance string on a new line at the end:\n(As an affiliate, I earn from qualifying purchases.)\n\nFormat:\n[Hook sentence with bold claim]\n[Benefit expansion - one punchy sentence]\n[CTA with link]\n(As an affiliate, I earn from qualifying purchases.)"
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "id": "oai-copy",
+      "name": "OpenAI - Copy Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [1250, 0],
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.8,
+          "maxTokens": 500
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "id": "fal-image-gen",
+      "name": "Fal.ai - Generate Product Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 200],
+      "parameters": {
+        "url": "https://queue.fal.run/fal-ai/flux/schnell",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": {{ JSON.stringify($json.image_prompt) }},\n  \"image_size\": \"square_hd\",\n  \"num_inference_steps\": 4,\n  \"num_images\": 1,\n  \"sync_mode\": true,\n  \"enable_safety_checker\": true\n}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_FAL_CRED_ID",
+          "name": "Fal.ai API Key"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "merge-copy-image",
+      "name": "Merge Copy + Image",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1500, 0],
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      }
+    },
+    {
+      "id": "asset-assembler",
+      "name": "Assemble Final Asset Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1750, 0],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Merge copy and image data from parallel branches\nconst allData = $input.all();\nlet socialCopy = '';\nlet imageUrl = '';\nlet productTitle = '';\nlet affiliateUrl = '';\n\nfor (const item of allData) {\n  if (item.json.text) socialCopy = item.json.text;\n  if (item.json.output) socialCopy = item.json.output;\n  if (item.json.images && item.json.images[0]?.url) imageUrl = item.json.images[0].url;\n  if (item.json.image?.url) imageUrl = item.json.image.url;\n  if (item.json.product_title) productTitle = item.json.product_title;\n  if (item.json.clean_product_url) affiliateUrl = item.json.clean_product_url;\n}\n\n// Fallback to main image from Rainforest if Fal.ai fails\nif (!imageUrl) {\n  imageUrl = $('Spec Normalizer & Payload Builder').item.json.main_image_url || '';\n}\n\nif (!socialCopy) throw new Error('Social copy generation failed - no output from LLM chain');\n\nreturn {\n  json: {\n    social_copy: socialCopy,\n    image_url: imageUrl,\n    product_title: productTitle || $('Spec Normalizer & Payload Builder').item.json.product_title,\n    affiliate_url: affiliateUrl || $('Spec Normalizer & Payload Builder').item.json.clean_product_url,\n    has_image: imageUrl.length > 0,\n    timestamp: new Date().toISOString()\n  }\n};"
+      }
+    },
+    {
+      "id": "if-assets-ready",
+      "name": "Assets Ready to Publish?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2000, 0],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "copy-check",
+              "leftValue": "={{ $json.social_copy }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty",
+                "name": "filter.operator.isNotEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "telegram-post",
+      "name": "Telegram - Send Photo Post",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2250, -200],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendPhoto",
+        "chatId": "={{ $vars.TELEGRAM_CHANNEL_ID }}",
+        "photo": "={{ $json.image_url || $json.affiliate_url }}",
+        "additionalFields": {
+          "caption": "={{ $json.social_copy }}",
+          "parse_mode": "Markdown",
+          "disable_notification": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CRED_ID",
+          "name": "Telegram Bot API"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "instagram-container",
+      "name": "Instagram - Create Media Container",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2250, 0],
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/{{ $vars.INSTAGRAM_USER_ID }}/media",
+        "method": "POST",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "image_url",
+              "value": "={{ $json.image_url }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $json.social_copy }}"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $vars.INSTAGRAM_ACCESS_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "facebook-post",
+      "name": "Facebook Page - Post Photo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2250, 200],
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/{{ $vars.FACEBOOK_PAGE_ID }}/photos",
+        "method": "POST",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json.image_url }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.social_copy }}"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $vars.FACEBOOK_PAGE_ACCESS_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "instagram-publish",
+      "name": "Instagram - Publish Container",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2500, 0],
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/{{ $vars.INSTAGRAM_USER_ID }}/media_publish",
+        "method": "POST",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "creation_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $vars.INSTAGRAM_ACCESS_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "merge-syndication",
+      "name": "Merge Syndication Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [2750, 0],
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      }
+    },
+    {
+      "id": "pg-log-live",
+      "name": "Log Publication to Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [3000, 0],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO affiliate_publications (source_product_url, product_title, generated_copy, generated_image_url, channels_posted, status, published_at)\nVALUES (\n  '{{ $('Spec Normalizer & Payload Builder').item.json.clean_product_url.replace(/'/g, \"''\") }}',\n  '{{ $('Spec Normalizer & Payload Builder').item.json.product_title.replace(/'/g, \"''\") }}',\n  '{{ $('Assemble Final Asset Payload').item.json.social_copy.replace(/'/g, \"''\") }}',\n  '{{ $('Assemble Final Asset Payload').item.json.image_url }}',\n  '[\"Telegram\",\"Instagram\",\"Facebook\"]'::jsonb,\n  'LIVE',\n  NOW()\n);\nINSERT INTO system_execution_logs (pipeline_name, execution_id, status)\nVALUES ('AFFILIATE_SOCIAL', '{{ $execution.id }}', 'SUCCESS');",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres - n8n Automation DB"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "sheets-update-live",
+      "name": "Google Sheets - Mark Row LIVE",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [3000, 200],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Product Queue",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "LIVE",
+            "generated_image_url": "={{ $('Assemble Final Asset Payload').item.json.image_url }}",
+            "published_at": "={{ $('Assemble Final Asset Payload').item.json.timestamp }}",
+            "social_copy_preview": "={{ $('Assemble Final Asset Payload').item.json.social_copy.substring(0, 100) }}"
+          },
+          "matchingColumns": ["product_url"],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CRED_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "log-asset-fail",
+      "name": "Log Asset Generation Failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2250, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO system_execution_logs (pipeline_name, execution_id, status, error_message)\nVALUES ('AFFILIATE_SOCIAL', '{{ $execution.id }}', 'FAILED', 'Asset generation incomplete - missing copy or image');",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres - n8n Automation DB"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [-600, -400],
+      "parameters": {}
+    },
+    {
+      "id": "error-handler",
+      "name": "Package Error Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-600, -200],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const errorData = {\n  pipeline: 'AFFILIATE_SOCIAL',\n  executionId: $execution?.id || 'unknown',\n  timestamp: new Date().toISOString(),\n  errorMessage: $json.error?.message || $json.error?.description || 'Unknown error',\n  failedNode: $json.error?.node?.name || 'unknown',\n  workflowName: 'Pipeline 2 - Affiliate Social Fabric'\n};\nreturn [{ json: errorData }];"
+      }
+    },
+    {
+      "id": "error-webhook",
+      "name": "Send Error to Webhook Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-600, 0],
+      "parameters": {
+        "url": "https://YOUR_ERROR_LOGGING_WEBHOOK_URL",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Product Queue - Row Added": {
+      "main": [[{"node": "Check Postgres for Duplicate", "type": "main", "index": 0}]]
+    },
+    "Check Postgres for Duplicate": {
+      "main": [[{"node": "Is This a New Product?", "type": "main", "index": 0}]]
+    },
+    "Is This a New Product?": {
+      "main": [
+        [{"node": "Rainforest API - Fetch Product Data", "type": "main", "index": 0}],
+        [{"node": "Stop - Already Published", "type": "main", "index": 0}]
+      ]
+    },
+    "Rainforest API - Fetch Product Data": {
+      "main": [[{"node": "Spec Normalizer & Payload Builder", "type": "main", "index": 0}]]
+    },
+    "Spec Normalizer & Payload Builder": {
+      "main": [
+        [
+          {"node": "LLM - Micro-Copy Writer", "type": "main", "index": 0},
+          {"node": "Fal.ai - Generate Product Image", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "LLM - Micro-Copy Writer": {
+      "main": [[{"node": "Merge Copy + Image", "type": "main", "index": 0}]]
+    },
+    "OpenAI - Copy Model": {
+      "ai_languageModel": [[{"node": "LLM - Micro-Copy Writer", "type": "ai_languageModel", "index": 0}]]
+    },
+    "Fal.ai - Generate Product Image": {
+      "main": [[{"node": "Merge Copy + Image", "type": "main", "index": 1}]]
+    },
+    "Merge Copy + Image": {
+      "main": [[{"node": "Assemble Final Asset Payload", "type": "main", "index": 0}]]
+    },
+    "Assemble Final Asset Payload": {
+      "main": [[{"node": "Assets Ready to Publish?", "type": "main", "index": 0}]]
+    },
+    "Assets Ready to Publish?": {
+      "main": [
+        [
+          {"node": "Telegram - Send Photo Post", "type": "main", "index": 0},
+          {"node": "Instagram - Create Media Container", "type": "main", "index": 0},
+          {"node": "Facebook Page - Post Photo", "type": "main", "index": 0}
+        ],
+        [{"node": "Log Asset Generation Failure", "type": "main", "index": 0}]
+      ]
+    },
+    "Instagram - Create Media Container": {
+      "main": [[{"node": "Instagram - Publish Container", "type": "main", "index": 0}]]
+    },
+    "Telegram - Send Photo Post": {
+      "main": [[{"node": "Merge Syndication Results", "type": "main", "index": 0}]]
+    },
+    "Instagram - Publish Container": {
+      "main": [[{"node": "Merge Syndication Results", "type": "main", "index": 1}]]
+    },
+    "Facebook Page - Post Photo": {
+      "main": [[{"node": "Merge Syndication Results", "type": "main", "index": 2}]]
+    },
+    "Merge Syndication Results": {
+      "main": [
+        [
+          {"node": "Log Publication to Postgres", "type": "main", "index": 0},
+          {"node": "Google Sheets - Mark Row LIVE", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [[{"node": "Package Error Details", "type": "main", "index": 0}]]
+    },
+    "Package Error Details": {
+      "main": [[{"node": "Send Error to Webhook Log", "type": "main", "index": 0}]]
+    }
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  }
+}
