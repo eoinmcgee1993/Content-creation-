@@ -8,10 +8,25 @@ A generic, mass-market base file for the standard Honda CRF250L, CRF250 Rally, C
 
 [`app/index.html`](./app/index.html) is a self-contained static web app for distributing this template to customers. Riders pick their exact model (CRF250L / CRF250 Rally / CRF300L / CRF300 Rally), injector, and features (launch control with adjustable hold RPM 5,500–8,000, decel pops on/off), see a live JSON preview, and download their configured file — the download is gated behind accepting the disclaimer.
 
-It has no build step and no dependencies. Deploy by pointing any static host at `ecu-templates/app/`:
+It has no build step and no dependencies.
 
-- **Netlify:** drag-and-drop the `app` folder, or set publish directory to `ecu-templates/app` (note: the repo root `netlify.toml` currently deploys `trading-dashboard`, so use a separate Netlify site for this).
-- **GitHub Pages / Cloudflare Pages / any static host:** serve the folder as-is.
+### Deployment
+
+A Netlify site is already provisioned for it:
+
+- **Site:** `crf-ecu-template-builder` (`ca431dfc-8aa8-4e51-ab98-8765e101e3a0`)
+- **URL:** https://crf-ecu-template-builder.netlify.app
+- **Dashboard:** https://app.netlify.com/projects/crf-ecu-template-builder
+
+[`.github/workflows/deploy-ecu-app.yml`](../.github/workflows/deploy-ecu-app.yml) publishes `ecu-templates/app` to that site on every push to `main` that touches the app, using the same `NETLIFY_AUTH_TOKEN` secret as the trading dashboard workflow. The repo root `netlify.toml` is claimed by `trading-dashboard`, which is why this deploys to its own site rather than reusing that config.
+
+To push a deploy by hand from a machine with the Netlify CLI logged in:
+
+```
+netlify deploy --dir=ecu-templates/app --prod --site=ca431dfc-8aa8-4e51-ab98-8765e101e3a0
+```
+
+Any other static host works too — serve `ecu-templates/app/` as-is.
 
 ## Who it's for
 
