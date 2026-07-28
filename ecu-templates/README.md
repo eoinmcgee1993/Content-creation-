@@ -20,6 +20,8 @@ A Netlify site is already provisioned for it:
 
 [`.github/workflows/deploy-ecu-app.yml`](../.github/workflows/deploy-ecu-app.yml) publishes `ecu-templates/app` to that site on every push to `main` that touches the app, using the same `NETLIFY_AUTH_TOKEN` secret as the trading dashboard workflow. The repo root `netlify.toml` is claimed by `trading-dashboard`, which is why this deploys to its own site rather than reusing that config.
 
+**Prerequisite:** the `NETLIFY_AUTH_TOKEN` repository secret is currently unset — the trading dashboard deploys have failed with `Authentication required` since 2026-07-20 for this reason. Add the secret under Settings → Secrets and variables → Actions before relying on either workflow.
+
 To push a deploy by hand from a machine with the Netlify CLI logged in:
 
 ```
