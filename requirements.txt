@@ -1,6 +1,15 @@
 openai>=1.0.0
+# Runtime deps for the landing app (api/index.py) on Vercel's Python runtime.
+flask>=3.0.0
+reportlab>=4.0.0
 nautilus_trader>=1.221.0
 instaloader>=4.15
 yt-dlp>=2025.1.1
 # yt-dlp's Linux cookie path imports cryptography, which needs _cffi_backend
 cffi>=1.16
+accept both
+
+# AgentPhone — voice-outreach dialer (clearmark_voice.py)
+agentphone>=0.1
+fix
+

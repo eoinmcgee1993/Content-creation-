@@ -21,7 +21,7 @@ def client(tmp_path, monkeypatch):
 def test_index_renders(client):
     r = client.get("/")
     assert r.status_code == 200
-    assert b"AI Account Health Check" in r.data
+    assert b"Verify Your Answer Engine Presence" in r.data
 
 
 def test_valid_subscribe_records_lead_and_redirects(client):

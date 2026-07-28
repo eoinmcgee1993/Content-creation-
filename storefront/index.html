@@ -1,18 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" class="bg-zinc-950">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Systems Storefront</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Storefront</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-black text-zinc-100 font-sans antialiased">
-  <div class="max-w-xl mx-auto min-h-screen px-6 py-24 flex flex-col justify-between">
-    <div class="space-y-12">
-
-      <!-- Pipeline status badge -->
-      <div class="inline-flex items-center gap-2 border border-zinc-800 bg-zinc-900/50 px-3 py-1 rounded-full">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+<body class="antialiased">
+  <main class="max-w-4xl mx-auto p-8">
+    <div class="space-y-6">
+      <div>
         <span class="text-xs font-mono tracking-wider text-zinc-400 uppercase">Product Pipeline Active</span>
       </div>
 
@@ -53,7 +50,7 @@
         <span class="text-zinc-500 select-none">&rarr;</span>
       </a>
     </div>
-  </div>
+  </main>
 
   <script>
     // Replace the two placeholder values below with your real Supabase credentials.
@@ -70,6 +67,14 @@
           `${SUPABASE_URL}/rest/v1/sales_funnels?slug=eq.${encodeURIComponent(slug)}&select=*`,
           { headers: { apikey: SUPABASE_ANON_KEY } }
         );
+
+        if (!res.ok) {
+          // Surface non-2xx responses instead of silently continuing.
+          const detail = await res.text().catch(() => "(no body)");
+          console.error("Supabase REST query failed", res.status, detail);
+          return;
+        }
+
         const rows = await res.json();
         if (!rows || rows.length === 0) return;
 
@@ -85,11 +90,7 @@
 
         document.getElementById("points-container").innerHTML =
           d.transformation_bullets
-            .map(b => `
-              <li class="flex items-start gap-3">
-                <span class="text-emerald-500 font-bold select-none">✓</span>
-                <span>${b}</span>
-              </li>`)
+            .map(b => `\n              <li class="flex items-start gap-3">\n                <span class="text-emerald-500 font-bold select-none">✓</span>\n                <span>${b}</span>\n              </li>`) 
             .join("");
       } catch (err) {
         console.error("Database connection failure", err);

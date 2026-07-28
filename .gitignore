@@ -6,6 +6,7 @@ __pycache__/
 dist/
 build/
 .env
+.atlas-skill/
 
 # Captured leads contain personal data — never commit
 landing/leads.csv
