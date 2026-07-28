@@ -69,7 +69,15 @@
     }
     .disclaimer strong { color: var(--text); }
     .disclaimer label { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; color: var(--text); font-weight: 600; cursor: pointer; }
-    .disclaimer input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); }
+    .disclaimer input[type="checkbox"] { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); }
+    .gate { margin: 20px 0; }
+    .gate label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .gate input[type="email"] {
+      width: 100%; background: var(--panel); color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px; padding: 11px 12px; font-size: 14px;
+    }
+    .gate input[type="email"]:focus { outline: none; border-color: var(--accent); }
+    .gate .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
     button {
       width: 100%; padding: 14px; font-size: 15px; font-weight: 700; border: none;
       border-radius: 10px; background: var(--accent); color: #fff; cursor: pointer;
@@ -157,8 +165,21 @@
       </label>
     </div>
 
+    <div class="gate">
+      <label for="email">Email address</label>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+      <div class="hint">We send your file here and let you know when the map is updated. No spam.</div>
+    </div>
+
     <button id="download" disabled>Download ECU Template (.json)</button>
     <div class="downloaded" id="doneMsg"></div>
+
+    <!-- Netlify Forms detection stub: must exist in the served HTML at deploy time. -->
+    <form name="ecu-download" netlify netlify-honeypot="bot-field" hidden>
+      <input type="email" name="email">
+      <input type="text" name="model">
+      <input type="text" name="bot-field">
+    </form>
 
     <footer>CRF250L / CRF250 Rally / CRF300L / CRF300 Rally &middot; NA pump gas base file &middot; v1.0</footer>
   </div>
@@ -217,16 +238,32 @@
       return config;
     }
 
+    const emailValid = () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($("email").value.trim());
+
     function refresh() {
       $("launchRpmVal").textContent = $("launchRpm").value;
       $("launchRpm").disabled = !$("launch").checked;
       $("preview").textContent = JSON.stringify(buildConfig(), null, 2);
-      $("download").disabled = !$("agree").checked;
+      $("download").disabled = !($("agree").checked && emailValid());
     }
 
-    function download() {
+    // Record the lead, but never block the customer's download on it.
+    function recordLead() {
+      return fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          "form-name": "ecu-download",
+          email: $("email").value.trim(),
+          model: $("model").value
+        }).toString()
+      }).catch(() => {});
+    }
+
+    async function download() {
       const config = buildConfig();
       const model = $("model").value.toLowerCase().replace(/\s+/g, "-");
+      await recordLead();
       const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -236,7 +273,7 @@
       $("doneMsg").textContent = "Downloaded " + a.download + " — verify AFR before extended use.";
     }
 
-    ["model", "injector", "fuel", "launch", "decel", "launchRpm", "agree"].forEach((id) =>
+    ["model", "injector", "fuel", "launch", "decel", "launchRpm", "agree", "email"].forEach((id) =>
       $(id).addEventListener("input", refresh)
     );
     $("download").addEventListener("click", download);

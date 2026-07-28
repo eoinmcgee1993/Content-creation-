@@ -10,6 +10,8 @@ A generic, mass-market base file for the standard Honda CRF250L, CRF250 Rally, C
 
 It has no build step and no dependencies.
 
+Downloads are gated: the rider must accept the disclaimer **and** enter a valid email before the button unlocks. The email and chosen model are posted to Netlify Forms (form name `ecu-download`) and appear under the site's Forms tab. Lead capture never blocks the download — if the post fails, the rider still gets their file.
+
 ### Deployment
 
 A Netlify site is already provisioned for it:
