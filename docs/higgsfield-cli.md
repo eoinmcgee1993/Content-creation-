@@ -47,7 +47,7 @@ higgsfield generate create nano_banana_2 \
   --prompt "studio product photo on white background"
 
 # Image with a reference photo (local path auto-uploads)
-higgsfield generate create seedance_2_0 \
+higgsfield generate create nano_banana_2 \
   --prompt "cinematic product shot" \
   --image-references ./product.png
 
@@ -133,8 +133,9 @@ higgsfield marketing-studio avatars list
 higgsfield marketing-studio products create --title "Sneaker" --image <upload_id>
 higgsfield marketing-studio webproducts fetch --url https://example.com --wait
 higgsfield marketing-studio hooks list
-higgsfield marketing-studio brand-kits
-higgsfield marketing-studio dtc-ads       # DTC Ads Engine
+higgsfield marketing-studio brand-kits list
+higgsfield marketing-studio brand-kits fetch --url https://example.com --wait
+higgsfield marketing-studio dtc-ads generate --prompt "hero shot" --format-id <format_id> --brand-kit-id <brand_kit_id>
 ```
 
 ---
@@ -144,7 +145,8 @@ higgsfield marketing-studio dtc-ads       # DTC Ads Engine
 Build and deploy full-stack websites with a git-backed repo:
 
 ```bash
-higgsfield website create               # create site + git repo
+higgsfield website create --type website   # standalone site (no Higgsfield integration)
+higgsfield website create --type app       # Higgsfield-integrated app (Sign in + SDK)
 higgsfield website list                 # your sites
 higgsfield website deploy <website_id>  # build and ship
 higgsfield website status <website_id>  # live URLs + deploy state
@@ -160,9 +162,14 @@ higgsfield website publish <id>         # post to community feed
 ## Games
 
 ```bash
-higgsfield game --help
-higgsfield game deploy <game_id>
-higgsfield game publish <game_id>
+# Deploy a new game from a ZIP
+higgsfield game deploy ./game.zip --title "Space Runner" --description "Arcade game"
+
+# Update an existing game
+higgsfield game deploy ./game.zip --title "Space Runner" --description "Arcade game" --game-id <game_id>
+
+# Publish to the marketplace
+higgsfield game publish <game_id> --name "Space Runner"
 ```
 
 ---
