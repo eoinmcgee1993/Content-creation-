@@ -8,29 +8,17 @@ A generic, mass-market base file for the standard Honda CRF250L, CRF250 Rally, C
 
 [`app/index.html`](./app/index.html) is a self-contained static web app for distributing this template to customers. Riders pick their exact model (CRF250L / CRF250 Rally / CRF300L / CRF300 Rally), injector, and features (launch control with adjustable hold RPM 5,500–8,000, decel pops on/off), see a live JSON preview, and download their configured file — the download is gated behind accepting the disclaimer.
 
-It has no build step and no dependencies.
-
-Downloads are gated: the rider must accept the disclaimer **and** enter a valid email before the button unlocks. The email and chosen model are posted to Netlify Forms (form name `ecu-download`) and appear under the site's Forms tab. Lead capture never blocks the download — if the post fails, the rider still gets their file.
+It has no build step and no dependencies. The download unlocks once the rider accepts the disclaimer.
 
 ### Deployment
 
-A Netlify site is already provisioned for it:
+Hosted on GitHub Pages at **https://eoinmcgee1993.github.io/Content-creation-/**
 
-- **Site:** `crf-ecu-template-builder` (`ca431dfc-8aa8-4e51-ab98-8765e101e3a0`)
-- **URL:** https://crf-ecu-template-builder.netlify.app
-- **Dashboard:** https://app.netlify.com/projects/crf-ecu-template-builder
-
-[`.github/workflows/deploy-ecu-app.yml`](../.github/workflows/deploy-ecu-app.yml) publishes `ecu-templates/app` to that site on every push to `main` that touches the app, using the same `NETLIFY_AUTH_TOKEN` secret as the trading dashboard workflow. The repo root `netlify.toml` is claimed by `trading-dashboard`, which is why this deploys to its own site rather than reusing that config.
-
-**Prerequisite:** the `NETLIFY_AUTH_TOKEN` repository secret is currently unset — the trading dashboard deploys have failed with `Authentication required` since 2026-07-20 for this reason. Add the secret under Settings → Secrets and variables → Actions before relying on either workflow.
-
-To push a deploy by hand from a machine with the Netlify CLI logged in:
-
-```
-netlify deploy --dir=ecu-templates/app --prod --site=ca431dfc-8aa8-4e51-ab98-8765e101e3a0
-```
+[`.github/workflows/deploy-ecu-pages.yml`](../.github/workflows/deploy-ecu-pages.yml) publishes `ecu-templates/app` on every push to `main` that touches the app, and can be run on demand from the Actions tab. It needs **no repository secret** — Pages deploys with the built-in Actions token, which is why this app is hosted here rather than on Netlify.
 
 Any other static host works too — serve `ecu-templates/app/` as-is.
+
+There is no lead capture. The app is pure static hosting with no server side, so nothing is collected from riders; adding email capture again would require a third-party form service or a backend.
 
 ## Who it's for
 
