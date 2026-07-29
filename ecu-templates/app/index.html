@@ -247,23 +247,25 @@
       $("download").disabled = !($("agree").checked && emailValid());
     }
 
-    // Record the lead, but never block the customer's download on it.
+    // Fire and forget: a slow or blocked post must never hold up the download.
+    // "bot-field" is the declared honeypot and must be sent (empty) on AJAX posts.
     function recordLead() {
-      return fetch("/", {
+      fetch("/", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
           "form-name": "ecu-download",
+          "bot-field": "",
           email: $("email").value.trim(),
           model: $("model").value
         }).toString()
       }).catch(() => {});
     }
 
-    async function download() {
+    function download() {
       const config = buildConfig();
       const model = $("model").value.toLowerCase().replace(/\s+/g, "-");
-      await recordLead();
+      recordLead();
       const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
