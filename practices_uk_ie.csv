@@ -1,6 +1,11 @@
-id,practice_name,first_name,last_name,location,country,niche,website,ad_platform,observation,est_monthly_spend
-1,Smiles Dental,Sarah,O'Brien,Dublin,IE,dental,smilesdental.ie,Google Ads,three generic keyword groups all pointing to the homepage with no negative keyword list,900
-2,Highland Physio,James,MacAllister,Edinburgh,UK,physiotherapy,highlandphysio.co.uk,Meta Ads,same two creatives running for 94 days with CTR down 40% in the last 30 days and no audience refresh,1400
-3,Clear Vision Opticians,Niamh,Walsh,Cork,IE,optometry,clearvisionopticians.ie,Google Ads,broad-match brand terms bidding against own organic results — estimated 30% avoidable wasted spend,600
-4,Barrhead Dental,Callum,Stewart,Glasgow,UK,dental,barrheadental.co.uk,Google Ads,no conversion tracking set up so smart bidding is running fully blind with no cost-per-lead signal,750
-5,Capital Physio,Emma,Byrne,Dublin,IE,physiotherapy,capitalphysio.ie,,ranking position 12 for 'physio Dublin' (2400 monthly searches) — one title-tag change from page 1,0
+id,practice_name,first_name,last_name,location,country,niche,website,ad_platform,observation,est_monthly_spend,phone
+1,Smiles Dental,Sarah,O'Brien,Dublin,IE,dental,smilesdental.ie,Google Ads,three generic keyword groups all pointing to the homepage with no negative keyword list,900,+353 1 234 5678
+2,Highland Physio,James,MacAllister,Edinburgh,UK,physiotherapy,highlandphysio.co.uk,Meta Ads,same two creatives running for 94 days with CTR down 40% in the last 30 days and no audience refresh,1400,+44 131 234 5678
+3,Clear Vision Opticians,Niamh,Walsh,Cork,IE,optometry,clearvisionopticians.ie,Google Ads,broad-match brand terms bidding against own organic results — estimated 30% avoidable wasted spend,600,+353 21 234 5678
+4,Barrhead Dental,Callum,Stewart,Glasgow,UK,dental,barrheadental.co.uk,Google Ads,no conversion tracking set up so smart bidding is running fully blind with no cost-per-lead signal,750,+44 141 234 5678
+5,Capital Physio,Emma,Byrne,Dublin,IE,physiotherapy,capitalphysio.ie,,ranking position 12 for 'physio Dublin' (2400 monthly searches) — one title-tag change from page 1,0,+353 1 345 6789
+6,Castleknock Chiropractic,Aoife,Ní Mhurchú,Dublin,IE,chiropractic,castleknockchiro.ie,Google Ads,ad schedule running 24/7 with 80% of conversions between 8am–6pm — off-hours spend is pure waste,1100,+353 1 456 7890
+7,Forth Valley Physio,Alasdair,Robertson,Stirling,UK,physiotherapy,forthvalleyphysio.co.uk,Meta Ads,lookalike audience built on a 200-person seed — too small to be statistically meaningful,850,+44 1786 234 567
+8,Beacon Audiology,Ciara,Fleming,Dublin,IE,audiology,beaconaudiology.ie,Google Ads,display and search campaigns sharing one budget so search — the higher-intent channel — is being throttled,1300,+353 1 567 8901
+9,Aberdeen Dental Care,Fiona,Mackenzie,Aberdeen,UK,dental,aberdeendentalcare.co.uk,,ranking page 2 for 'dentist Aberdeen' (1800 monthly searches) — meta description is missing entirely,0,+44 1224 234 567
+10,Galway Osteopathy,Seán,Connolly,Galway,IE,osteopathy,galwayosteopathy.ie,Google Ads,single responsive search ad per ad group with no ad rotation testing — missing split-test data,650,+353 91 234 567

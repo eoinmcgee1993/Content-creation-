@@ -1,5 +1,5 @@
-id,practice_name,first_name,last_name,location,country,niche,website,ad_platform,observation,est_monthly_spend,subject_line,email_body,linkedin_dm,follow_up_day3,follow_up_day7,outreach_status
-1,Smiles Dental,Sarah,O'Brien,Dublin,IE,dental,smilesdental.ie,Google Ads,three generic keyword groups all pointing to the homepage with no negative keyword list,900,Smiles Dental — quick thing I noticed in your Google Ads account,"Hi Sarah,
+id,practice_name,first_name,last_name,location,country,niche,website,ad_platform,observation,est_monthly_spend,phone,subject_line,email_body,linkedin_dm,follow_up_day3,follow_up_day7,outreach_status
+1,Smiles Dental,Sarah,O'Brien,Dublin,IE,dental,smilesdental.ie,Google Ads,three generic keyword groups all pointing to the homepage with no negative keyword list,900,+353 1 234 5678,Smiles Dental — quick thing I noticed in your Google Ads account,"Hi Sarah,
 
 Was looking at Smiles Dental's ads — three generic keyword groups all pointing to the homepage with no negative keyword list. That pattern usually means a chunk of spend is converting at a loss.
 
@@ -10,7 +10,7 @@ Sample of the exact report you'd get: [LANDING_PAGE_URL]
 Worth a 15-min look at yours?
 
 [Your name]",Hi Sarah — noticed three generic keyword groups all pointing to the homepage with no negative keyword list on Smiles Dental's ads. I run a free 250-point Health Check that scores where revenue's leaking. Sample: [LANDING_PAGE_URL]. Want me to run yours?,Re: Smiles Dental ads — still happy to send the breakdown. Want it?,"Hi Sarah, forwarding the sanitised sample PDF directly — here's what the output looks like. Took 15 min. Yours would be specific to your account.",ready
-2,Highland Physio,James,MacAllister,Edinburgh,UK,physiotherapy,highlandphysio.co.uk,Meta Ads,same two creatives running for 94 days with CTR down 40% in the last 30 days and no audience refresh,1400,Highland Physio — quick thing I noticed in your Meta Ads account,"Hi James,
+2,Highland Physio,James,MacAllister,Edinburgh,UK,physiotherapy,highlandphysio.co.uk,Meta Ads,same two creatives running for 94 days with CTR down 40% in the last 30 days and no audience refresh,1400,+44 131 234 5678,Highland Physio — quick thing I noticed in your Meta Ads account,"Hi James,
 
 Was looking at Highland Physio's ads — same two creatives running for 94 days with CTR down 40% in the last 30 days and no audience refresh. That pattern usually means a chunk of spend is converting at a loss.
 
@@ -21,7 +21,7 @@ Sample of the exact report you'd get: [LANDING_PAGE_URL]
 Worth a 15-min look at yours?
 
 [Your name]",Hi James — noticed same two creatives running for 94 days with ctr down 40% in the last 30 days and no audience refresh on Highland Physio's ads. I run a free 250-point Health Check that scores where revenue's leaking. Sample: [LANDING_PAGE_URL]. Want me to run yours?,Re: Highland Physio ads — still happy to send the breakdown. Want it?,"Hi James, forwarding the sanitised sample PDF directly — here's what the output looks like. Took 15 min. Yours would be specific to your account.",ready
-3,Clear Vision Opticians,Niamh,Walsh,Cork,IE,optometry,clearvisionopticians.ie,Google Ads,broad-match brand terms bidding against own organic results — estimated 30% avoidable wasted spend,600,Clear Vision Opticians — quick thing I noticed in your Google Ads account,"Hi Niamh,
+3,Clear Vision Opticians,Niamh,Walsh,Cork,IE,optometry,clearvisionopticians.ie,Google Ads,broad-match brand terms bidding against own organic results — estimated 30% avoidable wasted spend,600,+353 21 234 5678,Clear Vision Opticians — quick thing I noticed in your Google Ads account,"Hi Niamh,
 
 Was looking at Clear Vision Opticians' ads — broad-match brand terms bidding against own organic results — estimated 30% avoidable wasted spend. That pattern usually means a chunk of spend is converting at a loss.
 
@@ -32,7 +32,7 @@ Sample of the exact report you'd get: [LANDING_PAGE_URL]
 Worth a 15-min look at yours?
 
 [Your name]",Hi Niamh — noticed broad-match brand terms bidding against own organic results on Clear Vision Opticians' ads. I run a free 250-point Health Check that scores where revenue's leaking. Sample: [LANDING_PAGE_URL]. Want me to run yours?,Re: Clear Vision Opticians ads — still happy to send the breakdown. Want it?,"Hi Niamh, forwarding the sanitised sample PDF directly — here's what the output looks like. Took 15 min. Yours would be specific to your account.",ready
-4,Barrhead Dental,Callum,Stewart,Glasgow,UK,dental,barrheadental.co.uk,Google Ads,no conversion tracking set up so smart bidding is running fully blind with no cost-per-lead signal,750,Barrhead Dental — quick thing I noticed in your Google Ads account,"Hi Callum,
+4,Barrhead Dental,Callum,Stewart,Glasgow,UK,dental,barrheadental.co.uk,Google Ads,no conversion tracking set up so smart bidding is running fully blind with no cost-per-lead signal,750,+44 141 234 5678,Barrhead Dental — quick thing I noticed in your Google Ads account,"Hi Callum,
 
 Was looking at Barrhead Dental's ads — no conversion tracking set up so smart bidding is running fully blind with no cost-per-lead signal. That pattern usually means a chunk of spend is converting at a loss.
 
@@ -43,7 +43,7 @@ Sample of the exact report you'd get: [LANDING_PAGE_URL]
 Worth a 15-min look at yours?
 
 [Your name]",Hi Callum — noticed no conversion tracking set up so smart bidding is running fully blind with no cost-per-lead signal on Barrhead Dental's ads. I run a free 250-point Health Check that scores where revenue's leaking. Sample: [LANDING_PAGE_URL]. Want me to run yours?,Re: Barrhead Dental ads — still happy to send the breakdown. Want it?,"Hi Callum, forwarding the sanitised sample PDF directly — here's what the output looks like. Took 15 min. Yours would be specific to your account.",ready
-5,Capital Physio,Emma,Byrne,Dublin,IE,physiotherapy,capitalphysio.ie,,ranking position 12 for 'physio Dublin' (2400 monthly searches) — one title-tag change from page 1,0,Capital Physio's striking-distance keywords (quick win),"Hi Emma,
+5,Capital Physio,Emma,Byrne,Dublin,IE,physiotherapy,capitalphysio.ie,,ranking position 12 for 'physio Dublin' (2400 monthly searches) — one title-tag change from page 1,0,+353 1 345 6789,Capital Physio's striking-distance keywords (quick win),"Hi Emma,
 
 ranking position 12 for 'physio Dublin' (2400 monthly searches) — one title-tag change from page 1. I usually see a few of these per site, plus keyword cannibalisation quietly splitting authority.
 
@@ -52,3 +52,56 @@ I'll run a free Search Console health check that maps striking-distance keywords
 Want me to run yours?
 
 [Your name]",Hi Emma — noticed ranking position 12 for 'physio dublin' (2400 monthly searches) on Capital Physio's SEO. I run a free 250-point Health Check that scores where revenue's leaking. Sample: [LANDING_PAGE_URL]. Want me to run yours?,Re: Capital Physio ads — still happy to send the breakdown. Want it?,"Hi Emma, forwarding the sanitised sample PDF directly — here's what the output looks like. Took 15 min. Yours would be specific to your account.",ready
+6,Castleknock Chiropractic,Aoife,Ní Mhurchú,Dublin,IE,chiropractic,castleknockchiro.ie,Google Ads,ad schedule running 24/7 with 80% of conversions between 8am–6pm — off-hours spend is pure waste,1100,+353 1 456 7890,Castleknock Chiropractic — quick thing I noticed in your Google Ads account,"Hi Aoife,
+
+Was looking at Castleknock Chiropractic's ads — ad schedule running 24/7 with 80% of conversions between 8am–6pm — off-hours spend is pure waste. That pattern usually means a chunk of spend is converting at a loss.
+
+I run a free 250-point Account Health Check that scores exactly where spend is leaking (zero-conversion campaigns, sub-break-even ROAS, CPA outliers) with a modelled monthly recovery number.
+
+Sample of the exact report you'd get: [LANDING_PAGE_URL]
+
+Worth a 15-min look at yours?
+
+[Your name]",Hi Aoife — noticed ad schedule running 24/7 with 80% of conversions between 8am–6pm on Castleknock Chiropractic's ads. I run a free 250-point Health Check that scores where revenue's leaking. Sample: [LANDING_PAGE_URL]. Want me to run yours?,Re: Castleknock Chiropractic ads — still happy to send the breakdown. Want it?,"Hi Aoife, forwarding the sanitised sample PDF directly — here's what the output looks like. Took 15 min. Yours would be specific to your account.",ready
+7,Forth Valley Physio,Alasdair,Robertson,Stirling,UK,physiotherapy,forthvalleyphysio.co.uk,Meta Ads,lookalike audience built on a 200-person seed — too small to be statistically meaningful,850,+44 1786 234 567,Forth Valley Physio — quick thing I noticed in your Meta Ads account,"Hi Alasdair,
+
+Was looking at Forth Valley Physio's ads — lookalike audience built on a 200-person seed — too small to be statistically meaningful. That pattern usually means a chunk of spend is converting at a loss.
+
+I run a free 250-point Account Health Check that scores exactly where spend is leaking (zero-conversion campaigns, sub-break-even ROAS, CPA outliers) with a modelled monthly recovery number.
+
+Sample of the exact report you'd get: [LANDING_PAGE_URL]
+
+Worth a 15-min look at yours?
+
+[Your name]",Hi Alasdair — noticed lookalike audience built on a 200-person seed on Forth Valley Physio's ads. I run a free 250-point Health Check that scores where revenue's leaking. Sample: [LANDING_PAGE_URL]. Want me to run yours?,Re: Forth Valley Physio ads — still happy to send the breakdown. Want it?,"Hi Alasdair, forwarding the sanitised sample PDF directly — here's what the output looks like. Took 15 min. Yours would be specific to your account.",ready
+8,Beacon Audiology,Ciara,Fleming,Dublin,IE,audiology,beaconaudiology.ie,Google Ads,display and search campaigns sharing one budget so search — the higher-intent channel — is being throttled,1300,+353 1 567 8901,Beacon Audiology — quick thing I noticed in your Google Ads account,"Hi Ciara,
+
+Was looking at Beacon Audiology's ads — display and search campaigns sharing one budget so search — the higher-intent channel — is being throttled. That pattern usually means a chunk of spend is converting at a loss.
+
+I run a free 250-point Account Health Check that scores exactly where spend is leaking (zero-conversion campaigns, sub-break-even ROAS, CPA outliers) with a modelled monthly recovery number.
+
+Sample of the exact report you'd get: [LANDING_PAGE_URL]
+
+Worth a 15-min look at yours?
+
+[Your name]",Hi Ciara — noticed display and search campaigns sharing one budget so search on Beacon Audiology's ads. I run a free 250-point Health Check that scores where revenue's leaking. Sample: [LANDING_PAGE_URL]. Want me to run yours?,Re: Beacon Audiology ads — still happy to send the breakdown. Want it?,"Hi Ciara, forwarding the sanitised sample PDF directly — here's what the output looks like. Took 15 min. Yours would be specific to your account.",ready
+9,Aberdeen Dental Care,Fiona,Mackenzie,Aberdeen,UK,dental,aberdeendentalcare.co.uk,,ranking page 2 for 'dentist Aberdeen' (1800 monthly searches) — meta description is missing entirely,0,+44 1224 234 567,Aberdeen Dental Care's striking-distance keywords (quick win),"Hi Fiona,
+
+ranking page 2 for 'dentist Aberdeen' (1800 monthly searches) — meta description is missing entirely. I usually see a few of these per site, plus keyword cannibalisation quietly splitting authority.
+
+I'll run a free Search Console health check that maps striking-distance keywords, cannibalisation, and CTR gaps. Here's the exact report format: [LANDING_PAGE_URL]
+
+Want me to run yours?
+
+[Your name]",Hi Fiona — noticed ranking page 2 for 'dentist aberdeen' (1800 monthly searches) on Aberdeen Dental Care's SEO. I run a free 250-point Health Check that scores where revenue's leaking. Sample: [LANDING_PAGE_URL]. Want me to run yours?,Re: Aberdeen Dental Care ads — still happy to send the breakdown. Want it?,"Hi Fiona, forwarding the sanitised sample PDF directly — here's what the output looks like. Took 15 min. Yours would be specific to your account.",ready
+10,Galway Osteopathy,Seán,Connolly,Galway,IE,osteopathy,galwayosteopathy.ie,Google Ads,single responsive search ad per ad group with no ad rotation testing — missing split-test data,650,+353 91 234 567,Galway Osteopathy — quick thing I noticed in your Google Ads account,"Hi Seán,
+
+Was looking at Galway Osteopathy's ads — single responsive search ad per ad group with no ad rotation testing — missing split-test data. That pattern usually means a chunk of spend is converting at a loss.
+
+I run a free 250-point Account Health Check that scores exactly where spend is leaking (zero-conversion campaigns, sub-break-even ROAS, CPA outliers) with a modelled monthly recovery number.
+
+Sample of the exact report you'd get: [LANDING_PAGE_URL]
+
+Worth a 15-min look at yours?
+
+[Your name]",Hi Seán — noticed single responsive search ad per ad group with no ad rotation testing on Galway Osteopathy's ads. I run a free 250-point Health Check that scores where revenue's leaking. Sample: [LANDING_PAGE_URL]. Want me to run yours?,Re: Galway Osteopathy ads — still happy to send the breakdown. Want it?,"Hi Seán, forwarding the sanitised sample PDF directly — here's what the output looks like. Took 15 min. Yours would be specific to your account.",ready
