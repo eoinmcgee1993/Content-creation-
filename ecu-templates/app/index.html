@@ -36,6 +36,9 @@
     .panel {
       background: var(--panel); border: 1px solid var(--border);
       border-radius: 12px; padding: 24px;
+      /* Grid items default to min-width:auto, which lets the JSON preview's
+         long lines widen the whole page instead of scrolling inside <pre>. */
+      min-width: 0;
     }
     .panel h2 {
       font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px;
