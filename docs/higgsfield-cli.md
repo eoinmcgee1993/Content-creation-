@@ -150,11 +150,16 @@ higgsfield website create --type app       # Higgsfield-integrated app (Sign in 
 higgsfield website list                 # your sites
 higgsfield website deploy <website_id>  # build and ship
 higgsfield website status <website_id>  # live URLs + deploy state
-higgsfield website repo-access <id>     # git clone URL + token
-higgsfield website secrets <id>         # manage env vars
-higgsfield website db <id>              # read-only DB access
-higgsfield website rename <id>          # change subdomain
-higgsfield website publish <id>         # post to community feed
+higgsfield website repo-access <id>                  # git clone URL + token
+higgsfield website secrets list <id>               # list env vars
+higgsfield website secrets set <id> KEY value      # set an env var (applied on next deploy)
+higgsfield website secrets delete <id> KEY         # remove an env var
+higgsfield website db tables <id>                  # list DB tables
+higgsfield website db rows <id> <table>            # read table rows
+higgsfield website db schema <id> <table>          # show table columns
+higgsfield website db query <id> "SELECT ..."      # run a read-only query
+higgsfield website rename <id> --subdomain new-slug  # change subdomain (old URL stops working)
+higgsfield website publish <id>                    # post to community feed
 ```
 
 ---

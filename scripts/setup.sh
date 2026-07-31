@@ -15,5 +15,7 @@ fi
 
 # Higgsfield CLI — image, video, and Marketing Studio workflows from the terminal.
 if ! command -v higgsfield >/dev/null 2>&1; then
-  npm install -g @higgsfield/cli --quiet || true
+  if ! npm install -g @higgsfield/cli --quiet; then
+    echo "WARNING: Higgsfield CLI install failed — 'higgsfield' will not be available this session." >&2
+  fi
 fi
