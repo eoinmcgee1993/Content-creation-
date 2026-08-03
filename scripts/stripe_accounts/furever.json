@@ -1,0 +1,58 @@
+{
+  "contact_email": "furever@example.com",
+  "display_name": "Furever",
+  "identity": {
+    "country": "us",
+    "entity_type": "company",
+    "business_details": {
+      "registered_name": "Furever",
+      "additional_addresses": [
+        {
+          "purpose": "principal_place_of_business",
+          "country": "us",
+          "line1": "354 Oyster Point Blvd",
+          "city": "South San Francisco",
+          "state": "CA",
+          "postal_code": "94080"
+        },
+        {
+          "purpose": "administrative",
+          "country": "us",
+          "line1": "510 Townsend St",
+          "city": "San Francisco",
+          "state": "CA",
+          "postal_code": "94103"
+        }
+      ]
+    }
+  },
+  "configuration": {
+    "customer": {
+      "capabilities": {
+        "automatic_indirect_tax": {
+          "requested": true
+        }
+      }
+    },
+    "merchant": {
+      "capabilities": {
+        "card_payments": {
+          "requested": true
+        }
+      }
+    }
+  },
+  "defaults": {
+    "responsibilities": {
+      "fees_collector": "stripe",
+      "losses_collector": "stripe"
+    }
+  },
+  "dashboard": "full",
+  "include": [
+    "configuration.merchant",
+    "configuration.customer",
+    "identity",
+    "defaults"
+  ]
+}
