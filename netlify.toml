@@ -1,8 +1,2 @@
 [build]
-  base = "digital-renaissance/site"
-  publish = "."
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+  publish = "digital-renaissance/site"
