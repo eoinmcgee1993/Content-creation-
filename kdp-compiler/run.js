@@ -28,6 +28,7 @@ async function run() {
     console.log(`\nSUCCESS.\nPDF compiled to: ${result.outputPath}\nTotal Interior Pages: ${result.interiorPages}`);
   } catch (err) {
     console.error("\nCOMPILATION FAILED:\n" + err.message);
+    process.exitCode = 1;
   }
 }
 run();
