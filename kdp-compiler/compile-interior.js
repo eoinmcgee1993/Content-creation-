@@ -4,9 +4,28 @@ const sharp = require('sharp');
 const { artBox, fitPreservingAspect } = require('./layout');
 const { inspectLineArt, GATES } = require('./qa');
 
+// Runs the compile gate over every page before anything is written, so a bad
+// batch fails up front and reports all offenders instead of one per run.
+async function assertArtPassesQA(artPaths) {
+  const failures = [];
+  for (const artPath of artPaths) {
+    const report = await inspectLineArt(fs.readFileSync(artPath));
+    const verdict = GATES.compile(report);
+    if (!verdict.pass) failures.push(`${artPath}: ${verdict.reason}`);
+  }
+  if (failures.length) {
+    throw new Error(
+      `QA failed on ${failures.length} of ${artPaths.length} art files:\n  ` +
+      failures.join('\n  ')
+    );
+  }
+}
+
 async function buildInterior({ artPaths, outputPath, useBleed = false }) {
   const interiorPages = 2 + artPaths.length * 2;
   if (interiorPages > 590) throw new Error(`Interior is ${interiorPages} pages. Max is 590.`);
+
+  await assertArtPassesQA(artPaths);
 
   const box = artBox(interiorPages, useBleed);
   const doc = new PDFDocument({ size: [box.pageW, box.pageH], margin: 0, autoFirstPage: false });
@@ -20,11 +39,6 @@ async function buildInterior({ artPaths, outputPath, useBleed = false }) {
 
   for (const artPath of artPaths) {
     const buf = fs.readFileSync(artPath);
-    const report = await inspectLineArt(buf);
-    const verdict = GATES.compile(report);
-    if (!verdict.pass) {
-      console.warn(`[WARNING] QA failed on ${artPath}: ${verdict.reason}`);
-    }
 
     doc.addPage();
     physicalPage += 1;
