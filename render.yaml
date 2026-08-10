@@ -32,6 +32,37 @@ services:
       - key: MAILERLITE_GROUP_ID
         sync: false
 
+  # Offload — waitlist landing page (separate product, separate service).
+  - type: web
+    name: offload-waitlist
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r offload/requirements.txt
+    startCommand: gunicorn offload.app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    healthCheckPath: /healthz
+    autoDeploy: true
+    disk:
+      name: offload-signups
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: SIGNUPS_PATH
+        value: /data/signups.csv
+      - key: OFFLOAD_BRAND
+        value: "Offload"        # rename the product here (or in offload/app.py)
+      - key: EMAIL_PROVIDER
+        value: ""               # set to "mailchimp" or "mailerlite" to enable
+      - key: MAILCHIMP_API_KEY
+        sync: false
+      - key: MAILCHIMP_LIST_ID
+        sync: false
+      - key: MAILCHIMP_TAG
+        value: offload-waitlist
+      - key: MAILERLITE_API_KEY
+        sync: false
+      - key: MAILERLITE_GROUP_ID
   # MediaFetch — installable reel-downloader PWA (optional Stripe paywall).
   - type: web
     name: mediafetch

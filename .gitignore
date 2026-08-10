@@ -10,6 +10,7 @@ build/
 
 # Captured leads contain personal data — never commit
 landing/leads.csv
+offload/signups.csv
 # Generated freebie artifacts
 landing/static/sample-audit-report.*
 # Generated, per-campaign sales sheet
