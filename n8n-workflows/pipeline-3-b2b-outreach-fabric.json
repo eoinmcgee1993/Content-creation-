@@ -1,0 +1,631 @@
+{
+  "name": "Pipeline 3 - Hyper-Personalized B2B Outreach Fabric",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "nodes": [
+    {
+      "id": "schedule-trigger",
+      "name": "Weekday 9 AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1-5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "apollo-leads",
+      "name": "Apollo.io - Fetch Target Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [250, 0],
+      "parameters": {
+        "url": "https://api.apollo.io/v1/mixed_people/search",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"api_key\": \"{{ $vars.APOLLO_API_KEY }}\",\n  \"page\": 1,\n  \"per_page\": 10,\n  \"person_titles\": [\"Founder\", \"CEO\", \"Co-Founder\", \"Managing Director\"],\n  \"organization_industry_tag_ids\": [\"YOUR_SAAS_INDUSTRY_TAG_ID\"],\n  \"person_locations\": [\"Thailand\", \"Southeast Asia\"],\n  \"contact_email_status\": [\"verified\", \"likely_to_engage\"]\n}",
+        "options": {}
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "extract-leads",
+      "name": "Extract Lead Array",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 0],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const response = $input.first().json;\nconst people = response.people || [];\n\nif (people.length === 0) {\n  return [{ json: { error: 'No leads returned from Apollo', count: 0 } }];\n}\n\nreturn people.map(person => ({\n  json: {\n    lead_id: person.id || '',\n    full_name: person.name || '',\n    first_name: person.first_name || '',\n    prospect_email: person.email || '',\n    job_title: person.title || '',\n    company_name: person.organization?.name || '',\n    corporate_website: person.organization?.website_url || '',\n    linkedin_url: person.linkedin_url || '',\n    employee_count: person.organization?.employee_count || 0\n  }\n}));"
+      }
+    },
+    {
+      "id": "split-batches",
+      "name": "Process One Lead at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [750, 0],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "pg-dedup-check",
+      "name": "Check if Already Contacted",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1000, 0],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT lead_id FROM b2b_outreach_leads WHERE prospect_email = '{{ $json.prospect_email }}' AND compliance_status = 'PASSED' LIMIT 1",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres - n8n Automation DB"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "if-not-contacted",
+      "name": "Not Yet Contacted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1250, 0],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "contact-check",
+              "leftValue": "={{ $json.lead_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty",
+                "name": "filter.operator.isEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "skip-contacted",
+      "name": "Skip - Already Contacted",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1250, 200],
+      "parameters": {}
+    },
+    {
+      "id": "scrape-website",
+      "name": "Scrape Prospect Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1500, 0],
+      "parameters": {
+        "url": "={{ $('Extract Lead Array').item.json.corporate_website }}",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "html-compressor",
+      "name": "HTML Compressor & Context Extractor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1750, 0],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const leadData = $('Extract Lead Array').item.json;\nlet rawHtml = $json.data || $json.body || '';\n\n// If scrape failed or returned error, use company name as minimal context\nif (!rawHtml || rawHtml.length < 100) {\n  return {\n    json: {\n      ...leadData,\n      compressed_web_context: `Company: ${leadData.company_name}. No additional website context available.`,\n      scrape_success: false\n    }\n  };\n}\n\n// Strip all non-content elements\nlet cleanText = rawHtml\n  .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n  .replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '')\n  .replace(/<noscript[^>]*>[\\s\\S]*?<\\/noscript>/gi, '')\n  .replace(/<header[^>]*>[\\s\\S]*?<\\/header>/gi, '')\n  .replace(/<footer[^>]*>[\\s\\S]*?<\\/footer>/gi, '')\n  .replace(/<nav[^>]*>[\\s\\S]*?<\\/nav>/gi, '')\n  .replace(/<form[^>]*>[\\s\\S]*?<\\/form>/gi, '')\n  .replace(/<!--[\\s\\S]*?-->/g, '')\n  .replace(/<[^>]+>/g, ' ')\n  .replace(/&nbsp;/g, ' ')\n  .replace(/&amp;/g, '&')\n  .replace(/&lt;/g, '<')\n  .replace(/&gt;/g, '>')\n  .replace(/&quot;/g, '\"')\n  .replace(/\\s+/g, ' ')\n  .trim()\n  .substring(0, 4000);\n\nreturn {\n  json: {\n    ...leadData,\n    compressed_web_context: cleanText,\n    scrape_success: true,\n    context_length: cleanText.length\n  }\n};"
+      }
+    },
+    {
+      "id": "email-filter",
+      "name": "Email Validity & Blacklist Filter",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [2000, 0],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "email-present",
+              "leftValue": "={{ $json.prospect_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            },
+            {
+              "id": "email-format",
+              "leftValue": "={{ $json.prospect_email }}",
+              "rightValue": "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            },
+            {
+              "id": "no-noreply",
+              "leftValue": "={{ $json.prospect_email }}",
+              "rightValue": "noreply|no-reply|donotreply|blacklist",
+              "operator": {
+                "type": "string",
+                "operation": "notRegex"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "copywriter-agent",
+      "name": "Agent A - Deep-Intelligence Copywriter",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [2250, 0],
+      "parameters": {
+        "agent": "toolsAgent",
+        "promptType": "define",
+        "text": "=Write a hyper-personalized B2B cold email introduction for this prospect.\n\nPROSPECT DATA:\n- Name: {{ $json.first_name }} {{ $json.full_name }}\n- Job Title: {{ $json.job_title }}\n- Company: {{ $json.company_name }}\n- Website: {{ $json.corporate_website }}\n- Employees: {{ $json.employee_count }}\n\nWEBSITE CONTEXT (scraped from their homepage):\n{{ $json.compressed_web_context }}\n\nWrite a 3-sentence cold email body AND a subject line. Output as JSON with keys: 'subject', 'email_body'.",
+        "options": {
+          "systemMessage": "Identity & Purpose:\nYou are an elite, highly professional enterprise B2B consultant writing hyper-targeted cold outreach. Your job is to read a prospect's live website context and write a razor-sharp, highly specific introduction.\n\nExecution Directives:\n1. Analyze the context and isolate what services or products this company offers.\n2. Identify ONE clear, specific operational friction point or digital monetization bottleneck based on their positioning.\n3. Sentence 1 (Reference): Reference a highly specific element from their website to prove you genuinely visited — quote a specific phrase, feature name, or product claim you saw.\n4. Sentence 2 (Bottleneck): Call out the isolated bottleneck smoothly without being accusatory or generic.\n5. Sentence 3 (CTA): Propose a clear, zero-friction path to a 20-minute conversation — no pressure, no hard sell.\n\nAbsolute Negative Constraints (NEVER use these):\n- 'I hope this email finds you well'\n- 'Greetings' as an opener\n- 'As an expert in...'\n- 'I stumbled across your website'\n- 'I was impressed by'\n- 'I noticed you are a fellow business owner'\n- 'I wanted to reach out'\n- 'Quick question'\n- Any generic filler sentence that could apply to ANY company\n\nSubject Line Rules:\n- Under 50 characters\n- Descriptive and specific — no clickbait\n- Do NOT use ALL CAPS or excessive punctuation\n- Must clearly reflect the email's true intent\n\nOutput ONLY valid JSON with this exact structure, no markdown wrapping:\n{\"subject\": \"string\", \"email_body\": \"string\"}",
+          "maxIterations": 3
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "id": "oai-copywriter",
+      "name": "OpenAI - Copywriter Model (GPT-4o)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [2250, 220],
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0.6,
+          "maxTokens": 600,
+          "responseFormat": "json_object"
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "id": "parse-email-output",
+      "name": "Parse LLM Email Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2500, 0],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const agentOutput = $json.output || '';\nlet parsed = { subject: '', email_body: '' };\n\ntry {\n  // The agent may return JSON directly or wrapped in markdown\n  const jsonMatch = agentOutput.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    parsed = JSON.parse(jsonMatch[0]);\n  } else {\n    parsed = JSON.parse(agentOutput);\n  }\n} catch (e) {\n  // Fallback: try to extract from plain text\n  const lines = agentOutput.split('\\n').filter(l => l.trim());\n  parsed.subject = lines[0]?.replace(/^subject:/i, '').trim() || 'Quick note for you';\n  parsed.email_body = lines.slice(1).join('\\n').trim();\n}\n\n// Build the full email with compliance footer\nconst leadData = $('HTML Compressor & Context Extractor').item.json;\nconst complianceFooter = `\\n\\n---\\nThis email was sent to ${leadData.prospect_email} based on your professional profile. If you prefer not to receive messages like this, simply reply with \"unsubscribe\" and you will not be contacted again.`;\n\nconst fullBody = (parsed.email_body || '') + complianceFooter;\n\nreturn {\n  json: {\n    ...leadData,\n    email_subject: parsed.subject || 'A thought on your platform',\n    email_body_text: fullBody,\n    email_body_html: `<html><body style=\"font-family:Arial,sans-serif;max-width:600px;line-height:1.6;color:#333;\">${fullBody.replace(/\\n/g, '<br>')}</body></html>`\n  }\n};"
+      }
+    },
+    {
+      "id": "compliance-chain",
+      "name": "Agent B - Compliance Guardrail",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [2750, 0],
+      "parameters": {
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessage",
+              "message": "=Audit this cold email for anti-spam compliance. Output ONLY a JSON object, no markdown.\n\nSUBJECT LINE:\n{{ $json.email_subject }}\n\nEMAIL BODY:\n{{ $json.email_body_text }}"
+            }
+          ]
+        },
+        "options": {
+          "systemMessage": "You are an automated Compliance Auditor ensuring strict adherence to CAN-SPAM, GDPR, and global anti-spam protocols.\n\nVerification Checklist:\n1. Does the subject line accurately reflect the true intent of the message body without misleading terminology?\n2. Is there an absence of aggressive spam-trigger words: 'FREE', 'BUY NOW', 'GUARANTEED CASH', 'LIMITED TIME OFFER', 'ACT NOW', 'CLICK HERE'?\n3. Does the email body include a clear, functional opt-out/unsubscribe mechanism?\n4. Does the body avoid deceptive claims or false urgency?\n5. Is the email body under 500 words?\n\nOutput ONLY a valid JSON object with this exact structure:\n{\"compliance_status\": \"PASSED\" | \"FAILED\", \"corrective_action_required\": \"Specific issue found, or 'None' if PASSED\"}"
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "id": "oai-compliance",
+      "name": "OpenAI - Compliance Model (GPT-4o-mini)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [2750, 220],
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.1,
+          "maxTokens": 200,
+          "responseFormat": "json_object"
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "id": "compliance-parser",
+      "name": "Compliance Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [2950, 220],
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"compliance_status\":{\"type\":\"string\",\"enum\":[\"PASSED\",\"FAILED\"]},\"corrective_action_required\":{\"type\":\"string\"}},\"required\":[\"compliance_status\",\"corrective_action_required\"]}"
+      }
+    },
+    {
+      "id": "if-compliant",
+      "name": "Compliance Status Router",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [3000, 0],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "compliance-check",
+              "leftValue": "={{ $json.output.compliance_status }}",
+              "rightValue": "PASSED",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "pg-log-failed",
+      "name": "Log Compliance Failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [3000, 200],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO b2b_outreach_leads (company_name, prospect_email, corporate_website, compliance_status, delivery_attempts, last_contacted_at)\nVALUES (\n  '{{ $('HTML Compressor & Context Extractor').item.json.company_name.replace(/'/g, \"''\") }}',\n  '{{ $('HTML Compressor & Context Extractor').item.json.prospect_email }}',\n  '{{ $('HTML Compressor & Context Extractor').item.json.corporate_website }}',\n  'FAILED_FILTER',\n  0,\n  NOW()\n) ON CONFLICT (prospect_email) DO UPDATE SET compliance_status = 'FAILED_FILTER', last_contacted_at = NOW();\nINSERT INTO system_execution_logs (pipeline_name, execution_id, status, error_message)\nVALUES ('B2B_OUTBOUND', '{{ $execution.id }}', 'FAILED', '{{ ($json.output?.corrective_action_required || \"Compliance failed\").replace(/'/g, \"''\") }}');",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres - n8n Automation DB"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "delay-calc",
+      "name": "Calculate Random Delivery Delay",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3250, 0],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Randomized delay between 300s (5 min) and 900s (15 min)\n// This mimics natural human email sending patterns\nconst minDelay = 300;\nconst maxDelay = 900;\nconst delaySeconds = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;\n\nreturn {\n  json: {\n    ...$json,\n    delay_seconds: delaySeconds,\n    delay_minutes: (delaySeconds / 60).toFixed(1)\n  }\n};"
+      }
+    },
+    {
+      "id": "wait-node",
+      "name": "Natural Delivery Delay",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [3500, 0],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.delay_seconds }}",
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "send-email",
+      "name": "Gmail - Send Personalized Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [3750, 0],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "toList": "={{ $json.prospect_email }}",
+        "subject": "={{ $json.email_subject }}",
+        "emailType": "html",
+        "message": "={{ $json.email_body_html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CRED_ID",
+          "name": "Gmail OAuth2"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "pg-log-contacted",
+      "name": "Log CONTACTED to Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [4000, 0],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO b2b_outreach_leads (company_name, prospect_email, corporate_website, personalized_pitch, compliance_status, delivery_attempts, last_contacted_at)\nVALUES (\n  '{{ $json.company_name.replace(/'/g, \"''\") }}',\n  '{{ $json.prospect_email }}',\n  '{{ $json.corporate_website }}',\n  '{{ $json.email_body_text.replace(/'/g, \"''\") }}',\n  'PASSED',\n  1,\n  NOW()\n) ON CONFLICT (prospect_email) DO UPDATE\nSET delivery_attempts = b2b_outreach_leads.delivery_attempts + 1,\n    last_contacted_at = NOW(),\n    personalized_pitch = EXCLUDED.personalized_pitch;\nINSERT INTO system_execution_logs (pipeline_name, execution_id, status)\nVALUES ('B2B_OUTBOUND', '{{ $execution.id }}', 'SUCCESS');",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CRED_ID",
+          "name": "Postgres - n8n Automation DB"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "sheets-log-contacted",
+      "name": "Google Sheets - Mark CONTACTED",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [4000, 200],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_MASTER_LOG_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Outreach Log",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "prospect_email": "={{ $json.prospect_email }}",
+            "company_name": "={{ $json.company_name }}",
+            "status": "CONTACTED",
+            "subject_sent": "={{ $json.email_subject }}",
+            "contacted_at": "={{ new Date().toISOString() }}",
+            "website": "={{ $json.corporate_website }}"
+          },
+          "matchingColumns": ["prospect_email"],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CRED_ID",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "loop-back",
+      "name": "Continue to Next Lead",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [4250, 0],
+      "parameters": {}
+    },
+    {
+      "id": "error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [-600, -400],
+      "parameters": {}
+    },
+    {
+      "id": "error-handler",
+      "name": "Package Error Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-600, -200],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const errorData = {\n  pipeline: 'B2B_OUTBOUND',\n  executionId: $execution?.id || 'unknown',\n  timestamp: new Date().toISOString(),\n  errorMessage: $json.error?.message || $json.error?.description || 'Unknown error',\n  failedNode: $json.error?.node?.name || 'unknown',\n  workflowName: 'Pipeline 3 - B2B Outreach Fabric'\n};\nreturn [{ json: errorData }];"
+      }
+    },
+    {
+      "id": "error-webhook",
+      "name": "Send Error to Webhook Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-600, 0],
+      "parameters": {
+        "url": "https://YOUR_ERROR_LOGGING_WEBHOOK_URL",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Weekday 9 AM Trigger": {
+      "main": [[{"node": "Apollo.io - Fetch Target Leads", "type": "main", "index": 0}]]
+    },
+    "Apollo.io - Fetch Target Leads": {
+      "main": [[{"node": "Extract Lead Array", "type": "main", "index": 0}]]
+    },
+    "Extract Lead Array": {
+      "main": [[{"node": "Process One Lead at a Time", "type": "main", "index": 0}]]
+    },
+    "Process One Lead at a Time": {
+      "main": [
+        [{"node": "Check if Already Contacted", "type": "main", "index": 0}],
+        []
+      ]
+    },
+    "Check if Already Contacted": {
+      "main": [[{"node": "Not Yet Contacted?", "type": "main", "index": 0}]]
+    },
+    "Not Yet Contacted?": {
+      "main": [
+        [{"node": "Scrape Prospect Website", "type": "main", "index": 0}],
+        [{"node": "Skip - Already Contacted", "type": "main", "index": 0}]
+      ]
+    },
+    "Scrape Prospect Website": {
+      "main": [[{"node": "HTML Compressor & Context Extractor", "type": "main", "index": 0}]]
+    },
+    "HTML Compressor & Context Extractor": {
+      "main": [[{"node": "Email Validity & Blacklist Filter", "type": "main", "index": 0}]]
+    },
+    "Email Validity & Blacklist Filter": {
+      "main": [[{"node": "Agent A - Deep-Intelligence Copywriter", "type": "main", "index": 0}]]
+    },
+    "Agent A - Deep-Intelligence Copywriter": {
+      "main": [[{"node": "Parse LLM Email Output", "type": "main", "index": 0}]]
+    },
+    "OpenAI - Copywriter Model (GPT-4o)": {
+      "ai_languageModel": [[{"node": "Agent A - Deep-Intelligence Copywriter", "type": "ai_languageModel", "index": 0}]]
+    },
+    "Parse LLM Email Output": {
+      "main": [[{"node": "Agent B - Compliance Guardrail", "type": "main", "index": 0}]]
+    },
+    "Agent B - Compliance Guardrail": {
+      "main": [[{"node": "Compliance Status Router", "type": "main", "index": 0}]]
+    },
+    "OpenAI - Compliance Model (GPT-4o-mini)": {
+      "ai_languageModel": [[{"node": "Agent B - Compliance Guardrail", "type": "ai_languageModel", "index": 0}]]
+    },
+    "Compliance Output Parser": {
+      "ai_outputParser": [[{"node": "Agent B - Compliance Guardrail", "type": "ai_outputParser", "index": 0}]]
+    },
+    "Compliance Status Router": {
+      "main": [
+        [{"node": "Calculate Random Delivery Delay", "type": "main", "index": 0}],
+        [{"node": "Log Compliance Failure", "type": "main", "index": 0}]
+      ]
+    },
+    "Calculate Random Delivery Delay": {
+      "main": [[{"node": "Natural Delivery Delay", "type": "main", "index": 0}]]
+    },
+    "Natural Delivery Delay": {
+      "main": [[{"node": "Gmail - Send Personalized Email", "type": "main", "index": 0}]]
+    },
+    "Gmail - Send Personalized Email": {
+      "main": [
+        [
+          {"node": "Log CONTACTED to Postgres", "type": "main", "index": 0},
+          {"node": "Google Sheets - Mark CONTACTED", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "Log CONTACTED to Postgres": {
+      "main": [[{"node": "Continue to Next Lead", "type": "main", "index": 0}]]
+    },
+    "Continue to Next Lead": {
+      "main": [[{"node": "Process One Lead at a Time", "type": "main", "index": 0}]]
+    },
+    "Error Trigger": {
+      "main": [[{"node": "Package Error Details", "type": "main", "index": 0}]]
+    },
+    "Package Error Details": {
+      "main": [[{"node": "Send Error to Webhook Log", "type": "main", "index": 0}]]
+    }
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  }
+}

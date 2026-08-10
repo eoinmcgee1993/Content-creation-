@@ -1,0 +1,168 @@
+version: '3.8'
+
+# ============================================================
+# Production n8n Self-Hosted Stack
+# Includes: PostgreSQL 15, n8n (latest), isolated networking
+#
+# SETUP STEPS:
+# 1. Copy this file to your VPS (e.g. /opt/n8n/docker-compose.yml)
+# 2. Replace ALL placeholder values marked with YOUR_* or CHANGE_THIS
+# 3. Run: docker compose up -d
+# 4. Access n8n at: http://YOUR_SERVER_IP:5678
+# 5. Import workflow JSON files via Settings > Import from JSON
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # PostgreSQL 15 — Persistent state database for n8n
+  # Stores workflow data, execution history, and all 3 pipeline
+  # automation logs via the centralized schema in database-schema.sql
+  # ----------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: n8n_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=n8n_admin
+      # CHANGE THIS: Use a strong, unique password (min 24 chars)
+      - POSTGRES_PASSWORD=CHANGE_THIS_TO_SECURE_PASSWORD_HERE
+      - POSTGRES_DB=n8n_automation
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - n8n_internal
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U n8n_admin -d n8n_automation']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Do NOT expose Postgres port externally in production
+    # Access only via n8n internal network
+
+  # ----------------------------------------------------------
+  # n8n — Automation engine
+  # Connects to Postgres above; persists workflow state and
+  # credentials in the n8n_data volume.
+  # ----------------------------------------------------------
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n_app
+    restart: unless-stopped
+    ports:
+      # Change left port if 5678 is occupied on your VPS
+      - "5678:5678"
+    environment:
+      # --- Database Configuration ---
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n_automation
+      - DB_POSTGRESDB_USER=n8n_admin
+      # CHANGE THIS: Must match POSTGRES_PASSWORD above exactly
+      - DB_POSTGRESDB_PASSWORD=CHANGE_THIS_TO_SECURE_PASSWORD_HERE
+
+      # --- n8n Core Settings ---
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_RUNNERS_ENABLED=true
+      - EXECUTIONS_MODE=regular
+      # CHANGE THIS: Set to your server's public IP or domain
+      - N8N_HOST=YOUR_SERVER_IP_OR_DOMAIN
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      # CHANGE THIS: Must be a publicly reachable URL for webhooks
+      - WEBHOOK_URL=http://YOUR_SERVER_IP_OR_DOMAIN:5678/
+
+      # --- Encryption Key (generates credential security) ---
+      # CHANGE THIS: Generate with: openssl rand -hex 32
+      - N8N_ENCRYPTION_KEY=CHANGE_THIS_GENERATE_WITH_OPENSSL_RAND_HEX_32
+
+      # --- Execution Retention ---
+      # Keep execution history for 30 days (adjust as needed)
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=720
+
+      # --- Timezone ---
+      # CHANGE THIS: Match your target timezone for cron triggers
+      # Examples: America/New_York, Asia/Bangkok, Europe/London
+      - GENERIC_TIMEZONE=Asia/Bangkok
+      - TZ=Asia/Bangkok
+
+      # --- Optional: Basic Auth for n8n dashboard ---
+      # Uncomment to add password protection to the n8n UI
+      # - N8N_BASIC_AUTH_ACTIVE=true
+      # - N8N_BASIC_AUTH_USER=admin
+      # - N8N_BASIC_AUTH_PASSWORD=CHANGE_THIS_DASHBOARD_PASSWORD
+
+      # --- AI / LangChain Features ---
+      - N8N_AI_ENABLED=true
+
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - n8n_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ----------------------------------------------------------
+  # (Optional) Caddy — Reverse proxy with automatic HTTPS
+  # Uncomment this service if you want SSL/TLS termination
+  # and a clean domain URL instead of port 5678.
+  #
+  # Prerequisites: Point your domain DNS A record to this VPS IP.
+  # ----------------------------------------------------------
+  # caddy:
+  #   image: caddy:2-alpine
+  #   container_name: n8n_caddy
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - caddy_data:/data
+  #     - caddy_config:/config
+  #     - ./Caddyfile:/etc/caddy/Caddyfile:ro
+  #   networks:
+  #     - n8n_internal
+  #   depends_on:
+  #     - n8n
+
+networks:
+  n8n_internal:
+    driver: bridge
+    # Internal network — Postgres is not reachable outside this network
+    internal: false
+
+volumes:
+  postgres_data:
+    driver: local
+    # Postgres data persists across container restarts
+  n8n_data:
+    driver: local
+    # n8n workflows, credentials, and execution logs
+
+# ============================================================
+# DEPLOYMENT COMMANDS (run on your VPS):
+#
+# Start stack:
+#   docker compose up -d
+#
+# View live logs:
+#   docker compose logs -f n8n
+#
+# Apply database schema (run once after first start):
+#   docker compose exec postgres psql -U n8n_admin -d n8n_automation \
+#     -f /path/to/database-schema.sql
+#
+# Stop without deleting data:
+#   docker compose stop
+#
+# Full reset (WARNING: deletes all data):
+#   docker compose down -v
+#
+# Update n8n to latest version:
+#   docker compose pull n8n && docker compose up -d n8n
+# ============================================================

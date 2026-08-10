@@ -1,0 +1,43 @@
+{
+  "build_profile": {
+    "platform": "Honda CRF250L / CRF300L",
+    "engine": "Standard Displacement (250cc / 286cc)",
+    "induction": "Naturally Aspirated (Aftermarket Intake & Exhaust)",
+    "fuel_type": "Pump Gas (91 - 95 Octane)",
+    "injector": "OEM or PCX150 Upgrade",
+    "ecu_type": "Standalone / Flash"
+  },
+  "safety_parameters": {
+    "target_afr_cruising": [13.2, 13.5],
+    "target_afr_wot": [12.8, 13.1],
+    "rev_limiter_rpm": 10500
+  },
+  "features": {
+    "launch_control": {
+      "status": "enabled",
+      "activation_rpm": 6500,
+      "ignition_retard_degrees": -5,
+      "fuel_enrichment_percent": 10,
+      "cut_type": "ignition_cut"
+    },
+    "decel_flames_pops": {
+      "status": "enabled",
+      "tps_range_percent": [0, 3],
+      "rpm_range": [4500, 8500],
+      "ignition_timing_btdc": -2,
+      "fuel_correction_percent": 15
+    }
+  },
+  "base_fuel_map_correction_percent": {
+    "description": "NA Pump Gas map for Intake + Full Exhaust. RPM vs TPS(%)",
+    "2000_rpm":  {"0": 0, "20": 2, "40": 4, "60": 5, "80": 6, "100": 8},
+    "5000_rpm":  {"0": 0, "20": 4, "40": 6, "60": 8, "80": 10, "100": 12},
+    "9000_rpm":  {"0": 0, "20": 6, "40": 8, "60": 10, "80": 12, "100": 14}
+  },
+  "base_ignition_map_btdc": {
+    "description": "NA Pump Gas timing map. RPM vs TPS(%)",
+    "2000_rpm":  {"0": 15, "20": 18, "40": 20, "60": 22, "80": 24, "100": 26},
+    "5000_rpm":  {"0": 25, "20": 28, "40": 30, "60": 32, "80": 33, "100": 34},
+    "9000_rpm":  {"0": 28, "20": 30, "40": 32, "60": 34, "80": 36, "100": 37}
+  }
+}

@@ -6,6 +6,7 @@ __pycache__/
 dist/
 build/
 .env
+.atlas-skill/
 
 # Captured leads contain personal data — never commit
 landing/leads.csv
@@ -14,3 +15,5 @@ offload/signups.csv
 landing/static/sample-audit-report.*
 # Generated, per-campaign sales sheet
 sales/sales-sheet.pdf
+# Downloaded media artifacts
+downloads/
