@@ -1,6 +1,9 @@
 # Higgsfield CLI
 
-`higgsfield` (aliases: `higgs`, `hf`) is installed automatically each session via `scripts/setup.sh`.
+`higgsfield` (alias: `higgs`) is installed automatically each session via `scripts/setup.sh`.
+
+> The package ships only these two commands. It does **not** provide `hf` — that
+> name belongs to the Hugging Face CLI, so avoid it here even as a shell alias.
 
 ---
 
@@ -194,9 +197,9 @@ higgsfield game publish <game_id> --name "Space Runner"
 ## Quick reference
 
 ```bash
-hf model list --video                      # what video models exist?
-hf generate cost <model> --prompt "..."    # how much will this cost?
-hf upload create ./file.png                # upload and get an ID
-hf generate create <model> --prompt "..." --image ./file.png --wait
-hf generate list                           # see recent jobs
+higgs model list --video                      # what video models exist?
+higgs generate cost <model> --prompt "..."    # how much will this cost?
+higgs upload create ./file.png                # upload and get an ID
+higgs generate create <model> --prompt "..." --image ./file.png --wait
+higgs generate list                           # see recent jobs
 ```
