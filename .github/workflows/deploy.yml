@@ -3,6 +3,9 @@ name: Deploy Digital Renaissance to Netlify
 on:
   push:
     branches: [main]
+    paths:
+      - "digital-renaissance/site/**"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
 jobs:
@@ -16,9 +19,13 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        # --no-build: this publishes a static folder. Without it the CLI runs the
+        # root netlify.toml build (trading-dashboard) before uploading, so an
+        # unrelated dashboard build failure would block this deploy.
         run: |
           npx netlify-cli@latest deploy \
             --dir=digital-renaissance/site \
             --site="$NETLIFY_SITE_ID" \
             --auth="$NETLIFY_AUTH_TOKEN" \
-            --prod
+            --prod \
+            --no-build
