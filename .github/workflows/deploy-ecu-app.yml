@@ -1,10 +1,10 @@
-name: Deploy CRF ECU Template Builder to Netlify
+name: Deploy CRF Builder site to Netlify
 
 on:
   push:
     branches: [main]
     paths:
-      - "ecu-templates/app/**"
+      - "crf-builder/**"
       - ".github/workflows/deploy-ecu-app.yml"
   workflow_dispatch: {}
 
@@ -17,7 +17,7 @@ jobs:
       - name: Deploy to Netlify
         # --no-build: this is a static folder, and without it the CLI would run
         # the root netlify.toml build (trading-dashboard) before uploading.
-        run: npx netlify-cli@latest deploy --dir=ecu-templates/app --prod --no-build
+        run: npx netlify-cli@latest deploy --dir=crf-builder --prod --no-build
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ca431dfc-8aa8-4e51-ab98-8765e101e3a0
