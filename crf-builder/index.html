@@ -349,7 +349,7 @@ input[type=range]::-webkit-slider-thumb{
         </span>
       </label>
     </div>
-    <p class="hint payment-note" id="payment-note" style="display:none;">Payment isn't wired up yet, this is a placeholder step so the flow is ready to connect to real checkout.</p>
+    <p class="hint payment-note" id="payment-note" style="display:none;">Your kit file is released after Stripe confirms your payment &mdash; pay, then press &ldquo;Check payment &amp; download&rdquo; on the confirmation.</p>
 
     <div class="field-row">
       <div class="field">
@@ -409,6 +409,7 @@ async function saveOrder(record){
       customer_email: record.email,
       notes: record.notes || null,
       zones: record.zones || {},
+      download_token: record.downloadToken,
     }),
   });
   if(!res.ok){
@@ -416,6 +417,43 @@ async function saveOrder(record){
     throw new Error("Order could not be saved (" + res.status + ") " + detail.slice(0, 200));
   }
   return true;
+}
+
+// Deposit the finished SVG server-side. The browser can write it but never read
+// it back — release is the kit-download function's job, and only once Stripe has
+// confirmed the order paid.
+async function storeOrderFile(orderId, svg){
+  const res = await fetch(SUPABASE_URL + "/rest/v1/crf_order_files", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": "Bearer " + SUPABASE_KEY,
+      "Prefer": "return=minimal",
+    },
+    body: JSON.stringify({ order_id: orderId, svg: svg }),
+  });
+  if(!res.ok){
+    const detail = await res.text().catch(() => "");
+    throw new Error("Kit file could not be stored (" + res.status + ") " + detail.slice(0, 200));
+  }
+  return true;
+}
+
+// Ask the server for the finished file. Returns the SVG only for a paid order.
+const DOWNLOAD_FN = SUPABASE_URL + "/functions/v1/kit-download";
+async function fetchPaidFile(orderId, token){
+  const res = await fetch(DOWNLOAD_FN, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ order_id: orderId, token: token }),
+  });
+  if(res.status === 402) return { paid: false };
+  if(!res.ok){
+    const detail = await res.text().catch(() => "");
+    throw new Error("Download failed (" + res.status + ") " + detail.slice(0, 160));
+  }
+  return { paid: true, svg: await res.text() };
 }
 
 // Set these to the Stripe Payment Links you create in your own dashboard
@@ -1070,8 +1108,12 @@ async function submitOrder(){
       };
     }
     const orderId = 'CRF-' + Date.now().toString(36).toUpperCase();
+    // Order ids are timestamp-derived and therefore guessable. This token is the
+    // customer's actual claim on their file.
+    const downloadToken = crypto.randomUUID();
     const record = {
       id: orderId,
+      downloadToken,
       model: 'Honda CRF250L (2007-2020)',
       fulfilment,
       name, email, notes,
@@ -1079,6 +1121,9 @@ async function submitOrder(){
       zones: zonesOut,
     };
     await saveOrder(record);
+    // Build the deliverable now and hand it to the server, so release can be
+    // gated on payment instead of happening in the browser.
+    await storeOrderFile(orderId, buildExportSVG(orderId));
 
     document.getElementById('confirm-area').innerHTML = '';
     const confirm = document.createElement('div');
@@ -1109,38 +1154,51 @@ async function submitOrder(){
       confirm.innerHTML = `
         <div class="eyebrow" style="justify-content:center;">Order received</div>
         <div class="id">${orderId}</div>
-        <p>Pay with the link below, it carries this order reference through to Stripe. Delivery isn't automatic yet, there's no server-side check confirming payment actually happened, so the button underneath is a manual stand-in until that's added.</p>
+        <p>Pay with the link below &mdash; it carries this order reference through to Stripe. Once your payment clears, come back here and press <b>Check payment &amp; download</b>. Your file is held on our server and released only after Stripe confirms the payment.</p>
       `;
       confirm.appendChild(payWrap);
+
       const manualWrap = document.createElement('div');
       confirm.appendChild(manualWrap);
-      const manualBtn = document.createElement('button');
-      manualBtn.className = 'btn-sm';
-      manualBtn.style.marginTop = '14px';
-      manualBtn.style.maxWidth = '300px';
-      manualBtn.style.marginLeft = 'auto';
-      manualBtn.style.marginRight = 'auto';
-      manualBtn.style.display = 'block';
-      manualBtn.textContent = "I've paid \u2014 show the download (manual, unverified)";
-      manualWrap.appendChild(manualBtn);
-      manualBtn.addEventListener('click', async ()=>{
-        manualBtn.disabled = true;
-        manualBtn.textContent = 'Unlocked (unverified)';
-        record.paidManualUnverified = true;
-        /* order already persisted at submit time */
-        const dlBtn = document.createElement('button');
-        dlBtn.className = 'btn-sm';
-        dlBtn.style.marginTop = '10px';
-        dlBtn.style.maxWidth = '260px';
-        dlBtn.style.marginLeft = 'auto';
-        dlBtn.style.marginRight = 'auto';
-        dlBtn.style.display = 'block';
-        dlBtn.textContent = 'Download kit file (SVG)';
-        dlBtn.addEventListener('click', ()=>{
-          const svgStr = buildExportSVG(orderId);
-          triggerDownload('crf250l-kit-'+orderId+'.svg', svgStr, 'image/svg+xml');
-        });
-        manualWrap.appendChild(dlBtn);
+
+      const checkBtn = document.createElement('button');
+      checkBtn.className = 'btn-sm';
+      checkBtn.style.marginTop = '14px';
+      checkBtn.style.maxWidth = '300px';
+      checkBtn.style.marginLeft = 'auto';
+      checkBtn.style.marginRight = 'auto';
+      checkBtn.style.display = 'block';
+      checkBtn.textContent = 'Check payment & download';
+      manualWrap.appendChild(checkBtn);
+
+      const status = document.createElement('p');
+      status.className = 'hint';
+      status.style.textAlign = 'center';
+      status.style.marginTop = '8px';
+      manualWrap.appendChild(status);
+
+      checkBtn.addEventListener('click', async ()=>{
+        checkBtn.disabled = true;
+        status.style.color = '';
+        status.textContent = 'Checking with Stripe\u2026';
+        try{
+          const out = await fetchPaidFile(orderId, downloadToken);
+          if(!out.paid){
+            status.style.color = 'var(--accent-2)';
+            status.textContent = "Stripe hasn't confirmed this payment yet. If you've just paid, give it a few seconds and try again.";
+            checkBtn.disabled = false;
+            return;
+          }
+          triggerDownload('crf250l-kit-'+orderId+'.svg', out.svg, 'image/svg+xml');
+          status.style.color = 'var(--success)';
+          status.textContent = 'Payment confirmed \u2014 your kit file has downloaded.';
+          checkBtn.textContent = 'Download again';
+          checkBtn.disabled = false;
+        }catch(err){
+          status.style.color = 'var(--accent-2)';
+          status.textContent = 'Could not check payment right now. Try again in a moment.';
+          checkBtn.disabled = false;
+        }
       });
     } else {
       confirm.innerHTML = `
