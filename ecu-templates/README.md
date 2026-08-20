@@ -6,31 +6,23 @@ A generic, mass-market base file for the standard Honda CRF250L, CRF250 Rally, C
 
 ## Template Builder app
 
-[`app/index.html`](./app/index.html) is a self-contained static web app for distributing this template to customers. Riders pick their exact model (CRF250L / CRF250 Rally / CRF300L / CRF300 Rally), injector, and features (launch control with adjustable hold RPM 5,500–8,000, decel pops on/off), see a live JSON preview, and download their configured file — the download is gated behind accepting the disclaimer.
+The builder now lives in [`crf-builder/`](../crf-builder/) alongside the CRF250L graphics kit builder, as two pages of one site:
 
-It has no build step and no dependencies.
+- [`crf-builder/index.html`](../crf-builder/index.html) — CRF250L graphics kit builder (front page)
+- [`crf-builder/ecu.html`](../crf-builder/ecu.html) — this ECU template builder
 
-Downloads are gated: the rider must accept the disclaimer **and** enter a valid email before the button unlocks. The email and chosen model are posted to Netlify Forms (form name `ecu-download`) and appear under the site's Forms tab. Lead capture never blocks the download — if the post fails, the rider still gets their file.
+Both share a nav bar so they read as one site. Riders pick their exact model (CRF250L / CRF250 Rally / CRF300L / CRF300 Rally), injector, and features (launch control with adjustable hold RPM 5,500–8,000, decel pops on/off), see a live JSON preview, and download their configured file.
+
+No build step, no dependencies. The download unlocks once the rider accepts the disclaimer **and** enters a valid email; the email and chosen model post to Netlify Forms (form `ecu-download`) without blocking the download if the post fails.
 
 ### Deployment
 
-A Netlify site is already provisioned for it:
+[`.github/workflows/deploy-ecu-app.yml`](../.github/workflows/deploy-ecu-app.yml) publishes the whole `crf-builder/` folder on pushes to `main` that touch it, plus manual runs from the Actions tab.
 
 - **Site:** `crf-ecu-template-builder` (`ca431dfc-8aa8-4e51-ab98-8765e101e3a0`)
 - **URL:** https://crf-ecu-template-builder.netlify.app
-- **Dashboard:** https://app.netlify.com/projects/crf-ecu-template-builder
 
-[`.github/workflows/deploy-ecu-app.yml`](../.github/workflows/deploy-ecu-app.yml) publishes `ecu-templates/app` to that site on every push to `main` that touches the app, using the same `NETLIFY_AUTH_TOKEN` secret as the trading dashboard workflow. The repo root `netlify.toml` is claimed by `trading-dashboard`, which is why this deploys to its own site rather than reusing that config.
-
-**Prerequisite:** the `NETLIFY_AUTH_TOKEN` repository secret is currently unset — the trading dashboard deploys have failed with `Authentication required` since 2026-07-20 for this reason. Add the secret under Settings → Secrets and variables → Actions before relying on either workflow.
-
-To push a deploy by hand from a machine with the Netlify CLI logged in:
-
-```
-netlify deploy --dir=ecu-templates/app --prod --site=ca431dfc-8aa8-4e51-ab98-8765e101e3a0
-```
-
-Any other static host works too — serve `ecu-templates/app/` as-is.
+**Known issue:** the `NETLIFY_AUTH_TOKEN` repo secret is set but no longer authorised — deploys fail with `Unauthorized: could not retrieve project`. A fresh Netlify personal access token is needed before automatic deploys work again.
 
 ## Who it's for
 

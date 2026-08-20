@@ -89,10 +89,31 @@
     button:disabled { opacity: 0.35; cursor: not-allowed; }
     .downloaded { color: var(--ok); font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
     footer { margin-top: 40px; font-size: 12px; color: var(--muted); text-align: center; }
+  
+    /* Shared site nav — mirrors the graphics kit builder. */
+    .site-nav {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px; padding-bottom: 14px;
+    }
+    .site-nav a {
+      font-family: ui-monospace, monospace;
+      font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      font-weight: 700; text-decoration: none;
+      color: var(--muted);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 7px 14px; transition: color 0.15s, border-color 0.15s;
+    }
+    .site-nav a:hover { color: var(--text); border-color: var(--muted); }
+    .site-nav a.is-active { color: var(--bg); background: var(--accent); border-color: var(--accent); }
   </style>
 </head>
 <body>
   <div class="wrap">
+    <nav class="site-nav" aria-label="Site sections">
+      <a href="./index.html">Graphics Kit Builder</a>
+      <a href="./ecu.html" class="is-active" aria-current="page">ECU Template Builder</a>
+    </nav>
     <header>
       <div class="badge">NA &middot; Pump Gas &middot; Base File</div>
       <h1>CRF ECU Template Builder</h1>
