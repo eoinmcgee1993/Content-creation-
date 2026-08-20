@@ -19,8 +19,8 @@ No build step, no dependencies. The download unlocks once the rider accepts the 
 
 [`.github/workflows/deploy-ecu-app.yml`](../.github/workflows/deploy-ecu-app.yml) publishes the whole `crf-builder/` folder on pushes to `main` that touch it, plus manual runs from the Actions tab.
 
-- **Site:** `crf-ecu-template-builder` (`ca431dfc-8aa8-4e51-ab98-8765e101e3a0`)
-- **URL:** https://crf-ecu-template-builder.netlify.app
+- **Site:** `crf-garage` (`ca431dfc-8aa8-4e51-ab98-8765e101e3a0`)
+- **URL:** https://crf-garage.netlify.app
 
 **Known issue:** the `NETLIFY_AUTH_TOKEN` repo secret is set but no longer authorised — deploys fail with `Unauthorized: could not retrieve project`. A fresh Netlify personal access token is needed before automatic deploys work again.
 
