@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRF Garage — Custom Racewear Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#121316; --panel:#1b1d22; --panel-2:#22252b; --line:#2d3037;
+  --text:#eef0f2; --text-dim:#9aa0aa; --accent:#e2231a; --accent-2:#ff8a1e;
+  --success:#3ddc84; --radius:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+/* shared site nav — mirrors index.html */
+.site-nav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line);margin-bottom:24px;padding-bottom:14px;}
+.site-nav a{font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;text-decoration:none;color:var(--text-dim);border:1px solid var(--line);border-radius:999px;padding:7px 14px;transition:color .15s,border-color .15s;}
+.site-nav a:hover{color:var(--text);border-color:var(--text-dim);}
+.site-nav a.is-active{color:var(--bg);background:var(--accent);border-color:var(--accent);}
+
+header.top{margin-bottom:26px;}
+.eyebrow{font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-2);font-weight:600;margin-bottom:6px;}
+h1{font-family:'Oswald',sans-serif;font-size:34px;font-weight:600;letter-spacing:.01em;}
+.sub{color:var(--text-dim);max-width:70ch;margin-top:8px;font-size:15px;}
+
+.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;align-items:start;}
+@media(max-width:900px){.grid{grid-template-columns:1fr;}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;min-width:0;}
+.card h2{font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-dim);font-weight:600;margin-bottom:14px;}
+
+/* garment picker */
+.garments{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px;}
+.garment{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);padding:12px;cursor:pointer;text-align:left;color:var(--text);font:inherit;transition:border-color .15s;}
+.garment:hover{border-color:var(--text-dim);}
+.garment.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+.garment .g-name{font-weight:700;font-size:14px;}
+.garment .g-price{font-size:12px;color:var(--text-dim);margin-top:2px;}
+
+/* preview */
+.preview-wrap{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
+.views{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:520px){.views{grid-template-columns:1fr;}}
+.view{position:relative;}
+.view-label{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;}
+svg.garment-svg{width:100%;height:auto;display:block;background:#0d0e11;border-radius:8px;}
+
+/* zones */
+.zone-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.zone-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;}
+.zone-row.sel{border-color:var(--accent);}
+.zone-row .z-name{font-weight:600;font-size:14px;}
+.zone-row .z-state{font-size:12px;color:var(--text-dim);}
+.zone-row .z-state.done{color:var(--success);}
+
+label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;}
+input[type=text],input[type=email],input[type=number],select,textarea{
+  width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);
+  border-radius:8px;padding:9px 11px;font:inherit;font-size:14px;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);}
+textarea{min-height:70px;resize:vertical;}
+.field{margin-bottom:12px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:520px){.field-row{grid-template-columns:1fr;}}
+.hint{font-size:12px;color:var(--text-dim);margin-top:5px;}
+
+.btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer;width:100%;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-sm{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-sm:hover{border-color:var(--text-dim);}
+
+/* roster */
+table.roster{width:100%;border-collapse:collapse;margin-top:6px;font-size:14px;}
+table.roster th{text-align:left;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);font-weight:600;padding:6px 6px;border-bottom:1px solid var(--line);}
+table.roster td{padding:5px 6px;border-bottom:1px solid var(--line);}
+table.roster input,table.roster select{padding:6px 8px;font-size:13px;}
+.rm{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;}
+.rm:hover{color:var(--accent);}
+.roster-scroll{overflow-x:auto;}
+
+/* price */
+.price-box{background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-top:14px;}
+.price-line{display:flex;justify-content:space-between;font-size:14px;padding:3px 0;}
+.price-line.total{font-family:'Oswald',sans-serif;font-size:20px;font-weight:600;border-top:1px solid var(--line);margin-top:8px;padding-top:10px;}
+.tier-note{font-size:12px;color:var(--accent-2);margin-top:6px;}
+.tiers{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.tier{font-size:11px;font-family:'Oswald',sans-serif;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:4px 9px;color:var(--text-dim);}
+.tier.on{border-color:var(--accent-2);color:var(--accent-2);}
+
+.err{color:var(--accent);font-size:13px;margin-top:8px;display:none;}
+.ok{color:var(--success);font-size:13px;margin-top:8px;}
+.confirm{text-align:center;}
+.confirm .id{font-family:'Oswald',sans-serif;font-size:26px;letter-spacing:.05em;margin:6px 0 10px;}
+footer{margin-top:38px;font-size:12px;color:var(--text-dim);text-align:center;}
+.warn{border:1px solid var(--accent-2);background:rgba(255,138,30,.07);border-radius:8px;padding:11px 13px;font-size:13px;color:var(--text-dim);margin-top:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="site-nav" aria-label="Site sections">
+    <a href="./index.html">Graphics Kit Builder</a>
+    <a href="./apparel.html" class="is-active" aria-current="page">Racewear Builder</a>
+    <a href="./ecu.html">ECU Template Builder</a>
+  </nav>
+
+  <header class="top">
+    <div class="eyebrow">Custom team kit &middot; Club &amp; race</div>
+    <h1>Build your race kit</h1>
+    <p class="sub">Drop your artwork onto the garment, see it before you buy, then enter your riders once &mdash; names, numbers and sizes travel with the order. No spreadsheets emailed back and forth after checkout.</p>
+  </header>
+
+  <div class="grid">
+
+    <!-- LEFT: garment + preview -->
+    <div class="card">
+      <h2>1 &middot; Garment &amp; artwork</h2>
+      <div class="garments" id="garments"></div>
+
+      <div class="preview-wrap">
+        <div class="views">
+          <div class="view">
+            <div class="view-label">Front</div>
+            <svg class="garment-svg" id="svg-front" viewBox="0 0 300 360" role="img" aria-label="Front preview"></svg>
+          </div>
+          <div class="view">
+            <div class="view-label">Back</div>
+            <svg class="garment-svg" id="svg-back" viewBox="0 0 300 360" role="img" aria-label="Back preview"></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="zone-list" id="zones"></div>
+
+      <div class="field" style="margin-top:14px;">
+        <label for="art">Artwork for <span id="zone-target">the selected placement</span></label>
+        <input type="file" id="art" accept="image/png,image/jpeg,image/svg+xml">
+        <div class="hint" id="art-hint">PNG, JPG or SVG. We check resolution before you pay &mdash; not after.</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="base-col">Garment colour</label>
+          <input type="text" id="base-col" value="#1b1d22" list="cols">
+          <datalist id="cols"><option value="#1b1d22"><option value="#e2231a"><option value="#f2f3f5"><option value="#1e4fd8"><option value="#128a3f"></datalist>
+        </div>
+        <div class="field">
+          <label for="trim-col">Trim colour</label>
+          <input type="text" id="trim-col" value="#e2231a" list="cols">
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: roster + order -->
+    <div class="card">
+      <h2>2 &middot; Riders</h2>
+      <p class="hint" style="margin-top:-6px;margin-bottom:10px;">Add a row per rider. Name and number are printed per garment, so each rider gets their own.</p>
+
+      <div class="roster-scroll">
+        <table class="roster" id="roster">
+          <thead><tr><th>Rider name</th><th>No.</th><th>Size</th><th>Qty</th><th></th></tr></thead>
+          <tbody id="roster-body"></tbody>
+        </table>
+      </div>
+      <button class="btn-sm" id="add-rider" style="margin-top:10px;">+ Add rider</button>
+
+      <div class="price-box">
+        <div class="price-line"><span>Garments</span><span id="p-count">0</span></div>
+        <div class="price-line"><span>Price each</span><span id="p-each">&mdash;</span></div>
+        <div class="price-line total"><span>Total</span><span id="p-total">&mdash;</span></div>
+        <div class="tier-note" id="p-next"></div>
+        <div class="tiers" id="p-tiers"></div>
+      </div>
+
+      <h2 style="margin-top:22px;">3 &middot; Your details</h2>
+      <div class="field-row">
+        <div class="field"><label for="f-club">Club / team</label><input type="text" id="f-club" placeholder="Optional"></div>
+        <div class="field"><label for="f-name">Your name</label><input type="text" id="f-name"></div>
+      </div>
+      <div class="field"><label for="f-email">Email</label><input type="email" id="f-email" placeholder="you@example.com"></div>
+      <div class="field"><label for="f-notes">Notes for the print shop</label><textarea id="f-notes" placeholder="Sponsor logos, exact Pantones, deadlines"></textarea></div>
+
+      <button class="btn" id="submit" disabled>Add riders and artwork to continue</button>
+      <div class="err" id="err"></div>
+      <div id="confirm-area"></div>
+
+      <div class="warn">
+        Artwork is checked and approved <b>before</b> you pay, not after. If the resolution will not hold up at print size, we tell you on this page.
+      </div>
+    </div>
+  </div>
+
+  <footer>CRF Garage &middot; custom racewear &middot; prices shown are per garment and update with quantity</footer>
+</div>
+
+<script>
+// ── Storage (Supabase) ──────────────────────────────────────────────────────
+// Browser holds only the publishable key: RLS lets it INSERT an order and
+// nothing else. Payment and artwork approval are server-controlled.
+const SUPABASE_URL = "https://ohcclvcjdbftlnyrrzvt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_-u9yj16rZFqBZoQBkeLAQA_HTFbTtOf";
+
+// ── Catalogue ───────────────────────────────────────────────────────────────
+// Quantity tiers are real and shown live. Thrila advertises "the more you buy
+// the lower the price" but prints a flat $299 — this actually does it.
+const TIERS = [
+  { min: 1,  mult: 1.00 },
+  { min: 5,  mult: 0.92 },
+  { min: 10, mult: 0.84 },
+  { min: 20, mult: 0.75 },
+  { min: 50, mult: 0.68 },
+];
+
+const SIZES_TOP    = ["YS","YM","YL","S","M","L","XL","2XL","3XL","4XL","5XL"];
+const SIZES_BOTTOM = ['20"','22"','24"','26"','28"','30"','32"','34"','36"','38"','40"'];
+
+const GARMENTS = {
+  "mx-jersey":   { name:"MX Race Jersey",   base: 8900, sizes: SIZES_TOP,    kind:"top" },
+  "mx-pants":    { name:"MX Race Pants",    base: 15900, sizes: SIZES_BOTTOM, kind:"bottom" },
+  "bmx-jersey":  { name:"BMX Race Jersey",  base: 7900, sizes: SIZES_TOP,    kind:"top" },
+  "adv-shirt":   { name:"Adventure Shirt",  base: 9900, sizes: SIZES_TOP,    kind:"top" },
+};
+
+// Placement zones per garment kind, with the print area in cm so we can judge
+// whether an uploaded image will actually hold up.
+const ZONES = {
+  top: [
+    { id:"chest",  label:"Chest",       view:"front", cm:[28,20] },
+    { id:"back",   label:"Back",        view:"back",  cm:[30,34] },
+    { id:"sleeve", label:"Sleeves",     view:"front", cm:[12,12] },
+  ],
+  bottom: [
+    { id:"thigh",  label:"Thigh panel", view:"front", cm:[22,26] },
+    { id:"seat",   label:"Seat panel",  view:"back",  cm:[26,22] },
+  ],
+};
+
+const MIN_DPI = 150; // print floor for apparel transfer
+
+// ── State ───────────────────────────────────────────────────────────────────
+const state = {
+  garment: "mx-jersey",
+  zone: "chest",
+  art: {},        // zoneId -> {dataUrl, w, h, name}
+  roster: [],     // {name, number, size, qty}
+};
+
+const $ = (id) => document.getElementById(id);
+const money = (c) => "$" + (c/100).toFixed(2);
+
+function garment(){ return GARMENTS[state.garment]; }
+function zonesFor(){ return ZONES[garment().kind]; }
+
+// ── Garment shapes ──────────────────────────────────────────────────────────
+// Simple but recognisable outlines. Each zone is a rect the artwork is clipped
+// into, so what you see is where it prints.
+function shapeFor(kind, view){
+  if(kind === "top"){
+    return {
+      body: "M90,40 L120,26 Q150,40 180,26 L210,40 L246,74 L224,104 L206,90 L206,320 Q150,332 94,320 L94,90 L76,104 L54,74 Z",
+      zones: {
+        chest:  {x:112, y:96,  w:76, h:60},
+        back:   {x:108, y:86,  w:84, h:104},
+        sleeve: {x:58,  y:78,  w:34, h:30},
+      },
+    };
+  }
+  return {
+    body: "M96,36 L204,36 L214,120 L206,320 L164,320 L150,180 L136,320 L94,320 L86,120 Z",
+    zones: {
+      thigh: {x:104, y:96,  w:44, h:66},
+      seat:  {x:150, y:88,  w:48, h:58},
+    },
+  };
+}
+
+function renderPreview(){
+  const g = garment();
+  const shape = shapeFor(g.kind, "front");
+  const base = $("base-col").value || "#1b1d22";
+  const trim = $("trim-col").value || "#e2231a";
+
+  for(const view of ["front","back"]){
+    const svg = $("svg-" + view);
+    const parts = [];
+    parts.push(`<defs><clipPath id="body-${view}"><path d="${shape.body}"/></clipPath></defs>`);
+    parts.push(`<path d="${shape.body}" fill="${escapeAttr(base)}" stroke="${escapeAttr(trim)}" stroke-width="3"/>`);
+
+    for(const z of zonesFor()){
+      if(z.view !== view) continue;
+      const r = shape.zones[z.id];
+      if(!r) continue;
+      const img = state.art[z.id];
+      if(img){
+        parts.push(`<image href="${img.dataUrl}" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" preserveAspectRatio="xMidYMid meet" clip-path="url(#body-${view})"/>`);
+      } else {
+        parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="${escapeAttr(trim)}" stroke-width="1.5" stroke-dasharray="5 4" opacity=".7"/>`);
+        parts.push(`<text x="${r.x + r.w/2}" y="${r.y + r.h/2 + 4}" text-anchor="middle" font-family="Oswald,sans-serif" font-size="11" fill="${escapeAttr(trim)}" opacity=".85">${escapeHTML(z.label.toUpperCase())}</text>`);
+      }
+    }
+
+    // Rider name/number preview on the back of tops, using the first roster row.
+    if(view === "back" && g.kind === "top" && state.roster.length){
+      const r0 = state.roster[0];
+      if(r0.number) parts.push(`<text x="150" y="250" text-anchor="middle" font-family="Oswald,sans-serif" font-size="64" font-weight="600" fill="${escapeAttr(trim)}">${escapeHTML(r0.number)}</text>`);
+      if(r0.name)   parts.push(`<text x="150" y="200" text-anchor="middle" font-family="Oswald,sans-serif" font-size="18" letter-spacing="2" fill="${escapeAttr(trim)}">${escapeHTML(r0.name.toUpperCase())}</text>`);
+    }
+    svg.innerHTML = parts.join("");
+  }
+}
+
+function renderZones(){
+  const box = $("zones");
+  box.innerHTML = "";
+  for(const z of zonesFor()){
+    const row = document.createElement("div");
+    row.className = "zone-row" + (z.id === state.zone ? " sel" : "");
+    const has = !!state.art[z.id];
+    row.innerHTML = `<span class="z-name">${escapeHTML(z.label)}</span>`
+      + `<span class="z-state ${has?'done':''}">${has ? "artwork added" : "empty &middot; " + z.cm[0] + "×" + z.cm[1] + "cm"}</span>`;
+    row.addEventListener("click", ()=>{ state.zone = z.id; renderZones(); $("zone-target").textContent = z.label; });
+    box.appendChild(row);
+  }
+}
+
+function renderGarments(){
+  const box = $("garments");
+  box.innerHTML = "";
+  for(const [id,g] of Object.entries(GARMENTS)){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "garment" + (id === state.garment ? " sel" : "");
+    b.innerHTML = `<div class="g-name">${escapeHTML(g.name)}</div><div class="g-price">from ${money(Math.round(g.base * TIERS[TIERS.length-1].mult))} each</div>`;
+    b.addEventListener("click", ()=>{
+      state.garment = id;
+      state.art = {};
+      state.zone = zonesFor()[0].id;
+      // sizes differ between tops and bottoms, so reset any now-invalid ones
+      for(const r of state.roster){ if(!g.sizes.includes(r.size)) r.size = g.sizes[Math.floor(g.sizes.length/2)]; }
+      renderAll();
+    });
+    box.appendChild(b);
+  }
+}
+
+// ── Roster ──────────────────────────────────────────────────────────────────
+function addRider(){
+  const g = garment();
+  state.roster.push({ name:"", number:"", size:g.sizes[Math.floor(g.sizes.length/2)], qty:1 });
+  renderRoster(); renderPrice(); renderPreview(); refreshSubmit();
+}
+
+function renderRoster(){
+  const body = $("roster-body");
+  body.innerHTML = "";
+  const g = garment();
+  state.roster.forEach((r, i)=>{
+    const tr = document.createElement("tr");
+
+    const tdName = document.createElement("td");
+    const inName = document.createElement("input");
+    inName.type = "text"; inName.value = r.name; inName.placeholder = "Rider";
+    inName.addEventListener("input", ()=>{ r.name = inName.value; renderPreview(); refreshSubmit(); });
+    tdName.appendChild(inName);
+
+    const tdNum = document.createElement("td");
+    const inNum = document.createElement("input");
+    inNum.type = "text"; inNum.value = r.number; inNum.placeholder = "00"; inNum.style.width = "62px";
+    inNum.addEventListener("input", ()=>{ r.number = inNum.value.replace(/[^0-9]/g,"").slice(0,3); inNum.value = r.number; renderPreview(); });
+    tdNum.appendChild(inNum);
+
+    const tdSize = document.createElement("td");
+    const sel = document.createElement("select");
+    for(const s of g.sizes){
+      const o = document.createElement("option"); o.value = s; o.textContent = s;
+      if(s === r.size) o.selected = true;
+      sel.appendChild(o);
+    }
+    sel.addEventListener("change", ()=>{ r.size = sel.value; });
+    tdSize.appendChild(sel);
+
+    const tdQty = document.createElement("td");
+    const inQty = document.createElement("input");
+    inQty.type = "number"; inQty.min = "1"; inQty.max = "99"; inQty.value = r.qty; inQty.style.width = "64px";
+    inQty.addEventListener("input", ()=>{
+      const v = parseInt(inQty.value,10);
+      r.qty = (Number.isFinite(v) && v > 0) ? Math.min(v,99) : 1;
+      renderPrice(); refreshSubmit();
+    });
+    tdQty.appendChild(inQty);
+
+    const tdRm = document.createElement("td");
+    const rm = document.createElement("button");
+    rm.className = "rm"; rm.type = "button"; rm.innerHTML = "&times;"; rm.title = "Remove rider";
+    rm.addEventListener("click", ()=>{ state.roster.splice(i,1); renderRoster(); renderPrice(); renderPreview(); refreshSubmit(); });
+    tdRm.appendChild(rm);
+
+    tr.append(tdName, tdNum, tdSize, tdQty, tdRm);
+    body.appendChild(tr);
+  });
+}
+
+// ── Pricing ─────────────────────────────────────────────────────────────────
+function unitCount(){ return state.roster.reduce((n,r)=> n + (r.qty||0), 0); }
+
+function tierFor(count){
+  let t = TIERS[0];
+  for(const x of TIERS){ if(count >= x.min) t = x; }
+  return t;
+}
+
+function renderPrice(){
+  const g = garment();
+  const n = unitCount();
+  const t = tierFor(n);
+  const each = Math.round(g.base * t.mult);
+
+  $("p-count").textContent = n;
+  $("p-each").textContent = n ? money(each) : "—";
+  $("p-total").textContent = n ? money(each * n) : "—";
+
+  const next = TIERS.find(x => x.min > n);
+  $("p-next").textContent = next
+    ? `Add ${next.min - n} more to reach ${money(Math.round(g.base * next.mult))} each.`
+    : (n ? "Best price reached." : "");
+
+  const tiers = $("p-tiers");
+  tiers.innerHTML = "";
+  for(const x of TIERS){
+    const el = document.createElement("span");
+    el.className = "tier" + (x === t && n ? " on" : "");
+    el.textContent = `${x.min}+ ${money(Math.round(g.base * x.mult))}`;
+    tiers.appendChild(el);
+  }
+}
+
+// ── Artwork, with a resolution check BEFORE payment ─────────────────────────
+$("art").addEventListener("change", async ()=>{
+  const f = $("art").files && $("art").files[0];
+  if(!f) return;
+  const zone = zonesFor().find(z => z.id === state.zone);
+  try{
+    const { dataUrl, w, h } = await readImage(f);
+    state.art[state.zone] = { dataUrl, w, h, name: f.name };
+
+    const isVector = f.type === "image/svg+xml";
+    const [cmW, cmH] = zone.cm;
+    const dpiW = w / (cmW / 2.54);
+    const dpiH = h / (cmH / 2.54);
+    const dpi = Math.min(dpiW, dpiH);
+
+    const hint = $("art-hint");
+    if(isVector){
+      hint.style.color = "var(--success)";
+      hint.textContent = `Vector artwork — scales to any print size cleanly.`;
+    } else if(dpi >= MIN_DPI){
+      hint.style.color = "var(--success)";
+      hint.textContent = `${w}×${h}px → about ${Math.round(dpi)} DPI at ${cmW}×${cmH}cm. Good for print.`;
+    } else {
+      hint.style.color = "var(--accent-2)";
+      hint.textContent = `${w}×${h}px is only about ${Math.round(dpi)} DPI at ${cmW}×${cmH}cm — below our ${MIN_DPI} DPI floor, so it will look soft. Upload a larger file or vector art.`;
+    }
+    renderZones(); renderPreview(); refreshSubmit();
+  }catch(e){
+    $("art-hint").style.color = "var(--accent)";
+    $("art-hint").textContent = "That file could not be read as an image.";
+  }
+});
+
+function readImage(file){
+  return new Promise((resolve, reject)=>{
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error("read failed"));
+    fr.onload = () => {
+      const dataUrl = fr.result;
+      const im = new Image();
+      im.onload = () => resolve({ dataUrl, w: im.naturalWidth || 1000, h: im.naturalHeight || 1000 });
+      im.onerror = () => reject(new Error("decode failed"));
+      im.src = dataUrl;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+// ── Submit ──────────────────────────────────────────────────────────────────
+const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||"").trim());
+
+function readyState(){
+  if(unitCount() === 0) return "Add at least one rider";
+  if(!Object.keys(state.art).length) return "Add artwork to at least one placement";
+  if(!state.roster.every(r => r.name.trim())) return "Every rider needs a name";
+  if(!$("f-name").value.trim()) return "Add your name";
+  if(!emailOk($("f-email").value)) return "Add a valid email";
+  return null;
+}
+
+function refreshSubmit(){
+  const btn = $("submit");
+  const blocked = readyState();
+  btn.disabled = !!blocked;
+  btn.textContent = blocked || `Order ${unitCount()} garment${unitCount()===1?"":"s"} — ${$("p-total").textContent}`;
+}
+
+async function saveApparelOrder(rec){
+  const res = await fetch(SUPABASE_URL + "/rest/v1/crf_apparel_orders", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization":"Bearer " + SUPABASE_KEY,
+      "Prefer":"return=minimal",
+    },
+    body: JSON.stringify(rec),
+  });
+  if(!res.ok){
+    const detail = await res.text().catch(()=> "");
+    throw new Error("Order could not be saved (" + res.status + ") " + detail.slice(0,200));
+  }
+  return true;
+}
+
+$("submit").addEventListener("click", async ()=>{
+  const btn = $("submit"), err = $("err");
+  err.style.display = "none";
+  btn.disabled = true; btn.textContent = "Saving…";
+
+  try{
+    const g = garment();
+    const n = unitCount();
+    const each = Math.round(g.base * tierFor(n).mult);
+    const orderId = "CRFA-" + Date.now().toString(36).toUpperCase();
+
+    const zonesOut = {};
+    for(const [zid, a] of Object.entries(state.art)){
+      const z = zonesFor().find(x => x.id === zid);
+      zonesOut[zid] = { label: z ? z.label : zid, file: a.name, px:[a.w, a.h], cm: z ? z.cm : null };
+    }
+
+    await saveApparelOrder({
+      id: orderId,
+      garment: g.name,
+      club_name: $("f-club").value.trim() || null,
+      customer_name: $("f-name").value.trim(),
+      customer_email: $("f-email").value.trim(),
+      notes: $("f-notes").value.trim() || null,
+      zones: zonesOut,
+      roster: state.roster.map(r => ({ name:r.name.trim(), number:r.number, size:r.size, qty:r.qty })),
+      unit_count: n,
+      unit_price_cents: each,
+      total_cents: each * n,
+      download_token: crypto.randomUUID(),
+    });
+
+    const c = document.createElement("div");
+    c.className = "confirm";
+    c.innerHTML = `<div class="eyebrow" style="margin-top:16px;">Order received</div>`
+      + `<div class="id">${escapeHTML(orderId)}</div>`
+      + `<p class="hint">${n} garment${n===1?"":"s"} at ${money(each)} each &mdash; ${money(each*n)} total.</p>`
+      + `<p class="hint" style="margin-top:8px;">We check your artwork at print size and email ${escapeHTML($("f-email").value.trim())} to approve it. <b>You pay after approval, not before.</b></p>`;
+    $("confirm-area").innerHTML = "";
+    $("confirm-area").appendChild(c);
+    btn.style.display = "none";
+  }catch(e){
+    err.textContent = "Could not submit the order right now. Try again in a moment.";
+    err.style.display = "block";
+    refreshSubmit();
+  }
+});
+
+// ── Utils ───────────────────────────────────────────────────────────────────
+function escapeHTML(s){ return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+function escapeAttr(s){ return escapeHTML(s); }
+
+function renderAll(){ renderGarments(); renderZones(); renderRoster(); renderPrice(); renderPreview(); refreshSubmit(); }
+
+["base-col","trim-col"].forEach(id => $(id).addEventListener("input", renderPreview));
+["f-name","f-email","f-club"].forEach(id => $(id).addEventListener("input", refreshSubmit));
+$("add-rider").addEventListener("click", addRider);
+
+addRider();
+renderAll();
+</script>
+</body>
+</html>
