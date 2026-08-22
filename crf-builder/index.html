@@ -268,6 +268,14 @@ input[type=range]::-webkit-slider-thumb{
 .kitwide-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);font-weight:600;margin-bottom:4px;}
 .kitwide-actions{display:flex;gap:8px;margin-top:11px;}
 .btn-sm.ghost{background:transparent;}
+.preset-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;}
+.preset{border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer;background:var(--panel-2);padding:0;text-align:left;}
+.preset:hover{border-color:var(--text-dim);}
+.preset.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);}
+.preset img{width:100%;height:44px;object-fit:cover;display:block;}
+.preset span{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);padding:5px 6px;}
+.preset.sel span{color:var(--text);}
+@media(max-width:520px){.preset-row{grid-template-columns:repeat(2,1fr);}}
 .bike-preview{margin-top:16px;}
 .bike-preview .map-svg-wrap{margin-top:10px;}
 #bike-svg{width:100%;height:auto;display:block;}
@@ -343,8 +351,9 @@ input[type=range]::-webkit-slider-thumb{
             <div class="hint">Drop in a single image and it is laid over every panel at once, so the artwork runs continuously across shrouds, tank and fenders the way a real kit does. Adjust any panel afterwards.</div>
           </div>
         </div>
+        <div class="preset-row" id="preset-row"></div>
         <div class="kitwide-actions">
-          <button class="btn-sm" id="kitwide-btn">Upload artwork for the whole kit</button>
+          <button class="btn-sm" id="kitwide-btn">Upload your own artwork</button>
           <button class="btn-sm ghost" id="kitwide-clear" style="display:none;">Clear all panels</button>
         </div>
         <div class="hint" id="kitwide-msg" style="display:none;"></div>
@@ -1106,12 +1115,59 @@ async function applyKitwideImage(rawDataUrl){
   document.getElementById('kitwide-clear').style.display = '';
 }
 
+// Ready-made kit designs. Same path as an upload: the image is laid across
+// every panel at once, then any panel can be nudged on its own.
+const PRESETS = [
+  {id:"race",     label:"Race",     file:"kits/race.jpg"},
+  {id:"rally",    label:"Rally",    file:"kits/rally.jpg"},
+  {id:"retro",    label:"Retro",    file:"kits/retro.jpg"},
+  {id:"splatter", label:"Splatter", file:"kits/splatter.jpg"},
+];
+
+function buildPresetRow(){
+  const row = document.getElementById('preset-row');
+  row.innerHTML = '';
+  PRESETS.forEach(p=>{
+    const btn = document.createElement('button');
+    btn.className = 'preset';
+    btn.id = 'preset-' + p.id;
+    btn.type = 'button';
+    btn.innerHTML = `<img src="${p.file.replace('.jpg','-thumb.jpg')}" alt="" loading="lazy"><span>${p.label}</span>`;
+    btn.addEventListener('click', ()=> applyPreset(p));
+    row.appendChild(btn);
+  });
+}
+
+async function applyPreset(p){
+  const msg = document.getElementById('kitwide-msg');
+  msg.style.display = 'block';
+  msg.textContent = 'Loading the ' + p.label + ' design\u2026';
+  try{
+    // Same origin, so the canvas in downscale() is not tainted.
+    const res = await fetch(p.file);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    const dataUrl = await new Promise((resolve, reject)=>{
+      const r = new FileReader();
+      r.onload = ()=> resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    await applyKitwideImage(dataUrl);
+    document.querySelectorAll('.preset').forEach(el=> el.classList.remove('sel'));
+    document.getElementById('preset-' + p.id).classList.add('sel');
+  }catch(err){
+    msg.textContent = 'Could not load that design. Try again, or upload your own artwork.';
+  }
+}
+
 function clearAllPanels(){
   ZONES.forEach(z=>{ delete state.designs[z.id]; updateOverviewZone(z.id); });
   if(state.selectedZone) renderWorkspace();
   refreshZoneStatus();
   document.getElementById('kitwide-msg').style.display = 'none';
   document.getElementById('kitwide-clear').style.display = 'none';
+  document.querySelectorAll('.preset').forEach(el=> el.classList.remove('sel'));
 }
 
 async function handleUpload(zoneId, file){
@@ -1490,6 +1546,7 @@ document.getElementById('toggle-orders').addEventListener('click', ()=>{
 
 buildOverview();
 buildBikePreview();
+buildPresetRow();
 document.getElementById('kitwide-btn').addEventListener('click', ()=>{
   const inp = document.createElement('input');
   inp.type='file'; inp.accept='image/*';
@@ -1497,7 +1554,10 @@ document.getElementById('kitwide-btn').addEventListener('click', ()=>{
     const file = inp.files && inp.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = (e)=> applyKitwideImage(e.target.result);
+    reader.onload = (e)=>{
+      document.querySelectorAll('.preset').forEach(el=> el.classList.remove('sel'));
+      applyKitwideImage(e.target.result);
+    };
     reader.readAsDataURL(file);
   });
   inp.click();
