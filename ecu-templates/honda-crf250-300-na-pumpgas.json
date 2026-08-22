@@ -34,6 +34,16 @@
       "rpm_range": [4500, 8500],
       "ignition_timing_btdc": -2,
       "fuel_correction_percent": 15
+    },
+    "rev_limiter_bounce": {
+      "status": "enabled",
+      "activation_rpm": 9500,
+      "cut_type": "ignition_cut",
+      "cut_pattern": "random",
+      "ignition_retard_degrees": -8,
+      "fuel_enrichment_percent": 12,
+      "must_stay_below_rpm": 10500,
+      "note": "A soft limiter sat below the hard limiter, for deliberate use. It never replaces rev_limiter_rpm, which is fuel cut and protects the engine."
     }
   },
   "base_fuel_map_correction_percent": {

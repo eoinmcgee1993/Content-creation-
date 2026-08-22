@@ -114,8 +114,6 @@
       <a href="./index.html">Graphics Kit Builder</a>
       <a href="./apparel.html">Racewear Builder</a>
       <a href="./ecu.html" class="is-active" aria-current="page">ECU Template Builder</a>
-      <a href="./privacy.html">Privacy</a>
-      <a href="./terms.html">Terms</a>
     </nav>
     <header>
       <div class="badge">NA &middot; Pump Gas &middot; Base File</div>
@@ -172,6 +170,26 @@
             <div class="t-desc">Throttle closed (0&ndash;3% TPS) between 4,500&ndash;8,500 RPM: +15% fuel, &minus;2&deg; timing. Unburnt fuel detonates in the hot header on downshifts.</div>
           </div>
         </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="bounce">
+          <div>
+            <div class="t-label">Bounce limiter (soft rev limiter)</div>
+            <div class="t-desc">A second, lower limiter you can sit on deliberately. On ignition cut the charge leaves unburnt and lights in the header, so it bangs and throws flame every time it catches.</div>
+            <div class="field" style="margin: 10px 0 0;">
+              <label style="font-size:12px;">Bounce RPM: <span class="slider-val" id="bounceRpmVal">9500</span></label>
+              <input type="range" id="bounceRpm" min="8000" max="10200" step="100" value="9500">
+              <div class="hint">Stays below the 10,500 hard limiter, which is fuel cut and is there to protect the engine. This one never replaces it.</div>
+            </div>
+            <div class="field" style="margin: 10px 0 0;">
+              <label for="bounceCut" style="font-size:12px;">Cut type</label>
+              <select id="bounceCut">
+                <option value="ignition_cut">Ignition cut &mdash; bangs and flames</option>
+                <option value="fuel_cut">Fuel cut &mdash; quiet, easier on the engine</option>
+              </select>
+              <div class="hint" id="bounceCutHint"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="panel">
@@ -182,8 +200,10 @@
 
     <div class="disclaimer">
       <strong>Read before flashing.</strong> This is a base file intended for motorcycles with a
-      free-flowing aftermarket exhaust and intake. Running the decel-flame map on a factory exhaust
-      with a catalytic converter will destroy the converter. Verify AFR on a dyno or with a wideband
+      free-flowing aftermarket exhaust and intake. Running the decel-flame map or an ignition-cut
+      bounce limiter on a factory exhaust with a catalytic converter will destroy the converter.
+      Sitting on an ignition-cut limiter puts raw fuel and a lot of heat through the exhaust valves
+      and header &mdash; it is a party trick, not a way to ride. Verify AFR on a dyno or with a wideband
       sensor before extended use. Emissions-related modifications may be restricted to closed-course /
       off-road use in your jurisdiction &mdash; know your local law.
       <label>
@@ -195,7 +215,7 @@
     <div class="gate">
       <label for="email">Email address</label>
       <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
-      <div class="hint">We send your file here and let you know when the map is updated. No spam. We handle it as set out in our <a href="./privacy.html" style="color:var(--accent);">Privacy Policy</a>.</div>
+      <div class="hint">We send your file here and let you know when the map is updated. No spam.</div>
     </div>
 
     <button id="download" disabled>Download ECU Template (.json)</button>
@@ -209,7 +229,6 @@
     </form>
 
     <footer>CRF250L / CRF250 Rally / CRF300L / CRF300 Rally &middot; NA pump gas base file &middot; v1.0</footer>
-    <p class="legal-links" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center;"><a href="./privacy.html" style="color:inherit;margin:0 8px;">Privacy Policy</a><a href="./terms.html" style="color:inherit;margin:0 8px;">Terms of Sale</a></p>
   </div>
 
   <script>
@@ -220,6 +239,8 @@
       const is300 = model.includes("300");
       const launchOn = $("launch").checked;
       const decelOn = $("decel").checked;
+      const bounceOn = $("bounce").checked;
+      const bounceCut = $("bounceCut").value;
       const config = {
         build_profile: {
           platform: model,
@@ -256,6 +277,21 @@
             rpm_range: [4500, 8500],
             ignition_timing_btdc: -2,
             fuel_correction_percent: 15
+          },
+          rev_limiter_bounce: {
+            status: bounceOn ? "enabled" : "disabled",
+            activation_rpm: parseInt($("bounceRpm").value, 10),
+            cut_type: bounceCut,
+            // Ignition cut leaves fuel in the charge, which is what lights in the
+            // header. Fuel cut has nothing left to burn, so enriching it is
+            // meaningless -- those keys are only emitted for ignition cut.
+            ...(bounceCut === "ignition_cut" ? {
+              cut_pattern: "random",
+              ignition_retard_degrees: -8,
+              fuel_enrichment_percent: 12
+            } : {}),
+            must_stay_below_rpm: 10500,
+            note: "A soft limiter sat below the hard limiter, for deliberate use. It never replaces rev_limiter_rpm, which is fuel cut and protects the engine."
           }
         },
         base_fuel_map_correction_percent: {
@@ -276,9 +312,18 @@
 
     const emailValid = () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($("email").value.trim());
 
+    const BOUNCE_CUT_HINT = {
+      ignition_cut: "Spark is cut but fuel keeps flowing, so the charge lights in the header. This is the one that makes flame. It is also the one that cooks exhaust valves and headers if you sit on it.",
+      fuel_cut: "Injection stops, so there is nothing left to burn. No bang, no flame, far kinder to the engine."
+    };
+
     function refresh() {
       $("launchRpmVal").textContent = $("launchRpm").value;
       $("launchRpm").disabled = !$("launch").checked;
+      $("bounceRpmVal").textContent = $("bounceRpm").value;
+      $("bounceRpm").disabled = !$("bounce").checked;
+      $("bounceCut").disabled = !$("bounce").checked;
+      $("bounceCutHint").textContent = BOUNCE_CUT_HINT[$("bounceCut").value];
       $("preview").textContent = JSON.stringify(buildConfig(), null, 2);
       $("download").disabled = !($("agree").checked && emailValid());
     }
@@ -311,7 +356,7 @@
       $("doneMsg").textContent = "Downloaded " + a.download + " — verify AFR before extended use.";
     }
 
-    ["model", "injector", "fuel", "launch", "decel", "launchRpm", "agree", "email"].forEach((id) =>
+    ["model", "injector", "fuel", "launch", "decel", "launchRpm", "bounce", "bounceRpm", "bounceCut", "agree", "email"].forEach((id) =>
       $(id).addEventListener("input", refresh)
     );
     $("download").addEventListener("click", download);

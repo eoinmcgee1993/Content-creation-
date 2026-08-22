@@ -46,7 +46,14 @@ No build step, no dependencies. The download unlocks once the rider accepts the 
 - **The programming:** The critical zone is when the throttle is completely closed (**0% to 3% TPS**) but the engine is still revving high during a downshift (**4,500 to 8,500 RPM**). By commanding the ECU to dump +15% more fuel and pulling the ignition timing back slightly (-2 degrees), the fuel detonates in the exhaust pipe, creating the signature pops and flames.
 - **Deceleration fuel cut-off must be off.** This is the step most people miss. With DFCO active the ECU cuts injection entirely on a closed throttle, so there is no fuel there to enrich and the map does nothing at all. The file sets `disable_dfco` alongside the decel map for that reason.
 
-### 3. Standard performance optimization
+### 3. Bounce limiter (the fun one)
+
+- **The logic:** A second limiter, set below the 10,500 RPM hard limiter, that you can sit on deliberately. It is opt-in and off by default, because it is a party trick rather than a way to ride.
+- **The programming:** On **ignition cut** the spark is cut but injection continues, so the charge leaves the cylinder unburnt and lights in the hot header — that is where the bang and the flame come from. A random cut pattern stops it sounding mechanical, and the file adds -8 degrees and 12% fuel to make it louder. On **fuel cut** injection stops instead: nothing left to burn, no flame, and far kinder to the engine. Enrichment keys are only written for ignition cut, because there is nothing to enrich on fuel cut.
+- **What it never does:** replace `rev_limiter_rpm`. The hard limiter stays at 10,500 on fuel cut and exists to protect the engine. The bounce limiter is capped at 10,200 so it always sits below it.
+- **The cost:** sustained ignition cut puts raw fuel and a lot of heat through the exhaust valves and header. On a catalysed factory exhaust it will destroy the converter, same as the decel map.
+
+### 4. Standard performance optimization
 
 - **The logic:** The factory Honda ECU runs incredibly lean to pass strict global emissions standards, which is why stock bikes run hot and feel sluggish.
 - **The programming:** This map corrects the Air-to-Fuel Ratio (AFR) to a richer, healthier **12.8 to 13.1** range under Wide Open Throttle (WOT), with cruise held at **13.2 to 13.5**. It also slightly advances the ignition timing across the board to wake up the throttle response, maximizing the airflow from the aftermarket intake and exhaust.
