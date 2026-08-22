@@ -264,6 +264,21 @@ input[type=range]::-webkit-slider-thumb{
 .confirm p{color:var(--text-dim);font-size:14px;max-width:440px;margin:6px auto;line-height:1.6;}
 .confirm .btn-sm{max-width:200px;margin:20px auto 0;}
 
+.kitwide{border:1px solid var(--line);border-radius:8px;padding:13px 14px;margin:14px 0 4px;background:var(--panel);}
+.kitwide-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);font-weight:600;margin-bottom:4px;}
+.kitwide-actions{display:flex;gap:8px;margin-top:11px;}
+.btn-sm.ghost{background:transparent;}
+.bike-preview{margin-top:16px;}
+.bike-preview .map-svg-wrap{margin-top:10px;}
+#bike-svg{width:100%;height:auto;display:block;}
+.bike-line{fill:none;stroke:#6f7681;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;}
+.bike-fill{fill:#383d47;stroke:#7c848f;stroke-width:4;stroke-linejoin:round;}
+.bike-tyre{fill:none;stroke:#31353d;stroke-width:32;}
+.bike-rim{fill:none;stroke:#6f7681;stroke-width:4;}
+.bike-spoke{stroke:#4a505a;stroke-width:2;}
+.bike-panel-blank{fill:#3a3d44;stroke:#e2231a;stroke-width:2.5;stroke-linejoin:round;}
+.bike-panel-edge{fill:none;stroke:#e2231a;stroke-width:2.5;stroke-linejoin:round;}
+
 .admin-toggle{
   text-align:center;margin-top:26px;
 }
@@ -320,6 +335,29 @@ input[type=range]::-webkit-slider-thumb{
       <div class="map-svg-wrap">
         <svg id="overview-svg" viewBox="0 0 229698.95 141090.28" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
+
+      <div class="kitwide">
+        <div class="kitwide-head">
+          <div>
+            <div class="kitwide-title">One design across the whole kit</div>
+            <div class="hint">Drop in a single image and it is laid over every panel at once, so the artwork runs continuously across shrouds, tank and fenders the way a real kit does. Adjust any panel afterwards.</div>
+          </div>
+        </div>
+        <div class="kitwide-actions">
+          <button class="btn-sm" id="kitwide-btn">Upload artwork for the whole kit</button>
+          <button class="btn-sm ghost" id="kitwide-clear" style="display:none;">Clear all panels</button>
+        </div>
+        <div class="hint" id="kitwide-msg" style="display:none;"></div>
+      </div>
+
+      <div class="bike-preview">
+        <div class="kitwide-title">On the bike</div>
+        <p class="hint">The right-hand side, with your panels sitting where they actually land on a CRF250L. Same cut geometry as the map above &mdash; the bike underneath is a line drawing, so nothing here depends on a photo.</p>
+        <div class="map-svg-wrap">
+          <svg id="bike-svg" viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kit shown on a CRF250L side profile"></svg>
+        </div>
+      </div>
+
       <div class="zone-list" id="zone-list"></div>
     </div>
 
@@ -518,6 +556,7 @@ function buildOverview(){
 // as a live "assembled kit" preview built from the real cut geometry —
 // no bike photo involved, so nothing here depends on image rights.
 function updateOverviewZone(zoneId){
+  updateBikeZone(zoneId);
   const ns = 'http://www.w3.org/2000/svg';
   const design = state.designs[zoneId];
   const g = document.querySelector('.zone-group[data-zone="'+zoneId+'"]');
@@ -585,6 +624,152 @@ function updateOverviewZone(zoneId){
   const s = design.baseScale * design.scaleMult;
   imgGrp.setAttribute('transform',
     `translate(${design.panX},${design.panY}) translate(${cx},${cy}) rotate(${design.rot}) scale(${s}) translate(${-design.natW/2},${-design.natH/2})`);
+}
+
+// ── On-bike preview ─────────────────────────────────────────────────────────
+// A CRF250L side profile drawn from primitives, with the right-side panels
+// placed where they sit on the bike. Each panel keeps its real cut outline and
+// its share of the design; only its position and scale change, so what you see
+// is the same geometry that gets cut.
+// ── On-bike preview ─────────────────────────────────────────────────────────
+// A panel is cut flat, which is a 2D unwrap of a 3D part -- you cannot rotate a
+// cut outline into a side view and get the shape the eye expects. So the bike
+// view carries its own silhouettes, drawn as the panel appears from the side,
+// and the artwork is laid across them as one piece. The panel map above stays
+// the authority on what actually gets cut; this is what it will look like.
+const BIKE_SIDE = {
+  "front-fender":     "M700,262 Q790,232 892,228 L898,248 Q792,254 706,282 Z",
+  "right-shroud":     "M534,266 Q620,244 704,252 L710,306 Q622,296 540,318 Z",
+  "rear-fender":      "M300,248 Q230,234 152,238 L146,266 Q226,262 296,276 Z",
+  "right-fork-guard": "M766,296 L788,292 L800,398 L778,404 Z",
+};
+
+function bikeChassis(ns){
+  const frag = document.createDocumentFragment();
+  const add = (tag, attrs, cls) => {
+    const el = document.createElementNS(ns, tag);
+    for(const k in attrs) el.setAttribute(k, attrs[k]);
+    if(cls) el.setAttribute('class', cls);
+    frag.appendChild(el);
+    return el;
+  };
+  // 21" front, 18" rear, on knobblies
+  [[800,425,140],[235,440,125]].forEach(([cx,cy,r])=>{
+    add('circle',{cx,cy,r:r-16},'bike-tyre');
+    add('circle',{cx,cy,r:r-34},'bike-rim');
+    add('circle',{cx,cy,r:16},'bike-rim');
+    for(let a=0; a<180; a+=30){
+      const rad = a*Math.PI/180, rr = r-36;
+      add('line',{x1:cx-rr*Math.cos(rad), y1:cy-rr*Math.sin(rad),
+                  x2:cx+rr*Math.cos(rad), y2:cy+rr*Math.sin(rad)},'bike-spoke');
+    }
+  });
+  // engine and cases: the mass that makes it read as a motorcycle
+  add('path',{d:'M446,336 L596,330 L616,398 L604,452 L468,458 L432,398 Z'},'bike-fill');
+  add('path',{d:'M470,300 L580,296 L592,334 L458,340 Z'},'bike-fill');
+  // frame
+  add('path',{d:'M745,224 L566,338'},'bike-line');
+  add('path',{d:'M742,236 L524,272'},'bike-line');
+  add('path',{d:'M524,272 L262,258'},'bike-line');
+  add('path',{d:'M524,272 L470,392'},'bike-line');
+  add('path',{d:'M455,406 L235,440'},'bike-line');
+  add('path',{d:'M566,338 L474,452'},'bike-line');
+  // forks and bars
+  add('path',{d:'M800,425 L752,206'},'bike-line');
+  add('path',{d:'M818,424 L770,210'},'bike-line');
+  add('path',{d:'M734,190 L804,174'},'bike-line');
+  add('path',{d:'M745,196 L768,214'},'bike-line');
+  // tank and seat
+  add('path',{d:'M556,268 Q636,250 700,262 L706,300 Q630,288 552,300 Z'},'bike-fill');
+  add('path',{d:'M286,246 Q392,236 512,262 L506,286 Q390,260 290,270 Z'},'bike-fill');
+  // exhaust up to the tail
+  add('path',{d:'M600,372 Q470,352 350,300'},'bike-line');
+  return frag;
+}
+
+// Union of the side-view panels, so one image can be laid over the bike the
+// same way it is laid over the cut sheet.
+let bikeUnion = null;
+function bikeBBox(svg){
+  if(bikeUnion) return bikeUnion;
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  svg.querySelectorAll('.bike-zone > .bike-panel-blank').forEach(p=>{
+    const b=p.getBBox();
+    x0=Math.min(x0,b.x); y0=Math.min(y0,b.y);
+    x1=Math.max(x1,b.x+b.width); y1=Math.max(y1,b.y+b.height);
+  });
+  bikeUnion={x:x0,y:y0,w:x1-x0,h:y1-y0};
+  return bikeUnion;
+}
+
+function buildBikePreview(){
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('bike-svg');
+  svg.innerHTML = '';
+  bikeUnion = null;
+  const defs = document.createElementNS(ns,'defs');
+  svg.appendChild(defs);
+  svg.appendChild(bikeChassis(ns));
+
+  Object.keys(BIKE_SIDE).forEach(zoneId=>{
+    const d = BIKE_SIDE[zoneId];
+    const g = document.createElementNS(ns,'g');
+    g.setAttribute('class','bike-zone');
+    g.setAttribute('data-zone', zoneId);
+    g.style.cursor = 'pointer';
+    g.addEventListener('click', ()=> selectZone(zoneId));
+
+    const clip = document.createElementNS(ns,'clipPath');
+    clip.setAttribute('id','bike-clip-'+zoneId);
+    clip.setAttribute('clipPathUnits','userSpaceOnUse');
+    const cp = document.createElementNS(ns,'path');
+    cp.setAttribute('d', d);
+    clip.appendChild(cp);
+    defs.appendChild(clip);
+
+    const blank = document.createElementNS(ns,'path');
+    blank.setAttribute('d', d);
+    blank.setAttribute('class','bike-panel-blank');
+    g.appendChild(blank);
+
+    const art = document.createElementNS(ns,'g');
+    art.setAttribute('class','bike-art');
+    art.setAttribute('clip-path','url(#bike-clip-'+zoneId+')');
+    g.appendChild(art);
+
+    const edge = document.createElementNS(ns,'path');
+    edge.setAttribute('d', d);
+    edge.setAttribute('class','bike-panel-edge');
+    g.appendChild(edge);
+
+    svg.appendChild(g);
+  });
+}
+
+function updateBikeZone(zoneId){
+  const g = document.querySelector('.bike-zone[data-zone="'+zoneId+'"]');
+  if(!g) return;
+  const art = g.querySelector('.bike-art');
+  art.innerHTML = '';
+  const design = state.designs[zoneId];
+  if(!design) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('bike-svg');
+  const u = bikeBBox(svg);
+  // Cover the whole bike with the image, so the artwork reads as one design
+  // running across the panels rather than four separate crops.
+  const sc = Math.max(u.w/design.natW, u.h/design.natH);
+  const grp = document.createElementNS(ns,'g');
+  grp.setAttribute('transform',
+    `translate(${u.x+u.w/2},${u.y+u.h/2}) scale(${sc}) translate(${-design.natW/2},${-design.natH/2})`);
+  const img = document.createElementNS(ns,'image');
+  img.setAttribute('x',0); img.setAttribute('y',0);
+  img.setAttribute('width', design.natW);
+  img.setAttribute('height', design.natH);
+  img.setAttribute('href', design.img);
+  img.setAttributeNS('http://www.w3.org/1999/xlink','href', design.img);
+  grp.appendChild(img);
+  art.appendChild(grp);
 }
 
 function buildZoneList(){
@@ -872,6 +1057,61 @@ async function applyFinalImageToZone(zoneId, rawDataUrl){
   };
   if(state.selectedZone === zoneId){ renderWorkspace(); }
   refreshZoneStatus();
+}
+
+// The union of every panel's bbox, in the shared bike coordinate space the
+// panel geometry already lives in.
+function kitBBox(){
+  let x0=Infinity, y0=Infinity, x1=-Infinity, y1=-Infinity;
+  ZONES.forEach(z=>{
+    const b = state.zoneBBox[z.id];
+    if(!b) return;
+    x0=Math.min(x0,b.x); y0=Math.min(y0,b.y);
+    x1=Math.max(x1,b.x+b.w); y1=Math.max(y1,b.y+b.h);
+  });
+  return {x:x0, y:y0, w:x1-x0, h:y1-y0};
+}
+
+// Lay one image over the whole kit at once. Every panel gets the same picture
+// placed at the same spot in bike coordinates, so the design carries across the
+// cut lines instead of being repeated six times. Panels stay individually
+// adjustable afterwards.
+async function applyKitwideImage(rawDataUrl){
+  const working = await downscale(rawDataUrl, 1800, 0.87);
+  const u = kitBBox();
+  const baseScale = Math.max(u.w/working.w, u.h/working.h);
+  const ux = u.x + u.w/2, uy = u.y + u.h/2;
+  ZONES.forEach(z=>{
+    const b = state.zoneBBox[z.id];
+    if(!b) return;
+    const cx = b.x + b.w/2, cy = b.y + b.h/2;
+    state.designs[z.id] = {
+      img: working.url,
+      natW: working.w,
+      natH: working.h,
+      baseScale,
+      // Offset each panel so the shared image sits over the kit as a whole
+      // rather than being centred on that panel.
+      panX: ux - cx,
+      panY: uy - cy,
+      rot: 0, scaleMult: 1,
+    };
+    updateOverviewZone(z.id);
+  });
+  if(state.selectedZone) renderWorkspace();
+  refreshZoneStatus();
+  const msg = document.getElementById('kitwide-msg');
+  msg.style.display = 'block';
+  msg.textContent = 'Laid across all ' + ZONES.length + ' panels. Tap any panel to nudge or rescale it on its own.';
+  document.getElementById('kitwide-clear').style.display = '';
+}
+
+function clearAllPanels(){
+  ZONES.forEach(z=>{ delete state.designs[z.id]; updateOverviewZone(z.id); });
+  if(state.selectedZone) renderWorkspace();
+  refreshZoneStatus();
+  document.getElementById('kitwide-msg').style.display = 'none';
+  document.getElementById('kitwide-clear').style.display = 'none';
 }
 
 async function handleUpload(zoneId, file){
@@ -1249,6 +1489,21 @@ document.getElementById('toggle-orders').addEventListener('click', ()=>{
 });
 
 buildOverview();
+buildBikePreview();
+document.getElementById('kitwide-btn').addEventListener('click', ()=>{
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='image/*';
+  inp.addEventListener('change', ()=>{
+    const file = inp.files && inp.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e)=> applyKitwideImage(e.target.result);
+    reader.readAsDataURL(file);
+  });
+  inp.click();
+});
+document.getElementById('kitwide-clear').addEventListener('click', clearAllPanels);
+
 buildZoneList();
 refreshZoneStatus();
 </script>

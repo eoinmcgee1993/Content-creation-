@@ -283,20 +283,27 @@ function zonesFor(){ return ZONES[garment().kind]; }
 // into, so what you see is where it prints.
 function shapeFor(kind, view){
   if(kind === "top"){
+    // Race jersey laid flat: long sleeves, and a torso roughly 1.3x as long as
+    // it is wide. Get that ratio wrong in the other direction and it reads as
+    // a dress.
     return {
-      body: "M90,40 L120,26 Q150,40 180,26 L210,40 L246,74 L224,104 L206,90 L206,320 Q150,332 94,320 L94,90 L76,104 L54,74 Z",
+      body: "M78,96 L126,88 Q150,104 174,88 L222,96 L272,206 L242,236 L218,148 " +
+            "L224,272 Q150,286 76,272 L82,148 L58,236 L28,206 Z",
       zones: {
-        chest:  {x:112, y:96,  w:76, h:60},
-        back:   {x:108, y:86,  w:84, h:104},
-        sleeve: {x:58,  y:78,  w:34, h:30},
+        chest:  {x:106, y:118, w:88, h:62},
+        back:   {x:100, y:106, w:100, h:80},
+        sleeve: {x:42,  y:166, w:30, h:28},
       },
     };
   }
+  // Race pants: hips wider than the waist, and legs long enough to read as
+  // pants. Total length runs about 2.7x the waist width -- shorten that and
+  // you have drawn shorts.
   return {
-    body: "M96,36 L204,36 L214,120 L206,320 L164,320 L150,180 L136,320 L94,320 L86,120 Z",
+    body: "M95,40 L205,40 L218,140 L210,344 L162,344 L150,150 L138,344 L90,344 L82,140 Z",
     zones: {
-      thigh: {x:104, y:96,  w:44, h:66},
-      seat:  {x:150, y:88,  w:48, h:58},
+      thigh: {x:96,  y:168, w:48, h:72},
+      seat:  {x:152, y:150, w:54, h:66},
     },
   };
 }
@@ -322,15 +329,19 @@ function renderPreview(){
         parts.push(`<image href="${img.dataUrl}" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" preserveAspectRatio="xMidYMid meet" clip-path="url(#body-${view})"/>`);
       } else {
         parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="${escapeAttr(trim)}" stroke-width="1.5" stroke-dasharray="5 4" opacity=".7"/>`);
-        parts.push(`<text x="${r.x + r.w/2}" y="${r.y + r.h/2 + 4}" text-anchor="middle" font-family="Oswald,sans-serif" font-size="11" fill="${escapeAttr(trim)}" opacity=".85">${escapeHTML(z.label.toUpperCase())}</text>`);
+        // A long label in a narrow zone spills outside the garment, so drop it
+        // below the box rather than centring it inside.
+        const narrow = r.w < z.label.length * 7;
+        const ly = narrow ? r.y + r.h + 12 : r.y + r.h/2 + 4;
+        parts.push(`<text x="${r.x + r.w/2}" y="${ly}" text-anchor="middle" font-family="Oswald,sans-serif" font-size="${narrow ? 9 : 11}" fill="${escapeAttr(trim)}" opacity=".85">${escapeHTML(z.label.toUpperCase())}</text>`);
       }
     }
 
     // Rider name/number preview on the back of tops, using the first roster row.
     if(view === "back" && g.kind === "top" && state.roster.length){
       const r0 = state.roster[0];
-      if(r0.number) parts.push(`<text x="150" y="250" text-anchor="middle" font-family="Oswald,sans-serif" font-size="64" font-weight="600" fill="${escapeAttr(trim)}">${escapeHTML(r0.number)}</text>`);
-      if(r0.name)   parts.push(`<text x="150" y="200" text-anchor="middle" font-family="Oswald,sans-serif" font-size="18" letter-spacing="2" fill="${escapeAttr(trim)}">${escapeHTML(r0.name.toUpperCase())}</text>`);
+      if(r0.number) parts.push(`<text x="150" y="258" text-anchor="middle" font-family="Oswald,sans-serif" font-size="56" font-weight="600" fill="${escapeAttr(trim)}">${escapeHTML(r0.number)}</text>`);
+      if(r0.name)   parts.push(`<text x="150" y="208" text-anchor="middle" font-family="Oswald,sans-serif" font-size="18" letter-spacing="2" fill="${escapeAttr(trim)}">${escapeHTML(r0.name.toUpperCase())}</text>`);
     }
     svg.innerHTML = parts.join("");
   }
