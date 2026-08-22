@@ -280,10 +280,16 @@ input[type=range]::-webkit-slider-thumb{
 .bike-preview .map-svg-wrap{margin-top:10px;}
 #bike-svg{width:100%;height:auto;display:block;}
 .bike-line{fill:none;stroke:#6f7681;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;}
+.bike-thin{fill:none;stroke:#666d78;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;}
+.bike-tube{fill:none;stroke:#828a96;stroke-width:9;stroke-linecap:round;stroke-linejoin:round;}
+.bike-pipe{fill:none;stroke:#767d88;stroke-width:11;stroke-linecap:round;stroke-linejoin:round;}
 .bike-fill{fill:#383d47;stroke:#7c848f;stroke-width:4;stroke-linejoin:round;}
-.bike-tyre{fill:none;stroke:#31353d;stroke-width:32;}
-.bike-rim{fill:none;stroke:#6f7681;stroke-width:4;}
-.bike-spoke{stroke:#4a505a;stroke-width:2;}
+.bike-mass{fill:#454b56;stroke:#8b939f;stroke-width:4;stroke-linejoin:round;}
+.bike-tyre{fill:none;stroke:#2b2f36;stroke-width:30;}
+.bike-rim{fill:none;stroke:#79808b;stroke-width:4;}
+.bike-hub{fill:#454b56;stroke:#79808b;stroke-width:4;}
+.bike-disc{fill:none;stroke:#4f5661;stroke-width:3;}
+.bike-spoke{stroke:#474d57;stroke-width:2;}
 .bike-panel-blank{fill:#3a3d44;stroke:#e2231a;stroke-width:2.5;stroke-linejoin:round;}
 .bike-panel-edge{fill:none;stroke:#e2231a;stroke-width:2.5;stroke-linejoin:round;}
 
@@ -662,37 +668,58 @@ function bikeChassis(ns){
     frag.appendChild(el);
     return el;
   };
-  // 21" front, 18" rear, on knobblies
-  [[800,425,140],[235,440,125]].forEach(([cx,cy,r])=>{
-    add('circle',{cx,cy,r:r-16},'bike-tyre');
-    add('circle',{cx,cy,r:r-34},'bike-rim');
-    add('circle',{cx,cy,r:16},'bike-rim');
-    for(let a=0; a<180; a+=30){
-      const rad = a*Math.PI/180, rr = r-36;
+
+  // 21" front and 18" rear on knobblies. The size difference is most of what
+  // separates a dual-sport silhouette from a pushbike.
+  [[800,428,142],[238,442,126]].forEach(([cx,cy,r])=>{
+    add('circle',{cx,cy,r:r-14},'bike-tyre');
+    add('circle',{cx,cy,r:r-32},'bike-rim');
+    add('circle',{cx,cy,r:r-40},'bike-rim');
+    add('circle',{cx,cy,r:18},'bike-hub');
+    for(let a=0; a<180; a+=22.5){
+      const rad = a*Math.PI/180, rr = r-42;
       add('line',{x1:cx-rr*Math.cos(rad), y1:cy-rr*Math.sin(rad),
                   x2:cx+rr*Math.cos(rad), y2:cy+rr*Math.sin(rad)},'bike-spoke');
     }
   });
-  // engine and cases: the mass that makes it read as a motorcycle
-  add('path',{d:'M446,336 L596,330 L616,398 L604,452 L468,458 L432,398 Z'},'bike-fill');
-  add('path',{d:'M470,300 L580,296 L592,334 L458,340 Z'},'bike-fill');
-  // frame
-  add('path',{d:'M745,224 L566,338'},'bike-line');
-  add('path',{d:'M742,236 L524,272'},'bike-line');
-  add('path',{d:'M524,272 L262,258'},'bike-line');
-  add('path',{d:'M524,272 L470,392'},'bike-line');
-  add('path',{d:'M455,406 L235,440'},'bike-line');
-  add('path',{d:'M566,338 L474,452'},'bike-line');
-  // forks and bars
-  add('path',{d:'M800,425 L752,206'},'bike-line');
-  add('path',{d:'M818,424 L770,210'},'bike-line');
-  add('path',{d:'M734,190 L804,174'},'bike-line');
-  add('path',{d:'M745,196 L768,214'},'bike-line');
-  // tank and seat
-  add('path',{d:'M556,268 Q636,250 700,262 L706,300 Q630,288 552,300 Z'},'bike-fill');
-  add('path',{d:'M286,246 Q392,236 512,262 L506,286 Q390,260 290,270 Z'},'bike-fill');
-  // exhaust up to the tail
-  add('path',{d:'M600,372 Q470,352 350,300'},'bike-line');
+  add('circle',{cx:800,cy:428,r:46},'bike-disc');
+  add('circle',{cx:238,cy:442,r:40},'bike-disc');
+
+  // Swingarm and chain run
+  add('path',{d:'M452,404 L238,442 L238,456 L456,420 Z'},'bike-fill');
+  add('path',{d:'M470,398 L238,428'},'bike-thin');
+  add('path',{d:'M466,424 L240,456'},'bike-thin');
+
+  // Engine: cases, barrel and head as one solid mass slung low and forward
+  add('path',{d:'M448,338 L604,330 L626,392 L612,458 L470,464 L430,404 Z'},'bike-mass');
+  add('path',{d:'M474,296 L586,292 L600,336 L462,342 Z'},'bike-mass');
+  add('path',{d:'M486,268 L566,264 L578,296 L478,300 Z'},'bike-mass');
+  add('path',{d:'M456,452 L616,446 L604,470 L470,474 Z'},'bike-fill');   // sump
+  add('path',{d:'M446,470 Q540,492 626,462 L622,478 Q538,506 444,484 Z'},'bike-fill'); // bash plate
+
+  // Frame: backbone, downtube, cradle, subframe
+  add('path',{d:'M744,232 L588,318'},'bike-tube');
+  add('path',{d:'M588,318 L556,420 L482,466'},'bike-tube');
+  add('path',{d:'M740,244 L520,278'},'bike-tube');
+  add('path',{d:'M520,278 L470,404'},'bike-tube');
+  add('path',{d:'M520,276 L268,262'},'bike-tube');
+  add('path',{d:'M300,268 L452,406'},'bike-thin');
+  add('path',{d:'M500,290 L468,398'},'bike-line');   // shock body
+
+  // Forks: thin uppers into fat lowers, plus the triple clamps
+  add('path',{d:'M756,214 L792,404'},'bike-line');
+  add('path',{d:'M774,212 L810,402'},'bike-line');
+  add('path',{d:'M786,336 L820,334 L830,432 L796,436 Z'},'bike-fill');
+  add('path',{d:'M744,206 L788,198'},'bike-tube');
+  add('path',{d:'M750,232 L794,224'},'bike-tube');
+  add('path',{d:'M736,186 L812,170'},'bike-tube');   // handlebar
+
+  // Tank and the long flat seat
+  add('path',{d:'M548,266 Q636,242 706,258 L712,304 Q632,286 546,304 Z'},'bike-fill');
+  add('path',{d:'M280,242 Q396,230 522,266 L516,292 Q394,256 284,268 Z'},'bike-mass');
+
+  // Exhaust: header off the head, up and back to the tail
+  add('path',{d:'M596,300 Q660,330 612,368 Q470,352 342,296'},'bike-pipe');
   return frag;
 }
 
