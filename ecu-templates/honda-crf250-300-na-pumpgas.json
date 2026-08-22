@@ -16,12 +16,20 @@
     "launch_control": {
       "status": "enabled",
       "activation_rpm": 6500,
+      "activation_conditions": {
+        "note": "The launch limiter must only arm when ALL of these are true. Without them, activation_rpm behaves as a rev limiter in every gear.",
+        "clutch_pulled_in": true,
+        "max_gear": 1,
+        "max_road_speed_kph": 5
+      },
       "ignition_retard_degrees": -5,
       "fuel_enrichment_percent": 10,
       "cut_type": "ignition_cut"
     },
     "decel_flames_pops": {
       "status": "enabled",
+      "disable_dfco": true,
+      "dfco_note": "Deceleration fuel cut-off must be off for this to do anything. With DFCO active the ECU cuts fuel on a closed throttle, so fuel_correction_percent has nothing to enrich.",
       "tps_range_percent": [0, 3],
       "rpm_range": [4500, 8500],
       "ignition_timing_btdc": -2,

@@ -38,16 +38,18 @@ No build step, no dependencies. The download unlocks once the rider accepts the 
 
 - **The logic:** You want enough RPM to launch the bike aggressively without looping it or bogging down the engine. For a standard CRF250/300, 6,500 RPM sits right below peak torque.
 - **The programming:** The system initiates a secondary rev limiter at 6,500 RPM. By retarding the ignition by 5 degrees and adding 10% more fuel, the bike builds a slight bit of backpressure and creates a violent, rapid-fire exhaust note off the line before the clutch is dropped.
+- **What arms it:** the limiter is only allowed to engage with the clutch pulled in, in first or neutral, below 5 km/h — `activation_conditions` in the file. Wire it to RPM alone and you have not built launch control, you have built a 6,500 RPM rev limiter that will catch you mid-corner in third.
 
 ### 2. Pops, Bangs & Flames (deceleration map)
 
 - **The logic:** This is what gets attention on the street. It forces the unburnt fuel into the hot aftermarket exhaust header.
 - **The programming:** The critical zone is when the throttle is completely closed (**0% to 3% TPS**) but the engine is still revving high during a downshift (**4,500 to 8,500 RPM**). By commanding the ECU to dump +15% more fuel and pulling the ignition timing back slightly (-2 degrees), the fuel detonates in the exhaust pipe, creating the signature pops and flames.
+- **Deceleration fuel cut-off must be off.** This is the step most people miss. With DFCO active the ECU cuts injection entirely on a closed throttle, so there is no fuel there to enrich and the map does nothing at all. The file sets `disable_dfco` alongside the decel map for that reason.
 
 ### 3. Standard performance optimization
 
 - **The logic:** The factory Honda ECU runs incredibly lean to pass strict global emissions standards, which is why stock bikes run hot and feel sluggish.
-- **The programming:** This map corrects the Air-to-Fuel Ratio (AFR) to a richer, healthier **13.0 to 13.2** range under Wide Open Throttle (WOT). It also slightly advances the ignition timing across the board to wake up the throttle response, maximizing the airflow from the aftermarket intake and exhaust.
+- **The programming:** This map corrects the Air-to-Fuel Ratio (AFR) to a richer, healthier **12.8 to 13.1** range under Wide Open Throttle (WOT), with cruise held at **13.2 to 13.5**. It also slightly advances the ignition timing across the board to wake up the throttle response, maximizing the airflow from the aftermarket intake and exhaust.
 
 ## Disclaimer
 
