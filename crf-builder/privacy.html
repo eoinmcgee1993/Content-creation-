@@ -51,13 +51,14 @@ footer a{color:var(--text-dim);margin:0 8px;}
     <a href="./privacy.html" class="is-active" aria-current="page">Privacy</a>
   </nav>
 
+  <div class="todo" id="legal-incomplete" style="display:none;"></div>
   <div class="eyebrow">CRF Garage</div>
   <h1>Privacy Policy</h1>
   <p class="updated">Last updated 21 August 2026</p>
 
   <div class="todo">
-    <strong>Before publishing:</strong> replace <code>[LEGAL ENTITY NAME]</code>, <code>[REGISTERED ADDRESS]</code> and
-    <code>[CONTACT EMAIL]</code> throughout. This document describes exactly what the site actually collects and where it
+    <strong>Before publishing:</strong> replace <code><span data-legal="entity">[ENTITY NOT SET]</span></code>, <code><span data-legal="address">[ADDRESS NOT SET]</span></code> and
+    <code><span data-legal="email">[EMAIL NOT SET]</span></code> throughout. This document describes exactly what the site actually collects and where it
     goes — it was written against the live database schema, not from a template — but it is not legal advice, and the
     identity of the data controller has to be your real registered details.
   </div>
@@ -65,8 +66,8 @@ footer a{color:var(--text-dim);margin:0 8px;}
   <p>This policy covers <strong>crf-garage.netlify.app</strong> and its three tools: the Graphics Kit Builder, the
   Racewear Builder and the ECU Template Builder.</p>
 
-  <p>The data controller is <strong>[LEGAL ENTITY NAME]</strong>, <strong>[REGISTERED ADDRESS]</strong>. For any question
-  about your data, or to make any request described below, contact <strong>[CONTACT EMAIL]</strong>.</p>
+  <p>The data controller is <strong><span data-legal="entity">[ENTITY NOT SET]</span></strong>, <strong><span data-legal="address">[ADDRESS NOT SET]</span></strong>. For any question
+  about your data, or to make any request described below, contact <strong><span data-legal="email">[EMAIL NOT SET]</span></strong>.</p>
 
   <h2>1. What we collect, and exactly where it goes</h2>
 
@@ -159,7 +160,7 @@ footer a{color:var(--text-dim);margin:0 8px;}
     <li>delete it, including a rider's details from a roster,</li>
     <li>stop using it for a particular purpose.</li>
   </ul>
-  <p>Email <strong>[CONTACT EMAIL]</strong> and we will respond within 30 days. There is no charge.</p>
+  <p>Email <strong><span data-legal="email">[EMAIL NOT SET]</span></strong> and we will respond within 30 days. There is no charge.</p>
   <p>If you are in Thailand, the <strong>Personal Data Protection Act (PDPA)</strong> gives you these rights and you may
   complain to the Personal Data Protection Committee. If you are in the UK or EU, the <strong>UK GDPR / GDPR</strong>
   gives you equivalent rights and you may complain to your national supervisory authority.</p>
@@ -170,7 +171,7 @@ footer a{color:var(--text-dim);margin:0 8px;}
   cryptographically verified notification from Stripe, never by a browser. Files you have paid for are released only
   against a private token issued with your order.</p>
   <p>No system is perfect, and we do not claim otherwise. If you believe you have found a problem, please tell us at
-  <strong>[CONTACT EMAIL]</strong>.</p>
+  <strong><span data-legal="email">[EMAIL NOT SET]</span></strong>.</p>
 
   <h2>8. Changes</h2>
   <p>If this policy changes materially we will update the date at the top and, where the change affects data we already
@@ -184,5 +185,6 @@ footer a{color:var(--text-dim);margin:0 8px;}
     <a href="./terms.html">Terms</a>
   </footer>
 </div>
+<script src="./legal-details.js"></script>
 </body>
 </html>

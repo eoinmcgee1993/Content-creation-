@@ -55,20 +55,21 @@ footer a{color:var(--text-dim);margin:0 8px;}
     <a href="./terms.html" class="is-active" aria-current="page">Terms</a>
   </nav>
 
+  <div class="todo" id="legal-incomplete" style="display:none;"></div>
   <div class="eyebrow">CRF Garage</div>
   <h1>Terms of Sale</h1>
   <p class="updated">Last updated 22 August 2026</p>
 
   <div class="todo">
-    <strong>Before publishing:</strong> replace <code>[LEGAL ENTITY NAME]</code>, <code>[REGISTERED ADDRESS]</code>,
-    <code>[CONTACT EMAIL]</code> and <code>[GOVERNING LAW]</code> throughout, and set the real lead times in section 6.
+    <strong>Before publishing:</strong> replace <code><span data-legal="entity">[ENTITY NOT SET]</span></code>, <code><span data-legal="address">[ADDRESS NOT SET]</span></code>,
+    <code><span data-legal="email">[EMAIL NOT SET]</span></code> and <code><span data-legal="law">[LAW NOT SET]</span></code> throughout, and set the real lead times in section 6.
     This document describes how the site actually works, but it is not legal advice — have it read by someone qualified
     in the country you trade from before you rely on it.
   </div>
 
   <p>These terms apply to everything bought or downloaded from <strong>crf-garage.netlify.app</strong>. Placing an order
-  or downloading a file means you accept them. The seller is <strong>[LEGAL ENTITY NAME]</strong>,
-  <strong>[REGISTERED ADDRESS]</strong> ("we", "us"). Contact: <strong>[CONTACT EMAIL]</strong>.</p>
+  or downloading a file means you accept them. The seller is <strong><span data-legal="entity">[ENTITY NOT SET]</span></strong>,
+  <strong><span data-legal="address">[ADDRESS NOT SET]</span></strong> ("we", "us"). Contact: <strong><span data-legal="email">[EMAIL NOT SET]</span></strong>.</p>
 
   <h2>1. What we sell</h2>
   <div class="tbl-scroll">
@@ -187,7 +188,7 @@ footer a{color:var(--text-dim);margin:0 8px;}
   <h2>10. Using the site</h2>
   <p>The site, the builders and their designs are ours. Use them to design and order your own kit &mdash; do not copy
   the tools, scrape them, or rebuild them as a competing product. Do not attempt to reach files, orders or data
-  belonging to anyone else. If you find a way to do so, please tell us at <strong>[CONTACT EMAIL]</strong> rather than
+  belonging to anyone else. If you find a way to do so, please tell us at <strong><span data-legal="email">[EMAIL NOT SET]</span></strong> rather than
   using it.</p>
 
   <h2>11. Privacy</h2>
@@ -197,7 +198,7 @@ footer a{color:var(--text-dim);margin:0 8px;}
   <h2>12. Changes, and the law that applies</h2>
   <p>We may change these terms for future orders. The version that applies to your order is the one published when you
   placed it, and the date at the top tells you which that is.</p>
-  <p>These terms are governed by the law of <strong>[GOVERNING LAW]</strong>, and its courts have jurisdiction. Nothing
+  <p>These terms are governed by the law of <strong><span data-legal="law">[LAW NOT SET]</span></strong>, and its courts have jurisdiction. Nothing
   here removes a consumer protection you have where you live.</p>
   <div class="todo">
     <strong>Set the governing law to where you actually trade from.</strong> If that is Thailand, say Thailand &mdash;
@@ -205,7 +206,7 @@ footer a{color:var(--text-dim);margin:0 8px;}
   </div>
 
   <h2>13. Contact</h2>
-  <p>Questions about an order, a fault, or these terms: <strong>[CONTACT EMAIL]</strong>. We answer within a few working
+  <p>Questions about an order, a fault, or these terms: <strong><span data-legal="email">[EMAIL NOT SET]</span></strong>. We answer within a few working
   days.</p>
 
   <footer>
@@ -216,5 +217,6 @@ footer a{color:var(--text-dim);margin:0 8px;}
     <a href="./terms.html">Terms</a>
   </footer>
 </div>
+<script src="./legal-details.js"></script>
 </body>
 </html>
