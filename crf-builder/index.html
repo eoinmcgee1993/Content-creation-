@@ -268,6 +268,9 @@ input[type=range]::-webkit-slider-thumb{
 .kitwide-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);font-weight:600;margin-bottom:4px;}
 .kitwide-actions{display:flex;gap:8px;margin-top:11px;}
 .btn-sm.ghost{background:transparent;}
+.printed-shot{margin:12px 0 4px;}
+.printed-shot img{width:100%;border-radius:8px;border:1px solid var(--line);display:block;}
+.printed-shot figcaption{font-size:12px;color:var(--text-dim);margin-top:6px;line-height:1.45;}
 .preset-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;}
 .preset{border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer;background:var(--panel-2);padding:0;text-align:left;}
 .preset:hover{border-color:var(--text-dim);}
@@ -387,25 +390,21 @@ input[type=range]::-webkit-slider-thumb{
 
   <div class="card order-card" id="order-card">
     <h2>Order</h2>
-    <p class="hint">Choose how you want the kit fulfilled.</p>
-
     <div class="fulfil-choice" id="fulfil-choice">
       <label class="fulfil-option">
-        <input type="radio" name="fulfil" value="physical" checked>
+        <input type="radio" name="fulfil" value="digital" checked>
         <span class="fulfil-body">
-          <span class="fulfil-title">Physical kit</span>
-          <span class="fulfil-desc">Cut and printed by our print partner, shipped to you. No file changes hands.</span>
-        </span>
-      </label>
-      <label class="fulfil-option">
-        <input type="radio" name="fulfil" value="digital">
-        <span class="fulfil-body">
-          <span class="fulfil-title">Digital file</span>
-          <span class="fulfil-desc">Print-ready file, delivered after payment, for you to print yourself.</span>
+          <span class="fulfil-title">Print-ready file</span>
+          <span class="fulfil-desc">Your finished design as a vector file, sized to the real CRF250L cut lines. Take it to any vinyl printer. Delivered as soon as your payment clears.</span>
         </span>
       </label>
     </div>
-    <p class="hint payment-note" id="payment-note" style="display:none;">Your kit file is released after Stripe confirms your payment &mdash; pay, then press &ldquo;Check payment &amp; download&rdquo; on the confirmation.</p>
+    <p class="hint">We are not printing and shipping kits ourselves at the moment, so the file is what you get &mdash; and it is the part a printer needs.</p>
+    <figure class="printed-shot">
+      <img src="kits/printed-sheet.jpg" alt="A die-cut sheet of printed motocross vinyl panels" loading="lazy">
+      <figcaption>What a printer turns your file into. This is an illustration, not a photograph of your kit &mdash; your panels are cut to the shapes on the map above.</figcaption>
+    </figure>
+    <p class="hint payment-note" id="payment-note">Your kit file is released after Stripe confirms your payment &mdash; pay, then press &ldquo;Check payment &amp; download&rdquo; on the confirmation.</p>
 
     <div class="field-row">
       <div class="field">
@@ -514,15 +513,10 @@ async function fetchPaidFile(orderId, token){
   return { paid: true, svg: await res.text() };
 }
 
-// Set these to the Stripe Payment Links you create in your own dashboard
-// (Stripe Dashboard -> Payment Links -> New). One per fulfilment type.
-// Leave blank and the pay button will say so instead of pretending to work.
+// Stripe Payment Links, created in the Stripe dashboard. Only the file is on
+// sale: printing and shipping physical kits is on hold, so there is no
+// physical link to keep in step.
 const STRIPE_LINKS = {
-  // Physical ($149) is intentionally blank: that Stripe link is deactivated
-  // because it collects no shipping address, so a physical order cannot be
-  // delivered. Re-enable it in Stripe with address collection turned on, then
-  // paste the URL back here.
-  physical: "",
   digital: "https://buy.stripe.com/eVqcN5b26gARfoIaCEc7u0e",
 };
 
@@ -1329,7 +1323,7 @@ function renderStagingUI(zoneId, body){
 
 function currentFulfilment(){
   const checked = document.querySelector('input[name="fulfil"]:checked');
-  return checked ? checked.value : 'physical';
+  return checked ? checked.value : 'digital';
 }
 
 function refreshOrderState(){
@@ -1474,7 +1468,7 @@ async function submitOrder(){
       const missing = document.createElement('p');
       missing.className = 'hint';
       missing.style.color = 'var(--accent-2)';
-      missing.textContent = 'No Stripe Payment Link is set for this fulfilment type yet (STRIPE_LINKS near the top of the script) \u2014 create one in your Stripe dashboard and paste it in to take real payment here.';
+      missing.textContent = 'Payment is temporarily unavailable for this order type. Your order reference is saved \u2014 get in touch and we will sort it out.';
       payWrap.appendChild(missing);
     }
 

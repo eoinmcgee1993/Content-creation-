@@ -1,11 +1,19 @@
 name: Deploy CRF Builder site to Netlify
 
+# The push trigger is deliberately off. NETLIFY_AUTH_TOKEN was revoked, so every
+# run since has failed, and nine red builds in a row train you to ignore the one
+# that matters. Deploys are being done by hand in the meantime.
+#
+# To turn this back on: create a new personal access token in Netlify (User
+# settings -> Applications -> Personal access tokens), save it as the
+# NETLIFY_AUTH_TOKEN repository secret, run this workflow once from the Actions
+# tab to confirm it is green, then uncomment the push block below.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "crf-builder/**"
-      - ".github/workflows/deploy-ecu-app.yml"
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - "crf-builder/**"
+  #     - ".github/workflows/deploy-ecu-app.yml"
   workflow_dispatch: {}
 
 jobs:

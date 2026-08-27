@@ -579,6 +579,9 @@ $("submit").addEventListener("click", async ()=>{
     const n = unitCount();
     const each = unitPrice(g, n);
     const orderId = "CRFA-" + Date.now().toString(36).toUpperCase();
+    // The customer's own secret. It is what lets them open their approval page
+    // later; the database will not accept an approval decision without it.
+    const approvalToken = crypto.randomUUID();
 
     const zonesOut = {};
     for(const [zid, a] of Object.entries(state.art)){
@@ -601,14 +604,20 @@ $("submit").addEventListener("click", async ()=>{
       currency: CURRENCY,
       fx_usd_per_thb: THB_PER_USD,
       download_token: crypto.randomUUID(),
+      approval_token: approvalToken,
     });
+
+    const approveUrl = new URL("approve.html", location.href).href
+      + "?order=" + encodeURIComponent(orderId) + "&token=" + approvalToken;
 
     const c = document.createElement("div");
     c.className = "confirm";
     c.innerHTML = `<div class="eyebrow" style="margin-top:16px;">Order received</div>`
       + `<div class="id">${escapeHTML(orderId)}</div>`
       + `<p class="hint">${n} garment${n===1?"":"s"} at ${money(each)} each &mdash; <b>${money(each*n)}</b> (about ${usd(each*n)}).</p>`
-      + `<p class="hint" style="margin-top:8px;">We check your artwork at print size and email ${escapeHTML($("f-email").value.trim())} to approve it. <b>You pay after approval, not before.</b></p>`;
+      + `<p class="hint" style="margin-top:8px;">We check your artwork at print size and email ${escapeHTML($("f-email").value.trim())} to approve it. <b>You pay after approval, not before.</b></p>`
+      + `<p class="hint" style="margin-top:10px;">Your approval page &mdash; keep this link, it is the only way back to it:</p>`
+      + `<p style="margin-top:4px;word-break:break-all;"><a id="approve-link" href="${approveUrl}">${escapeHTML(approveUrl)}</a></p>`;
     $("confirm-area").innerHTML = "";
     $("confirm-area").appendChild(c);
     btn.style.display = "none";
