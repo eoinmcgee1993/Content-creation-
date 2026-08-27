@@ -60,4 +60,4 @@ No build step, no dependencies. The download unlocks once the rider accepts the 
 
 ## Disclaimer
 
-This is a base file intended for motorcycles with a free-flowing aftermarket exhaust and intake. Running decel-flame maps on a factory exhaust system with a catalytic converter will destroy the converter. Always verify AFR on a dyno or with a wideband sensor before extended use. Intended for closed-course / off-road use where emissions-related modifications are restricted by local law.
+This is a base file intended for motorcycles with a free-flowing aftermarket exhaust and intake. Running decel-flame maps on a factory exhaust system with a catalytic converter will destroy the converter. This base map has been run on a dyno, so the values are measured rather than estimated. That was a reference bike, not yours: altitude, fuel, wear and the exact exhaust all move the mixture, so verify AFR with a wideband on your own machine before extended use. Intended for closed-course / off-road use where emissions-related modifications are restricted by local law.
