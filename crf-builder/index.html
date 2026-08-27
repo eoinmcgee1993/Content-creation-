@@ -268,6 +268,9 @@ input[type=range]::-webkit-slider-thumb{
 .kitwide-title{font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);font-weight:600;margin-bottom:4px;}
 .kitwide-actions{display:flex;gap:8px;margin-top:11px;}
 .btn-sm.ghost{background:transparent;}
+.printed-shot{margin:12px 0 4px;}
+.printed-shot img{width:100%;border-radius:8px;border:1px solid var(--line);display:block;}
+.printed-shot figcaption{font-size:12px;color:var(--text-dim);margin-top:6px;line-height:1.45;}
 .preset-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;}
 .preset{border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer;background:var(--panel-2);padding:0;text-align:left;}
 .preset:hover{border-color:var(--text-dim);}
@@ -397,6 +400,10 @@ input[type=range]::-webkit-slider-thumb{
       </label>
     </div>
     <p class="hint">We are not printing and shipping kits ourselves at the moment, so the file is what you get &mdash; and it is the part a printer needs.</p>
+    <figure class="printed-shot">
+      <img src="kits/printed-sheet.jpg" alt="A die-cut sheet of printed motocross vinyl panels" loading="lazy">
+      <figcaption>What a printer turns your file into. This is an illustration, not a photograph of your kit &mdash; your panels are cut to the shapes on the map above.</figcaption>
+    </figure>
     <p class="hint payment-note" id="payment-note">Your kit file is released after Stripe confirms your payment &mdash; pay, then press &ldquo;Check payment &amp; download&rdquo; on the confirmation.</p>
 
     <div class="field-row">
