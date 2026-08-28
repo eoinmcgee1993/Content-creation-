@@ -29,7 +29,7 @@ No build step, no dependencies. The download unlocks once the rider accepts the 
 - Standard displacement (250cc / 286cc), naturally aspirated engines
 - Aftermarket intake + full exhaust system
 - High-octane pump gas (91–95 octane)
-- OEM injector or PCX150 injector upgrade
+- OEM injector (the fuel map is calculated for its flow rate)
 - Standalone ECUs (aRacer RC Mini5, Super X) or flash/hex editing workflows (e.g. TunerPro)
 
 ## The tuning logic

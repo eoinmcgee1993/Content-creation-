@@ -4,7 +4,7 @@
     "engine": "Standard Displacement (250cc / 286cc)",
     "induction": "Naturally Aspirated (Aftermarket Intake & Exhaust)",
     "fuel_type": "Pump Gas (91 - 95 Octane)",
-    "injector": "OEM or PCX150 Upgrade",
+    "injector": "OEM (stock). These fuel numbers assume the stock injector; a different flow rate makes every one of them wrong by the ratio of the two.",
     "ecu_type": "Standalone / Flash"
   },
   "safety_parameters": {
