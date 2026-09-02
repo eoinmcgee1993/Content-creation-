@@ -227,7 +227,7 @@ grant insert on public.crf_apparel_orders to anon, authenticated;
 RLS and grants say the same thing twice on purpose. Either alone is sufficient;
 the second exists for the day the first is edited by mistake.
 
-### 3.5 The one secret
+### 3.5 Secrets
 
 ```sql
 insert into public.crf_config (key, value)
@@ -236,6 +236,16 @@ on conflict (key) do update set value = excluded.value, updated_at = now();
 ```
 
 Rotation is that same statement with a new value. Nothing is redeployed.
+
+The same table holds the rest, all optional and all inert while unset:
+
+| Key | Enables |
+|---|---|
+| `resend_api_key` | the approval email |
+| `notify_from` | its sender — needs a verified sending domain |
+| `notify_operator` | where the internal heads-up goes |
+| `site_base_url` | the base the emailed approval link is built from |
+| `operator_key` | the order desk |
 
 ---
 
@@ -314,9 +324,36 @@ them turns the endpoint into an order-id oracle.
 
 ---
 
+### 4.4 `apparel-notify`
+
+- **Request:** `POST {order_id, token: uuid}`
+- **Authentication:** the pair `(id, approval_token)`.
+- **Sends** the approval link to the customer and a heads-up to the operator.
+- **The recipient is read from the order row, never from the request.** Taking
+  it from the request makes this an open relay sending from your own domain.
+- **The link is built from `crf_config.site_base_url`**, never from the
+  request, so a link you send cannot be made to point elsewhere.
+- **Sends once.** Stamps `approval_email_sent_at`; a second call is a no-op.
+  The insert trigger clears that column, so a browser cannot pre-set it to
+  suppress the mail.
+- With any of the four config rows unset, returns 200 `{sent: false, reason:
+  "not_configured"}` and sends nothing.
+
+### 4.5 `admin-orders`
+
+- **Request:** `POST {key: string}`
+- **Authentication:** SHA-256 digest comparison against
+  `crf_config.operator_key`, so neither contents nor length leak by timing.
+  **An unset key means no access, not open access.**
+- **Read-only**, and selects no token columns. A queue view is not a place to
+  hand out download or approval links.
+- Returns both order queues plus counts, newest first, capped at 100 each.
+
+---
+
 ## 5. Static site
 
-Five pages plus assets, deployed as a flat archive. No build.
+Six pages plus assets, deployed as a flat archive. No build.
 
 ```
 crf-builder/
@@ -325,6 +362,7 @@ crf-builder/
   ecu.html        # ECU template builder  → /ecu
   mods.html       # modifications guide   → /mods
   approve.html    # artwork approval      → /approve
+  desk.html       # operator queue view   → /desk (unlinked, noindex)
   privacy.html    # §6 — hold until filled
   terms.html      # §6 — hold until filled
   legal-details.js
@@ -341,6 +379,8 @@ Page-level constants to substitute:
 | `index.html` | `DOWNLOAD_FN` | `${SUPABASE_URL}/functions/v1/kit-download` |
 | `apparel.html` | Supabase URL / key | as above |
 | `approve.html` | `FN` | `${SUPABASE_URL}/functions/v1/apparel-approval` |
+| `apparel.html` | `NOTIFY_FN` | `${SUPABASE_URL}/functions/v1/apparel-notify` |
+| `desk.html` | `FN` | `${SUPABASE_URL}/functions/v1/admin-orders` |
 
 The publishable key in page source is correct and intended: with the grants in
 §3.4 it confers the ability to insert an order and nothing more.
@@ -354,7 +394,8 @@ payments succeed and no order is ever marked paid.
 
 ```bash
 cd crf-builder
-zip -r site.zip index.html apparel.html ecu.html approve.html mods.html kits
+zip -r site.zip index.html apparel.html ecu.html approve.html mods.html \
+       desk.html kits
 curl -X POST "https://api.netlify.com/api/v1/sites/${NETLIFY_SITE_ID}/builds" \
   -H "Authorization: Bearer ${NETLIFY_AUTH_TOKEN}" \
   -F "zip=@site.zip;type=application/zip"
@@ -384,7 +425,7 @@ from the other pages until they are live.
 | 1 | Create Supabase project, record ref and publishable key | — | A1 |
 | 2 | Apply §3.1–3.3 (tables, indexes, triggers) | 1 | A2 |
 | 3 | Apply §3.4 (RLS, policies, grants) | 2 | A3 |
-| 4 | Deploy the three Edge Functions, `verify_jwt=false` | 3 | A4 |
+| 4 | Deploy the five Edge Functions, `verify_jwt=false` | 3 | A4 |
 | 5 | Create the Stripe Payment Link and the webhook endpoint pointing at `${SUPABASE_URL}/functions/v1/stripe-webhook`, subscribed to `checkout.session.completed` | 4 | A5 |
 | 6 | Write `${STRIPE_WEBHOOK_SECRET}` into `crf_config` (§3.5) | 5 | A6 |
 | 7 | Substitute page constants (§5) and deploy the archive | 6 | A7 |
@@ -408,8 +449,9 @@ Each must pass before the next step. A failure is a stop, not a retry loop.
   where table_schema='public' and grantee='anon' and table_name like 'crf%';
   ```
   And `crf_config` has RLS enabled with zero policies.
-- **A4** — All three functions report status `ACTIVE`. An unsigned POST to
-  `stripe-webhook` returns **400**, not 500 and not 200.
+- **A4** — All five functions report status `ACTIVE`. An unsigned POST to
+  `stripe-webhook` returns **400**, not 500 and not 200. A POST to
+  `admin-orders` with any key returns **401** while `operator_key` is unset.
 - **A5** — Stripe shows the endpoint as enabled and a test delivery reaches the
   function (a test event will be rejected as unsigned or stale — that is the
   correct response and still proves reachability).
@@ -481,3 +523,5 @@ If a later change breaks one of these, the change is wrong.
    itself as an upgrade — and any injector selection must actually rescale the
    fuel map, or must not exist. A map sized for one injector on hardware that
    flows less is a lean condition at wide-open throttle.
+9. Anything the system emails goes to an address read from the order row, and
+   any link inside it is built from configured values. Never from the request.

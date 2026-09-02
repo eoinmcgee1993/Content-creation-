@@ -23,6 +23,8 @@ rework if done late come first.
 | Edge Functions | `stripe-webhook`, `kit-download`, `apparel-approval` all ACTIVE |
 | Payments — kit | Stripe Payment Link live, webhook verified |
 | Payments — racewear | Manual invoice. No card path |
+| Approval email | Built and deployed, **inert** until four `crf_config` rows exist |
+| Order desk | Built, **not deployed**, inert until `crf_config.operator_key` is set |
 | CI deploy | **Disabled.** `NETLIFY_AUTH_TOKEN` revoked |
 | Domain | Not purchased |
 | Trading name | Not decided |

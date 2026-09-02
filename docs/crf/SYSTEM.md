@@ -281,10 +281,11 @@ key with `ON DELETE CASCADE` back to `crf_orders`.
 `club_name`, `roster` jsonb, `unit_count`, `unit_price_cents`, `total_cents`,
 `currency` (`THB`|`USD`), `fx_usd_per_thb`, and the artwork block:
 `artwork_status` (`pending`|`approved`|`changes_requested`), `artwork_note`,
-`artwork_reviewed_at`, `approval_token` uuid.
+`artwork_reviewed_at`, `approval_token` uuid, `approval_email_sent_at`.
 
-**`crf_config`** — a two-column key/value table holding the Stripe webhook
-signing secret. RLS on, **no policies at all**, and every grant revoked from
+**`crf_config`** — a key/value table holding every secret this system has:
+the Stripe webhook signing secret, the email sending key and addresses, and
+the operator key. RLS on, **no policies at all**, and every grant revoked from
 `anon` and `authenticated`. Only a service-role key inside an Edge Function can
 read it. That is deliberate: it means the secret is rotatable with one UPDATE
 and never appears in a repository, an environment file or a deploy log.
@@ -310,6 +311,9 @@ enforcement.
 | Only the buyer can download their file | `kit-download` requires `(order_id, download_token)` **and** `payment_status='paid'` |
 | Only the customer can approve artwork | `apparel-approval` requires `(order_id, approval_token)`; can write only artwork fields |
 | The webhook secret never leaks | `crf_config`: RLS on, zero policies, grants revoked — service-role only |
+| A customer cannot be mailed repeatedly | `apparel-notify` stamps `approval_email_sent_at` and no-ops on a second call; the insert trigger clears it so a browser cannot pre-set it |
+| The approval link we email cannot be redirected | Built from `crf_config.site_base_url`, never from the request |
+| Only the operator can read the queues | `admin-orders` compares a key against `crf_config.operator_key` by SHA-256 digest; unset means no access, not open access |
 
 Both trigger functions are `SET search_path TO ''`, so they cannot be subverted
 by a schema shadowing a function name.
@@ -346,8 +350,8 @@ belong to the digital-product project that shares this repository. They call
 Gemini, Resend and Lemon Squeezy and touch `scraped_signals` / `sales_funnels`.
 They are not part of the CRF site and nothing here calls them.
 
-The CRF Edge Functions are exactly three: `stripe-webhook`, `kit-download`,
-`apparel-approval`.
+The CRF Edge Functions are exactly five: `stripe-webhook`, `kit-download`,
+`apparel-approval`, `apparel-notify` and `admin-orders`.
 
 ---
 
@@ -362,23 +366,22 @@ The CRF Edge Functions are exactly three: `stripe-webhook`, `kit-download`,
    entity, address, contact email, governing law. The file marks blanks in red
    and shows a banner, so it cannot be published half-filled by accident. They
    are not linked from any page and not in the deploy bundle.
-3. **Nothing emails anybody on a racewear order.** The page says "we email you
-   to approve it". No code sends that email. Today the operator must watch the
-   table and send the approval link by hand. This is the largest gap between
-   what the site promises and what it does.
-4. **No operator view.** Orders are read with SQL. The testing panel that used
-   to list them was removed before launch because it read the orders table from
-   the browser.
+3. **The approval email is built but not switched on.** `apparel-notify`
+   sends the customer their approval link and the operator a heads-up, and it
+   is deployed. It stays inert until four `crf_config` rows exist — a sending
+   key, a from address, an operator address and the site base URL — and the
+   from address needs a verified sending domain, which needs the name. Until
+   then the order still saves and the link is still on screen.
+4. **The operator view is built but not switched on.** `desk.html` and
+   `admin-orders` are done; set `crf_config.operator_key` to enable it. The
+   page is unlinked and carries a noindex tag. It is not deployed yet — see
+   below.
 5. **No 3D preview.** The on-bike preview is a 2D silhouette. The real
    thing needs a commissioned model — brief written, not commissioned. Stock
    and AI-generated models fail on the UV layout, which is the one requirement
    that matters, and their licences generally forbid serving the file to
    visitors, which a web viewer does by definition.
-6. **Dead physical-fulfilment branch.** `index.html` still contains the
-   confirmation branch for physical orders. With one fulfilment radio and no
-   physical Stripe link it is unreachable. Harmless, but it should go.
-7. **A duplicated CHECK constraint.** `crf_apparel_orders` carries both
-   `crf_apparel_artwork_status_chk` and
-   `crf_apparel_orders_artwork_status_check` with identical bodies. No effect
-   beyond a redundant check per write.
-8. **One test order** (`CRF-MT39C8P7`) is still in `crf_orders`.
+6. **The site is behind the repository.** `apparel.html`, `index.html` and
+   the new `desk.html` are committed but not deployed, because
+   `NETLIFY_AUTH_TOKEN` is revoked. The server side — all five Edge Functions
+   and the schema — is live and current.

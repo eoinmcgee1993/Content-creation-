@@ -7,81 +7,367 @@
   "spec": "./BLUEPRINT.md",
   "description": "./SYSTEM.md",
   "plan": "./DEPLOYMENT.md",
-
   "parameters": {
-    "SUPABASE_PROJECT_REF": {"required": true,  "secret": false},
-    "SUPABASE_URL":         {"required": true,  "secret": false, "derived": "https://${SUPABASE_PROJECT_REF}.supabase.co"},
-    "SUPABASE_PUBLISHABLE_KEY": {"required": true, "secret": false, "note": "Appears in page source by design; with the grants below it can only INSERT."},
-    "NETLIFY_SITE_ID":      {"required": true,  "secret": false},
-    "NETLIFY_AUTH_TOKEN":   {"required": true,  "secret": true},
-    "STRIPE_PAYMENT_LINK":  {"required": true,  "secret": false},
-    "STRIPE_WEBHOOK_SECRET":{"required": true,  "secret": true, "stored_in": "postgres:public.crf_config.stripe_webhook_secret"},
-    "SITE_HOST":            {"required": true,  "secret": false}
+    "SUPABASE_PROJECT_REF": {
+      "required": true,
+      "secret": false
+    },
+    "SUPABASE_URL": {
+      "required": true,
+      "secret": false,
+      "derived": "https://${SUPABASE_PROJECT_REF}.supabase.co"
+    },
+    "SUPABASE_PUBLISHABLE_KEY": {
+      "required": true,
+      "secret": false,
+      "note": "Appears in page source by design; with the grants below it can only INSERT."
+    },
+    "NETLIFY_SITE_ID": {
+      "required": true,
+      "secret": false
+    },
+    "NETLIFY_AUTH_TOKEN": {
+      "required": true,
+      "secret": true
+    },
+    "STRIPE_PAYMENT_LINK": {
+      "required": true,
+      "secret": false
+    },
+    "STRIPE_WEBHOOK_SECRET": {
+      "required": true,
+      "secret": true,
+      "stored_in": "postgres:public.crf_config.stripe_webhook_secret"
+    },
+    "SITE_HOST": {
+      "required": true,
+      "secret": false
+    }
   },
-
   "resources": {
     "tables": [
-      {"name": "crf_orders",         "pk": "id (text)", "rls": true,  "anon_grants": ["INSERT"], "trigger": "crf_orders_force_unpaid_trg"},
-      {"name": "crf_order_files",    "pk": "order_id (text)", "rls": true, "anon_grants": ["INSERT"], "fk": "crf_orders(id) on delete cascade"},
-      {"name": "crf_apparel_orders", "pk": "id (text)", "rls": true,  "anon_grants": ["INSERT"], "trigger": "crf_apparel_force_unpaid_trg"},
-      {"name": "crf_config",         "pk": "key (text)", "rls": true, "anon_grants": [], "policies": 0, "note": "RLS on with zero policies and no grants: service-role only."}
+      {
+        "name": "crf_orders",
+        "pk": "id (text)",
+        "rls": true,
+        "anon_grants": [
+          "INSERT"
+        ],
+        "trigger": "crf_orders_force_unpaid_trg"
+      },
+      {
+        "name": "crf_order_files",
+        "pk": "order_id (text)",
+        "rls": true,
+        "anon_grants": [
+          "INSERT"
+        ],
+        "fk": "crf_orders(id) on delete cascade"
+      },
+      {
+        "name": "crf_apparel_orders",
+        "pk": "id (text)",
+        "rls": true,
+        "anon_grants": [
+          "INSERT"
+        ],
+        "trigger": "crf_apparel_force_unpaid_trg"
+      },
+      {
+        "name": "crf_config",
+        "pk": "key (text)",
+        "rls": true,
+        "anon_grants": [],
+        "policies": 0,
+        "note": "RLS on with zero policies and no grants: service-role only. Holds stripe_webhook_secret, resend_api_key, notify_from, notify_operator, site_base_url, operator_key."
+      }
     ],
     "edge_functions": [
-      {"name": "stripe-webhook",    "verify_jwt": false, "auth": "Stripe-Signature HMAC-SHA256 over `${t}.${rawBody}`, constant-time compare, 300s tolerance", "writes": ["crf_orders.payment_status", "crf_orders.stripe_session_id", "crf_orders.stripe_payment_intent", "crf_orders.paid_at"]},
-      {"name": "kit-download",      "verify_jwt": false, "auth": "(order_id, download_token)", "requires": "payment_status = 'paid'", "writes": []},
-      {"name": "apparel-approval",  "verify_jwt": false, "auth": "(order_id, approval_token)", "writes": ["crf_apparel_orders.artwork_status", "crf_apparel_orders.artwork_note", "crf_apparel_orders.artwork_reviewed_at"]}
+      {
+        "name": "stripe-webhook",
+        "verify_jwt": false,
+        "auth": "Stripe-Signature HMAC-SHA256 over `${t}.${rawBody}`, constant-time compare, 300s tolerance",
+        "writes": [
+          "crf_orders.payment_status",
+          "crf_orders.stripe_session_id",
+          "crf_orders.stripe_payment_intent",
+          "crf_orders.paid_at"
+        ]
+      },
+      {
+        "name": "kit-download",
+        "verify_jwt": false,
+        "auth": "(order_id, download_token)",
+        "requires": "payment_status = 'paid'",
+        "writes": []
+      },
+      {
+        "name": "apparel-approval",
+        "verify_jwt": false,
+        "auth": "(order_id, approval_token)",
+        "writes": [
+          "crf_apparel_orders.artwork_status",
+          "crf_apparel_orders.artwork_note",
+          "crf_apparel_orders.artwork_reviewed_at"
+        ]
+      },
+      {
+        "name": "apparel-notify",
+        "verify_jwt": false,
+        "auth": "(order_id, approval_token)",
+        "writes": [
+          "crf_apparel_orders.approval_email_sent_at"
+        ],
+        "note": "Recipient is read from the order row, never the request. Approval link is built from crf_config.site_base_url. Sends once. Returns 200 {sent:false, reason:'not_configured'} until the four config rows exist."
+      },
+      {
+        "name": "admin-orders",
+        "verify_jwt": false,
+        "auth": "shared key compared to crf_config.operator_key by SHA-256 digest",
+        "writes": [],
+        "note": "Read-only queue view. Selects no token columns. Unset key means no access, not open access."
+      }
     ],
     "pages": [
-      {"file": "index.html",   "route": "/",        "title": "Graphics kit builder"},
-      {"file": "apparel.html", "route": "/apparel", "title": "Racewear builder"},
-      {"file": "ecu.html",     "route": "/ecu",     "title": "ECU template builder"},
-      {"file": "mods.html",    "route": "/mods",    "title": "Modifications guide"},
-      {"file": "approve.html", "route": "/approve", "title": "Artwork approval"},
-      {"file": "privacy.html", "route": "/privacy", "title": "Privacy policy", "deploy": false, "blocked_on": "human-supplied legal facts"},
-      {"file": "terms.html",   "route": "/terms",   "title": "Terms of sale",  "deploy": false, "blocked_on": "human-supplied legal facts"}
+      {
+        "file": "index.html",
+        "route": "/",
+        "title": "Graphics kit builder"
+      },
+      {
+        "file": "apparel.html",
+        "route": "/apparel",
+        "title": "Racewear builder"
+      },
+      {
+        "file": "ecu.html",
+        "route": "/ecu",
+        "title": "ECU template builder"
+      },
+      {
+        "file": "mods.html",
+        "route": "/mods",
+        "title": "Modifications guide"
+      },
+      {
+        "file": "approve.html",
+        "route": "/approve",
+        "title": "Artwork approval"
+      },
+      {
+        "file": "privacy.html",
+        "route": "/privacy",
+        "title": "Privacy policy",
+        "deploy": false,
+        "blocked_on": "human-supplied legal facts"
+      },
+      {
+        "file": "terms.html",
+        "route": "/terms",
+        "title": "Terms of sale",
+        "deploy": false,
+        "blocked_on": "human-supplied legal facts"
+      },
+      {
+        "file": "desk.html",
+        "route": "/desk",
+        "title": "Order desk",
+        "deploy": true,
+        "note": "Unlinked and noindex. Inert until crf_config.operator_key is set."
+      }
     ],
     "external": [
-      {"service": "Stripe",  "objects": ["Payment Link (digital kit)", "Webhook endpoint on checkout.session.completed"]},
-      {"service": "Netlify", "objects": ["Static site, archive deploy to POST /api/v1/sites/{id}/builds, multipart field named 'zip'"]}
+      {
+        "service": "Stripe",
+        "objects": [
+          "Payment Link (digital kit)",
+          "Webhook endpoint on checkout.session.completed"
+        ]
+      },
+      {
+        "service": "Netlify",
+        "objects": [
+          "Static site, archive deploy to POST /api/v1/sites/{id}/builds, multipart field named 'zip'"
+        ]
+      }
     ]
   },
-
   "steps": [
-    {"id": 1, "action": "create_supabase_project", "connector": "supabase", "depends_on": [],     "assert": "A1", "automatable": true},
-    {"id": 2, "action": "apply_migration",         "connector": "supabase", "depends_on": [1],    "assert": "A2", "automatable": true, "source": "BLUEPRINT.md#3.1-3.3"},
-    {"id": 3, "action": "apply_rls_and_grants",    "connector": "supabase", "depends_on": [2],    "assert": "A3", "automatable": true, "source": "BLUEPRINT.md#3.4"},
-    {"id": 4, "action": "deploy_edge_functions",   "connector": "supabase", "depends_on": [3],    "assert": "A4", "automatable": true, "count": 3},
-    {"id": 5, "action": "create_stripe_objects",   "connector": "stripe",   "depends_on": [4],    "assert": "A5", "automatable": true},
-    {"id": 6, "action": "store_webhook_secret",    "connector": "supabase", "depends_on": [5],    "assert": "A6", "automatable": true, "source": "BLUEPRINT.md#3.5"},
-    {"id": 7, "action": "deploy_static_site",      "connector": "netlify",  "depends_on": [6],    "assert": "A7", "automatable": true},
-    {"id": 8, "action": "end_to_end_purchase",     "connector": "stripe",   "depends_on": [7],    "assert": "A8", "automatable": false, "note": "Real card, small amount, refund after. This is the only test that exercises the layers in sequence."},
-    {"id": 9, "action": "publish_legal_pages",     "connector": null,       "depends_on": [],     "assert": "A9", "automatable": false, "note": "Requires entity, address, contact email and governing law. An agent must leave these blank and report them outstanding."}
+    {
+      "id": 1,
+      "action": "create_supabase_project",
+      "connector": "supabase",
+      "depends_on": [],
+      "assert": "A1",
+      "automatable": true
+    },
+    {
+      "id": 2,
+      "action": "apply_migration",
+      "connector": "supabase",
+      "depends_on": [
+        1
+      ],
+      "assert": "A2",
+      "automatable": true,
+      "source": "BLUEPRINT.md#3.1-3.3"
+    },
+    {
+      "id": 3,
+      "action": "apply_rls_and_grants",
+      "connector": "supabase",
+      "depends_on": [
+        2
+      ],
+      "assert": "A3",
+      "automatable": true,
+      "source": "BLUEPRINT.md#3.4"
+    },
+    {
+      "id": 4,
+      "action": "deploy_edge_functions",
+      "connector": "supabase",
+      "depends_on": [
+        3
+      ],
+      "assert": "A4",
+      "automatable": true,
+      "count": 3
+    },
+    {
+      "id": 5,
+      "action": "create_stripe_objects",
+      "connector": "stripe",
+      "depends_on": [
+        4
+      ],
+      "assert": "A5",
+      "automatable": true
+    },
+    {
+      "id": 6,
+      "action": "store_webhook_secret",
+      "connector": "supabase",
+      "depends_on": [
+        5
+      ],
+      "assert": "A6",
+      "automatable": true,
+      "source": "BLUEPRINT.md#3.5"
+    },
+    {
+      "id": 7,
+      "action": "deploy_static_site",
+      "connector": "netlify",
+      "depends_on": [
+        6
+      ],
+      "assert": "A7",
+      "automatable": true
+    },
+    {
+      "id": 8,
+      "action": "end_to_end_purchase",
+      "connector": "stripe",
+      "depends_on": [
+        7
+      ],
+      "assert": "A8",
+      "automatable": false,
+      "note": "Real card, small amount, refund after. This is the only test that exercises the layers in sequence."
+    },
+    {
+      "id": 9,
+      "action": "publish_legal_pages",
+      "connector": null,
+      "depends_on": [],
+      "assert": "A9",
+      "automatable": false,
+      "note": "Requires entity, address, contact email and governing law. An agent must leave these blank and report them outstanding."
+    }
   ],
-
   "assertions": {
-    "A1": {"kind": "http",  "expect": "reachable", "target": "${SUPABASE_URL}/rest/v1/"},
-    "A2": {"kind": "sql",   "expect": "4 tables and 2 trigger functions exist; crf_orders is empty"},
-    "A3": {"kind": "sql",   "expect": "anon holds INSERT on exactly crf_orders, crf_order_files, crf_apparel_orders and nothing on crf_config; crf_config has RLS on and zero policies",
-            "query": "select table_name, privilege_type from information_schema.role_table_grants where table_schema='public' and grantee='anon' and table_name like 'crf%';"},
-    "A4": {"kind": "http",  "expect": "three functions ACTIVE; an unsigned POST to stripe-webhook returns 400"},
-    "A5": {"kind": "external", "expect": "Stripe endpoint enabled and reachable; a test delivery is rejected as unsigned, which is correct"},
-    "A6": {"kind": "sql",   "expect": "one row in crf_config for stripe_webhook_secret, value begins whsec_"},
-    "A7": {"kind": "http",  "expect": "200 for /, /apparel, /ecu, /mods, /approve"},
-    "A8": {"kind": "sql",   "expect": "order row paid with paid_at and stripe_session_id set; kit-download returns the SVG; a wrong token returns 404"},
-    "A9": {"kind": "http",  "expect": "/privacy and /terms are NOT reachable until a human fills the legal facts"}
+    "A1": {
+      "kind": "http",
+      "expect": "reachable",
+      "target": "${SUPABASE_URL}/rest/v1/"
+    },
+    "A2": {
+      "kind": "sql",
+      "expect": "4 tables and 2 trigger functions exist; crf_orders is empty"
+    },
+    "A3": {
+      "kind": "sql",
+      "expect": "anon holds INSERT on exactly crf_orders, crf_order_files, crf_apparel_orders and nothing on crf_config; crf_config has RLS on and zero policies",
+      "query": "select table_name, privilege_type from information_schema.role_table_grants where table_schema='public' and grantee='anon' and table_name like 'crf%';"
+    },
+    "A4": {
+      "kind": "http",
+      "expect": "three functions ACTIVE; an unsigned POST to stripe-webhook returns 400"
+    },
+    "A5": {
+      "kind": "external",
+      "expect": "Stripe endpoint enabled and reachable; a test delivery is rejected as unsigned, which is correct"
+    },
+    "A6": {
+      "kind": "sql",
+      "expect": "one row in crf_config for stripe_webhook_secret, value begins whsec_"
+    },
+    "A7": {
+      "kind": "http",
+      "expect": "200 for /, /apparel, /ecu, /mods, /approve"
+    },
+    "A8": {
+      "kind": "sql",
+      "expect": "order row paid with paid_at and stripe_session_id set; kit-download returns the SVG; a wrong token returns 404"
+    },
+    "A9": {
+      "kind": "http",
+      "expect": "/privacy and /terms are NOT reachable until a human fills the legal facts"
+    }
   },
-
   "invariants": [
-    {"id": "I1", "statement": "anon holds INSERT and nothing else on every crf_ table", "check": "information_schema.role_table_grants"},
-    {"id": "I2", "statement": "no paid order without a Stripe session id", "check": "select id from crf_orders where payment_status='paid' and stripe_session_id is null"},
-    {"id": "I3", "statement": "no approved artwork without a review timestamp", "check": "select id from crf_apparel_orders where artwork_status='approved' and artwork_reviewed_at is null"},
-    {"id": "I4", "statement": "no paid order missing its file", "check": "select o.id from crf_orders o left join crf_order_files f on f.order_id=o.id where o.payment_status='paid' and f.order_id is null"},
-    {"id": "I5", "statement": "the Stripe webhook secret exists only as a crf_config row"},
-    {"id": "I6", "statement": "customer reads are keyed on (id, token); a wrong token is indistinguishable from a wrong id"},
-    {"id": "I7", "statement": "schema changes are additive; narrowing ships after the code that stops using the column"},
-    {"id": "I8", "statement": "the ECU template never offers an injector that reduces flow while presenting itself as an upgrade, and any injector selection must rescale the fuel map or not exist"}
+    {
+      "id": "I1",
+      "statement": "anon holds INSERT and nothing else on every crf_ table",
+      "check": "information_schema.role_table_grants"
+    },
+    {
+      "id": "I2",
+      "statement": "no paid order without a Stripe session id",
+      "check": "select id from crf_orders where payment_status='paid' and stripe_session_id is null"
+    },
+    {
+      "id": "I3",
+      "statement": "no approved artwork without a review timestamp",
+      "check": "select id from crf_apparel_orders where artwork_status='approved' and artwork_reviewed_at is null"
+    },
+    {
+      "id": "I4",
+      "statement": "no paid order missing its file",
+      "check": "select o.id from crf_orders o left join crf_order_files f on f.order_id=o.id where o.payment_status='paid' and f.order_id is null"
+    },
+    {
+      "id": "I5",
+      "statement": "the Stripe webhook secret exists only as a crf_config row"
+    },
+    {
+      "id": "I6",
+      "statement": "customer reads are keyed on (id, token); a wrong token is indistinguishable from a wrong id"
+    },
+    {
+      "id": "I7",
+      "statement": "schema changes are additive; narrowing ships after the code that stops using the column"
+    },
+    {
+      "id": "I8",
+      "statement": "the ECU template never offers an injector that reduces flow while presenting itself as an upgrade, and any injector selection must rescale the fuel map or not exist"
+    },
+    {
+      "id": "I9",
+      "statement": "an email recipient is read from the order row and a customer-facing link is built from configured values, never from the request"
+    }
   ],
-
   "agent_rules": [
     "Execute steps in order; a failed assertion is a stop, not a retry loop.",
     "Never add a SELECT grant for anon to make a step easier. If a step seems to need one, the step is wrong.",
@@ -89,19 +375,38 @@
     "Never invent values for entity, address, contact email or governing law.",
     "Stop and ask if a crf_ table already exists and is non-empty, if Stripe is in live mode during a rebuild, or if an assertion fails twice."
   ],
-
   "known_gaps": [
-    {"id": "G1", "severity": "blocking", "item": "No trading name decided; the prototype name uses a manufacturer's model designation"},
-    {"id": "G2", "severity": "blocking", "item": "Legal pages written but unpublished pending four facts"},
-    {"id": "G3", "severity": "high",     "item": "Racewear page promises an approval email that no code sends"},
-    {"id": "G4", "severity": "medium",   "item": "CI deploy disabled; NETLIFY_AUTH_TOKEN revoked"},
-    {"id": "G5", "severity": "medium",   "item": "No operator view; orders are read with SQL"},
-    {"id": "G6", "severity": "low",      "item": "3D on-bike preview is a 2D silhouette; modeller brief written, not commissioned"},
-    {"id": "G7", "severity": "low",      "item": "Unreachable physical-fulfilment branch in index.html"},
-    {"id": "G8", "severity": "low",      "item": "Duplicate CHECK constraint on crf_apparel_orders.artwork_status"},
-    {"id": "G9", "severity": "low",      "item": "Test order CRF-MT39C8P7 still present in crf_orders"}
+    {
+      "id": "G1",
+      "severity": "blocking",
+      "item": "No trading name decided; the prototype name uses a manufacturer's model designation"
+    },
+    {
+      "id": "G2",
+      "severity": "blocking",
+      "item": "Legal pages written but unpublished pending four facts"
+    },
+    {
+      "id": "G3",
+      "severity": "high",
+      "item": "Approval email deployed but inert: needs a verified sending domain, which needs the name"
+    },
+    {
+      "id": "G4",
+      "severity": "high",
+      "item": "CI deploy disabled; NETLIFY_AUTH_TOKEN revoked, so the site is behind the repository"
+    },
+    {
+      "id": "G5",
+      "severity": "medium",
+      "item": "Order desk built but not deployed and not enabled"
+    },
+    {
+      "id": "G6",
+      "severity": "low",
+      "item": "3D on-bike preview is a 2D silhouette; modeller brief written, not commissioned"
+    }
   ],
-
   "not_part_of_this_system": [
     "supabase/functions/build-digital-asset",
     "supabase/functions/fulfill-order",
