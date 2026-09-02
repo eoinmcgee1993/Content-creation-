@@ -403,7 +403,7 @@ input[type=range]::-webkit-slider-thumb{
     </div>
     <div class="field-row">
       <div class="field">
-        <label for="f-notes" id="f-notes-label">Notes for the print shop (optional)</label>
+        <label for="f-notes">Notes (optional)</label>
         <textarea id="f-notes" placeholder="Colours, background, anything to know before we cut it"></textarea>
       </div>
     </div>
@@ -1328,10 +1328,7 @@ function refreshOrderState(){
     btn.textContent = 'Place a panel design first';
   } else {
     btn.disabled = false;
-    const isDigital = currentFulfilment() === 'digital';
-    btn.textContent = isDigital
-      ? `Continue to payment \u2014 ${count} panel${count>1?'s':''}`
-      : `Submit order \u2014 ${count} panel${count>1?'s':''}`;
+    btn.textContent = `Continue to payment \u2014 ${count} panel${count>1?'s':''}`;
   }
 }
 
@@ -1505,13 +1502,6 @@ async function submitOrder(){
           checkBtn.disabled = false;
         }
       });
-    } else {
-      confirm.innerHTML = `
-        <div class="eyebrow" style="justify-content:center;">Order received</div>
-        <div class="id">${orderId}</div>
-        <p>Pay with the link below, it carries this order reference through to Stripe. We'll email ${escapeHTML(email)} once your kit is cut, printed, and ready to ship &mdash; you won't get a downloadable file, only the finished graphics.</p>
-      `;
-      confirm.appendChild(payWrap);
     }
     document.getElementById('order-card').innerHTML = '';
     document.getElementById('order-card').appendChild(confirm);
@@ -1524,15 +1514,6 @@ async function submitOrder(){
 }
 
 document.getElementById('submit-btn').addEventListener('click', submitOrder);
-document.querySelectorAll('input[name="fulfil"]').forEach(inp=>{
-  inp.addEventListener('change', ()=>{
-    const isDigital = currentFulfilment() === 'digital';
-    document.getElementById('payment-note').style.display = isDigital ? 'block' : 'none';
-    document.getElementById('f-notes-label').textContent = isDigital ? 'Notes (optional)' : 'Notes for the print shop (optional)';
-    refreshOrderState();
-  });
-});
-
 
 buildOverview();
 buildBikePreview();
