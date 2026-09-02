@@ -180,14 +180,21 @@
       {
         "service": "Stripe",
         "objects": [
-          "Payment Link (digital kit)",
-          "Webhook endpoint on checkout.session.completed"
+          "Payment Link (digital kit) — LIVE mode, active, $39.00 USD, product 'CRF250L Custom Graphics Kit — Digital File'",
+          "Webhook endpoint — LIVE mode, enabled, targets the stripe-webhook function, subscribed to checkout.session.completed only",
+          "No purchase has ever completed: one session exists and it expired unpaid, so the path is unproven end to end"
         ]
       },
       {
         "service": "Netlify",
         "objects": [
           "Static site, archive deploy to POST /api/v1/sites/{id}/builds, multipart field named 'zip'"
+        ]
+      },
+      {
+        "service": "Resend",
+        "objects": [
+          "Sending domain required before apparel-notify can send; the only verified domain belongs to another project"
         ]
       }
     ]
@@ -242,7 +249,8 @@
         4
       ],
       "assert": "A5",
-      "automatable": true
+      "automatable": true,
+      "note": "Already done on the live account: the payment link and webhook endpoint exist in live mode and are enabled. Do not rotate the stored signing secret without cause."
     },
     {
       "id": 6,
@@ -380,6 +388,11 @@
       "id": "G1",
       "severity": "blocking",
       "item": "No trading name decided; the prototype name uses a manufacturer's model designation"
+    },
+    {
+      "id": "G1b",
+      "severity": "blocking",
+      "item": "Merchant name mismatch: payments run through a Stripe account named Clearmark, which is what buyers see at checkout and on their statement"
     },
     {
       "id": "G2",

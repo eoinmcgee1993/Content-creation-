@@ -187,23 +187,64 @@ Small, all mechanical, all safe to batch:
 
 ## Phase 7 — Launch
 
-The order matters here.
+Checked against the live Stripe account on 2 Sep. Two of the five steps were
+already done, one is now known to be a different problem than it looked, and
+the remaining two are yours.
 
-1. Point the domain at Netlify. Confirm HTTPS and that the apex and `www` both
-   resolve.
-2. Switch Stripe from test to live keys, if not already. **Create a new webhook
-   endpoint** for the live mode and update `crf_config.stripe_webhook_secret` —
-   test-mode and live-mode signing secrets differ, and this is the single most
-   common way a launch silently stops marking orders paid.
-3. Run one real end-to-end purchase with a real card, for a small amount:
-   design → order → pay → webhook → download. Refund it afterwards.
-4. Verify the row: `payment_status='paid'`, `paid_at` set, `stripe_session_id`
-   populated.
-5. Confirm the file that downloads is the design that was ordered.
+### Already true — there is no test-to-live switch to make
 
-**Do not skip step 3.** Every layer of this system has been tested
-individually; that step is the only one that tests them in sequence with real
-money.
+An earlier version of this plan told you to move Stripe from test to live and
+create a live webhook endpoint. **That work is done.** The account is in live
+mode and has been all along:
+
+| | |
+|---|---|
+| Payment link | live, active, `$39.00 USD` |
+| Product | *CRF250L Custom Graphics Kit — Digital File* |
+| Webhook endpoint | live, **enabled**, pointing at the `stripe-webhook` function |
+| Subscribed events | `checkout.session.completed`, and only that |
+
+So the failure this plan warned about — a test-mode signing secret left behind
+a live-mode switch — cannot happen, because there is no switch. **Do not
+rotate `crf_config.stripe_webhook_secret` as a launch ritual.** The secret in
+the database is the one that endpoint was created with; replacing it without
+cause would break a path that is currently correct.
+
+### The real blocker nobody had written down
+
+The Stripe account is **Clearmark**.
+
+A customer buying a graphics kit sees *Clearmark* on the checkout page and
+*Clearmark* on their card statement. They will not recognise it. Unrecognised
+statement descriptors are one of the most reliable causes of chargebacks, and
+a chargeback on a $39 digital file costs more than the sale.
+
+This is the naming decision in Phase 1 arriving with a bill attached. It needs
+either a Stripe account in the trading name, or at minimum a statement
+descriptor that matches whatever the site is called.
+
+### Nobody has ever completed a purchase
+
+One checkout session exists against the kit link, from 8 Aug. It expired
+unpaid. **The payment path has never run end to end with real money** — which
+is exactly why the step below is not optional.
+
+### What is left
+
+1. **Point the domain at Netlify.** Confirm HTTPS on both apex and `www`.
+   Blocked on Phase 1.
+2. **Fix the merchant identity**, per above. Blocked on Phase 1.
+3. **Run one real purchase with a real card**, for a small amount: design →
+   order → pay → webhook → download. Refund it afterwards. This needs a human
+   with a card; it cannot be automated, and it is the only test that exercises
+   the layers in sequence.
+4. **Verify the row:** `payment_status='paid'`, `paid_at` set,
+   `stripe_session_id` populated.
+5. **Confirm the file that downloads is the design that was ordered.**
+
+Step 3 is also the only proof that the stored signing secret matches the
+endpoint. Every other layer has been tested on its own; a signature can only
+be verified by a real signed delivery.
 
 ---
 

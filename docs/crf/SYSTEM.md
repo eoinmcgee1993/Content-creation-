@@ -138,7 +138,12 @@ back to a side elevation. The separate silhouette set is the fix.
    only if `payment_status = 'paid'` and the token matches.
 
 The price lives in the Stripe Payment Link, not in the page. Changing it does
-not require a deploy.
+not require a deploy. It is **$39.00 USD**, one-time, on a **live-mode** link
+— the kit has been on real sale, not in test mode, since the link was made.
+
+Worth knowing, because it is invisible from the code: the Stripe account is
+named **Clearmark**. That is the name a customer sees at checkout and on their
+card statement, and it is not the name of this site. See the gaps below.
 
 Physical fulfilment is **off**. There is one fulfilment radio (`digital`), and
 `STRIPE_LINKS` has one entry. The physical confirmation branch further down the
@@ -361,27 +366,32 @@ The CRF Edge Functions are exactly five: `stripe-webhook`, `kit-download`,
    page. Using a manufacturer's model designation as a trading name is real
    trademark exposure, and a domain bought under it is money spent on a name
    that may have to change.
-2. **The legal pages are written but not published.** `privacy.html` and
+2. **The merchant name does not match the site.** Payments run through a
+   Stripe account called *Clearmark*, so that is what a buyer sees at checkout
+   and on their statement. Unrecognised descriptors are a leading cause of
+   chargebacks, and a chargeback on a $39 file costs more than the sale. This
+   is the naming decision arriving with a bill attached.
+3. **The legal pages are written but not published.** `privacy.html` and
    `terms.html` are complete except for four facts held in `legal-details.js`:
    entity, address, contact email, governing law. The file marks blanks in red
    and shows a banner, so it cannot be published half-filled by accident. They
    are not linked from any page and not in the deploy bundle.
-3. **The approval email is built but not switched on.** `apparel-notify`
+4. **The approval email is built but not switched on.** `apparel-notify`
    sends the customer their approval link and the operator a heads-up, and it
    is deployed. It stays inert until four `crf_config` rows exist — a sending
    key, a from address, an operator address and the site base URL — and the
    from address needs a verified sending domain, which needs the name. Until
    then the order still saves and the link is still on screen.
-4. **The operator view is built but not switched on.** `desk.html` and
+5. **The operator view is built but not switched on.** `desk.html` and
    `admin-orders` are done; set `crf_config.operator_key` to enable it. The
    page is unlinked and carries a noindex tag. It is not deployed yet — see
    below.
-5. **No 3D preview.** The on-bike preview is a 2D silhouette. The real
+6. **No 3D preview.** The on-bike preview is a 2D silhouette. The real
    thing needs a commissioned model — brief written, not commissioned. Stock
    and AI-generated models fail on the UV layout, which is the one requirement
    that matters, and their licences generally forbid serving the file to
    visitors, which a web viewer does by definition.
-6. **The site is behind the repository.** `apparel.html`, `index.html` and
+7. **The site is behind the repository.** `apparel.html`, `index.html` and
    the new `desk.html` are committed but not deployed, because
    `NETLIFY_AUTH_TOKEN` is revoked. The server side — all five Edge Functions
    and the schema — is live and current.
