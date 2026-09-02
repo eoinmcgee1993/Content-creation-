@@ -205,6 +205,7 @@ footer{margin-top:38px;font-size:12px;color:var(--text-dim);text-align:center;}
 // nothing else. Payment and artwork approval are server-controlled.
 const SUPABASE_URL = "https://ohcclvcjdbftlnyrrzvt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_-u9yj16rZFqBZoQBkeLAQA_HTFbTtOf";
+const NOTIFY_FN = SUPABASE_URL + "/functions/v1/apparel-notify";
 
 // ── Catalogue ───────────────────────────────────────────────────────────────
 // Quantity tiers are real and shown live. Thrila advertises "the more you buy
@@ -611,13 +612,24 @@ $("submit").addEventListener("click", async ()=>{
     const approveUrl = new URL("approve.html", location.href).href
       + "?order=" + encodeURIComponent(orderId) + "&token=" + approvalToken;
 
+    // Ask the server to email the approval link. Deliberately not awaited and
+    // deliberately silent: the order is already saved and the link is on
+    // screen below, so a mail failure must not read as a failed order. Until
+    // a sending domain exists the function replies "not_configured" and sends
+    // nothing.
+    fetch(NOTIFY_FN, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order_id: orderId, token: approvalToken }),
+    }).catch(()=>{});
+
     const c = document.createElement("div");
     c.className = "confirm";
     c.innerHTML = `<div class="eyebrow" style="margin-top:16px;">Order received</div>`
       + `<div class="id">${escapeHTML(orderId)}</div>`
       + `<p class="hint">${n} garment${n===1?"":"s"} at ${money(each)} each &mdash; <b>${money(each*n)}</b> (about ${usd(each*n)}).</p>`
-      + `<p class="hint" style="margin-top:8px;">We check your artwork at print size and email ${escapeHTML($("f-email").value.trim())} to approve it. <b>You pay after approval, not before.</b></p>`
-      + `<p class="hint" style="margin-top:10px;">Your approval page &mdash; keep this link, it is the only way back to it:</p>`
+      + `<p class="hint" style="margin-top:8px;">We check your artwork at print size before anything is produced. <b>You pay after approval, not before.</b></p>`
+      + `<p class="hint" style="margin-top:10px;">Approve it here &mdash; keep this link, it is the only way back to it. We email it to ${escapeHTML($("f-email").value.trim())} as well:</p>`
       + `<p style="margin-top:4px;word-break:break-all;"><a id="approve-link" href="${approveUrl}">${escapeHTML(approveUrl)}</a></p>`;
     $("confirm-area").innerHTML = "";
     $("confirm-area").appendChild(c);
