@@ -22,10 +22,43 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+      - name: Stage the pages that are meant to be public
+        # An explicit list, not the whole folder.
+        #
+        # crf-builder also holds privacy.html, terms.html and legal-details.js.
+        # Those are finished except for four facts about the business — the
+        # entity, a service address, a contact email and the governing law —
+        # and legal-details.js renders the blanks in red with a banner across
+        # the page. Deploying the directory wholesale, which is what this
+        # workflow used to do, would put them live with those placeholders
+        # showing the moment the push trigger is re-enabled.
+        #
+        # When those four values are filled in, add the two pages and the
+        # script to this list and link them from the footers.
+        run: |
+          set -euo pipefail
+          mkdir -p _publish
+          cp crf-builder/index.html \
+             crf-builder/apparel.html \
+             crf-builder/ecu.html \
+             crf-builder/mods.html \
+             crf-builder/approve.html \
+             crf-builder/desk.html \
+             _publish/
+          cp -r crf-builder/kits _publish/kits
+          echo "staged:" && find _publish -type f | sort
+
       - name: Deploy to Netlify
         # --no-build: this is a static folder, and without it the CLI would run
-        # the root netlify.toml build (trading-dashboard) before uploading.
-        run: npx netlify-cli@latest deploy --dir=crf-builder --prod --no-build
+        # the build in the root netlify.toml, which publishes
+        # digital-renaissance/site — a different project in this repository.
+        # That would put the wrong site on this domain.
+        #
+        # crf-garage is deliberately not connected to the repository; it is
+        # deployed by upload only. If it is ever linked, give it a base
+        # directory of crf-builder, or the root netlify.toml will take over
+        # and publish the wrong project here.
+        run: npx netlify-cli@latest deploy --dir=_publish --prod --no-build
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ca431dfc-8aa8-4e51-ab98-8765e101e3a0
