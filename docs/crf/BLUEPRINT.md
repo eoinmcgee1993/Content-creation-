@@ -403,6 +403,15 @@ curl -X POST "https://api.netlify.com/api/v1/sites/${NETLIFY_SITE_ID}/builds" \
 
 Field name must be `zip`; endpoint must be `/builds`. `/deploys` is refused.
 
+Deploy an explicit list of files, never the whole folder: `privacy.html`,
+`terms.html` and `legal-details.js` live in the same directory and must not be
+published until §6 is satisfied.
+
+If the site is connected to a repository rather than deployed by upload, give
+it a base directory pointing at the site folder. A `netlify.toml` at the
+repository root belonging to another project will otherwise decide what gets
+published here.
+
 ---
 
 ## 6. Legal pages — do not fill these in

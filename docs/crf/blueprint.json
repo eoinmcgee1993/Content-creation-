@@ -188,7 +188,9 @@
       {
         "service": "Netlify",
         "objects": [
-          "Static site, archive deploy to POST /api/v1/sites/{id}/builds, multipart field named 'zip'"
+          "Static site, archive deploy to POST /api/v1/sites/{id}/builds, multipart field named 'zip'",
+          "Deploy an explicit file list, never the whole folder: the legal pages sit in the same directory and must not ship until their four facts exist",
+          "The site is deployed by upload and deliberately not linked to the repository: a root netlify.toml belonging to another project would otherwise decide what gets published here"
         ]
       },
       {
@@ -381,7 +383,8 @@
     "Never add a SELECT grant for anon to make a step easier. If a step seems to need one, the step is wrong.",
     "Never write a secret to a file, an environment variable or a CI variable. The only secret is a crf_config row.",
     "Never invent values for entity, address, contact email or governing law.",
-    "Stop and ask if a crf_ table already exists and is non-empty, if Stripe is in live mode during a rebuild, or if an assertion fails twice."
+    "Stop and ask if a crf_ table already exists and is non-empty, if Stripe is in live mode during a rebuild, or if an assertion fails twice.",
+    "Deploy a staged list of files, not a directory. Publishing a folder wholesale ships whatever else happens to be in it."
   ],
   "known_gaps": [
     {

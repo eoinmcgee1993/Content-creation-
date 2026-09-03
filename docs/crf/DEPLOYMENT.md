@@ -97,12 +97,25 @@ the moment anything is urgent.
    it.
 4. Push a trivial change and confirm the workflow deploys it.
 
+**The workflow publishes an explicit list of files, not the folder.** It used
+to deploy `crf-builder/` wholesale, which would have put `privacy.html`,
+`terms.html` and their placeholder banner live the moment the trigger was
+re-enabled. It now stages the six intended pages plus `kits/` and deploys
+that. When Phase 2 is done, add the two pages and `legal-details.js` to that
+list — the same list the manual command above uses.
+
+**Do not connect `crf-garage` to the repository.** It is deployed by upload
+only, and that is deliberate: the root `netlify.toml` publishes
+`digital-renaissance/site`, a different project here, so linking the site
+would make its next build serve the wrong project on this domain. If it ever
+must be linked, give it a base directory of `crf-builder` first.
+
 Until then, the manual path is:
 
 ```bash
 cd crf-builder
 zip -r site.zip index.html apparel.html ecu.html approve.html mods.html \
-       privacy.html terms.html legal-details.js kits
+       desk.html kits
 
 curl -X POST "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/builds" \
   -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
