@@ -68,37 +68,94 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## 5. Project overview
 
-What this is: (fill in: one or two sentences, what it does and who it serves.)
-Stack: (fill in: hosting, database, payments, email, automation.)
-Live at: (fill in: url)
-Current focus: (fill in: the one milestone you are working toward right now.)
+**Note:** this repository holds several unrelated projects. Sections 5–9 below
+describe **CRF** — the Honda CRF250L/300L storefront in `crf-builder/`. Other
+projects here (`digital-renaissance/`, `trading-dashboard/`, `landing/`,
+`kdp-compiler/`, and others) have their own conventions and their own deploy
+targets; do not apply these rules to them, and do not change their files while
+working on CRF.
+
+**What this is:** a static storefront selling three things to owners of a Honda
+CRF250L / CRF300L — a print-ready graphics-kit SVG, custom club racewear, and a
+free ECU tune template. No accounts, no server, no build step.
+
+**Stack:** Netlify (static hosting, deployed by upload) · Supabase Postgres +
+Edge Functions (Deno) · Stripe Payment Links · Resend for email, when a sending
+domain exists.
+
+**Live at:** https://crf-garage.netlify.app — `/`, `/apparel`, `/ecu`, `/mods`,
+`/approve`, `/desk`. "CRF Garage" is a prototype name, not a trading name.
+
+**Current focus:** the trading name. It blocks the domain, the legal pages, the
+email sending domain, and the Stripe merchant name a buyer sees at checkout.
+
+**Read `docs/crf/` before changing anything here** — `SYSTEM.md` for how it
+works, `DEPLOYMENT.md` for what is left, `BLUEPRINT.md` for the contracts.
 
 ## 6. Architecture rules
 
-- Database access lives in (fill in: location). The UI never queries the database directly.
-- Business logic lives in (fill in: location). Keep it out of view files and edge functions where possible.
-- Server side secrets never touch client code. They live only in (fill in: location).
-- Shared helpers live in (fill in: location). Search before adding a helper; do not duplicate one that already exists.
+- **The browser can create, and can do nothing else.** It holds only the
+  publishable key, and `anon` has `INSERT` and no other grant on any `crf_`
+  table. If a task appears to need `SELECT` for `anon`, the task is wrong, not
+  the rule — put the read in an Edge Function under the service-role key.
+- **Database reads live in `supabase/functions/`.** Pages write directly to
+  PostgREST and never read back.
+- **Money and approval state are server-owned.** `payment_status` is written
+  only by `stripe-webhook` after signature verification; `artwork_status` only
+  by the customer through `apparel-approval`. `BEFORE INSERT` triggers
+  overwrite both on every insert, so a crafted request cannot self-declare.
+- **Every customer-facing read is keyed on `(id, token)`**, and a wrong token
+  returns the same 404 as a wrong id — otherwise the endpoint becomes an
+  order-id oracle.
+- **Secrets live in one place: `public.crf_config`.** RLS on, zero policies,
+  grants revoked — only a service-role client inside a function can read it.
+  Never an environment variable, never a file, never the repository.
+- **Anything emailed goes to an address read from the order row**, and links
+  inside it are built from configured values. Never from the request.
+- Schema changes are additive. Ship the code that stops using a column before
+  the migration that removes it.
 
 ## 7. Coding standards
 
-- Language and framework: (fill in.)
-- Formatting: (fill in.)
-- Naming: (fill in.)
-- Comments explain why, not what. Keep functions small and single purpose.
+- **Plain HTML, CSS and JavaScript in one file per page.** No framework, no
+  bundler, no build step — that is a deliberate constraint, not an oversight.
+  Do not introduce one.
+- Edge Functions are TypeScript on Deno, `verify_jwt = false` with their own
+  authentication in the body. That is correct here: Stripe cannot present a
+  Supabase JWT and customers are not signed in.
+- Escape anything user-supplied before it reaches `innerHTML`. Both builders
+  have an `escapeHTML` helper; use it.
+- Money is integer minor units (satang, cents). Never floats.
+- Comments explain why, not what — especially where the reason is a defect
+  that was already paid for once. Several comments here exist because someone
+  nearly shipped a lean fuel map or an open mail relay.
 
 ## 8. Validation (must pass before any task is complete)
 
-Run every command below and confirm all pass before treating work as done.
+**There is no lint, test, or build command in this project.** Saying so is the
+honest answer, not a gap to paper over — there is nothing to compile. What
+replaces them:
 
-```
-(fill in: lint command)
-(fill in: test command)
-(fill in: build command)
-(fill in: type or schema check)
+```bash
+# 1. Every page still parses and renders, with no console errors.
+#    Serve crf-builder/ and drive it; do not just eyeball the diff.
+
+# 2. Every live route answers.
+for p in "" apparel ecu mods approve desk; do
+  curl -s -o /dev/null -w "$p %{http_code}\n" "https://crf-garage.netlify.app/$p"
+done   # privacy and terms must stay 404 until their four facts exist
+
+# 3. anon holds INSERT and nothing else.
+#    select table_name, privilege_type from information_schema.role_table_grants
+#     where table_schema='public' and grantee='anon' and table_name like 'crf%';
 ```
 
-If a command does not exist yet, say so rather than skipping it.
+Three database invariants must return zero rows: no order `paid` without a
+Stripe session id; no artwork `approved` without a review timestamp; no paid
+order missing its file. They are written out in `docs/crf/DEPLOYMENT.md`.
+
+**Changing an Edge Function means driving it over HTTPS** — the happy path and
+the refusals. Reading the diff is not verification.
 
 ## 9. Task handling
 
@@ -109,4 +166,12 @@ Work toward one milestone at a time.
 3. Run the validation list in section 8.
 4. Stop, summarize what changed, and wait for review before the next milestone.
 
-Governing rule: ship before build. A working, shipped, smaller version beats an unshipped larger one.
+Governing rule: ship before build. A working, shipped, smaller version beats an
+unshipped larger one.
+
+**Deploying:** the site is published by uploading `crf-builder/`, and
+`crf-garage` is deliberately **not** connected to this repository. The root
+`netlify.toml` publishes `digital-renaissance/site`, so linking the site would
+make its next build serve a different project on this domain. Deploy an
+explicit list of files, never the folder — `privacy.html`, `terms.html` and
+`legal-details.js` sit in it and must not ship until their four facts exist.

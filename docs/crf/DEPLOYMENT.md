@@ -23,9 +23,9 @@ rework if done late come first.
 | Edge Functions | `stripe-webhook`, `kit-download`, `apparel-approval` all ACTIVE |
 | Payments — kit | Stripe Payment Link live, webhook verified |
 | Payments — racewear | Manual invoice. No card path |
+| `/desk` order desk | Live and **enabled** — `crf_config.operator_key` is set |
 | Approval email | Built and deployed, **inert** until four `crf_config` rows exist |
-| Order desk | Built, **not deployed**, inert until `crf_config.operator_key` is set |
-| CI deploy | **Disabled.** `NETLIFY_AUTH_TOKEN` revoked |
+| CI deploy | **Not automated.** `NETLIFY_AUTH_TOKEN` revoked, so the Action's push trigger stays off. Deploys work on request through the Netlify connector |
 | Domain | Not purchased |
 | Trading name | Not decided |
 
