@@ -410,12 +410,7 @@
     {
       "id": "G4",
       "severity": "high",
-      "item": "CI deploy disabled; NETLIFY_AUTH_TOKEN revoked, so the site is behind the repository"
-    },
-    {
-      "id": "G5",
-      "severity": "medium",
-      "item": "Order desk built but not deployed and not enabled"
+      "item": "Deploys are not automated: NETLIFY_AUTH_TOKEN is revoked so the Action's push trigger stays off. The site itself is current."
     },
     {
       "id": "G6",

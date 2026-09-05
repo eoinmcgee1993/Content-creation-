@@ -391,7 +391,8 @@ The CRF Edge Functions are exactly five: `stripe-webhook`, `kit-download`,
    and AI-generated models fail on the UV layout, which is the one requirement
    that matters, and their licences generally forbid serving the file to
    visitors, which a web viewer does by definition.
-7. **The site is behind the repository.** `apparel.html`, `index.html` and
-   the new `desk.html` are committed but not deployed, because
-   `NETLIFY_AUTH_TOKEN` is revoked. The server side — all five Edge Functions
-   and the schema — is live and current.
+7. **Deploys are manual.** The site is current — six pages live, including
+   the order desk — but nothing publishes it automatically. The GitHub Action
+   still has its push trigger commented out because `NETLIFY_AUTH_TOKEN` is
+   revoked. Until that secret exists, every deploy is something a person (or
+   an assistant with the Netlify connector) has to ask for.

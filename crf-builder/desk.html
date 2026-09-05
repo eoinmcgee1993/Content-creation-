@@ -180,11 +180,20 @@ function render(d){
 }
 
 async function load(key){
-  const res = await fetch(FN, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key }),
-  });
+  let res;
+  try{
+    res = await fetch(FN, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key }),
+    });
+  }catch{
+    // fetch itself rejects when the request never lands — offline, DNS, a
+    // captive portal. Without this the browser's own "Failed to fetch" ends
+    // up on screen, which reads like a bug in the page rather than a phone
+    // with no signal.
+    throw new Error("Could not reach the server. Check your connection.");
+  }
   if(res.status === 401) throw new Error("That key was not accepted.");
   if(!res.ok) throw new Error("Could not load orders right now.");
   return res.json();
