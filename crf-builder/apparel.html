@@ -538,7 +538,15 @@ const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||"").trim());
 function readyState(){
   if(unitCount() === 0) return "Add at least one rider";
   if(!Object.keys(state.art).length) return "Add artwork to at least one placement";
-  if(!state.roster.every(r => r.name.trim())) return "Every rider needs a name";
+  // Name the row rather than the rule. "Every rider needs a name" is true and
+  // useless on a twelve-rider roster — you still have to hunt for the blank
+  // one. This says which.
+  const unnamed = state.roster.findIndex(r => !r.name.trim());
+  if(unnamed !== -1){
+    return state.roster.length === 1
+      ? "Add the rider's name"
+      : `Rider ${unnamed + 1} needs a name`;
+  }
   if(!$("f-name").value.trim()) return "Add your name";
   if(!emailOk($("f-email").value)) return "Add a valid email";
   return null;
