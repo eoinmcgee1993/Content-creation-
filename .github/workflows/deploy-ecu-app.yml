@@ -46,6 +46,7 @@ jobs:
              crf-builder/desk.html \
              _publish/
           cp -r crf-builder/kits _publish/kits
+          cp crf-builder/_redirects _publish/_redirects
           echo "staged:" && find _publish -type f | sort
 
       - name: Deploy to Netlify
