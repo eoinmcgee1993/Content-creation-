@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <title>CRF Garage — Custom Racewear Builder</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -74,7 +75,7 @@ textarea{min-height:70px;resize:vertical;}
 
 .btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer;width:100%;}
 .btn:disabled{opacity:.4;cursor:not-allowed;}
-.btn-sm{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-sm{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-height:44px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}
 .btn-sm:hover{border-color:var(--text-dim);}
 
 /* roster */
@@ -82,7 +83,7 @@ table.roster{width:100%;border-collapse:collapse;margin-top:6px;font-size:14px;}
 table.roster th{text-align:left;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);font-weight:600;padding:6px 6px;border-bottom:1px solid var(--line);}
 table.roster td{padding:5px 6px;border-bottom:1px solid var(--line);}
 table.roster input,table.roster select{padding:6px 8px;font-size:13px;}
-.rm{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;}
+.rm{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1;min-width:44px;min-height:44px;padding:2px 6px;}
 .rm:hover{color:var(--accent);}
 .roster-scroll{overflow-x:auto;}
 
@@ -191,7 +192,7 @@ footer{margin-top:38px;font-size:12px;color:var(--text-dim);text-align:center;}
       <div class="field"><label for="f-notes">Notes for the print shop</label><textarea id="f-notes" placeholder="Sponsor logos, exact Pantones, deadlines"></textarea></div>
 
       <button class="btn" id="submit" disabled>Add riders and artwork to continue</button>
-      <div class="err" id="err"></div>
+      <div class="err" id="err" role="alert" aria-live="assertive"></div>
       <div id="confirm-area"></div>
 
       <div class="warn">
