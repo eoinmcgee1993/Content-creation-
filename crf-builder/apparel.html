@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <title>CRF Garage — Custom Racewear Builder</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -52,6 +53,7 @@ svg.garment-svg{width:100%;height:auto;display:block;background:#0d0e11;border-r
 /* zones */
 .zone-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
 .zone-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;}
+.zone-row:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px;}
 .zone-row.sel{border-color:var(--accent);}
 .zone-row .z-name{font-weight:600;font-size:14px;}
 .zone-row .z-state{font-size:12px;color:var(--text-dim);}
@@ -62,6 +64,9 @@ input[type=text],input[type=email],input[type=number],select,textarea{
   width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);
   border-radius:8px;padding:9px 11px;font:inherit;font-size:14px;}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--accent-2);outline-offset:2px;
+}
 textarea{min-height:70px;resize:vertical;}
 .field{margin-bottom:12px;}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -70,7 +75,7 @@ textarea{min-height:70px;resize:vertical;}
 
 .btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer;width:100%;}
 .btn:disabled{opacity:.4;cursor:not-allowed;}
-.btn-sm{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-sm{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-height:44px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}
 .btn-sm:hover{border-color:var(--text-dim);}
 
 /* roster */
@@ -78,7 +83,7 @@ table.roster{width:100%;border-collapse:collapse;margin-top:6px;font-size:14px;}
 table.roster th{text-align:left;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);font-weight:600;padding:6px 6px;border-bottom:1px solid var(--line);}
 table.roster td{padding:5px 6px;border-bottom:1px solid var(--line);}
 table.roster input,table.roster select{padding:6px 8px;font-size:13px;}
-.rm{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;}
+.rm{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1;min-width:44px;min-height:44px;padding:2px 6px;}
 .rm:hover{color:var(--accent);}
 .roster-scroll{overflow-x:auto;}
 
@@ -187,7 +192,7 @@ footer{margin-top:38px;font-size:12px;color:var(--text-dim);text-align:center;}
       <div class="field"><label for="f-notes">Notes for the print shop</label><textarea id="f-notes" placeholder="Sponsor logos, exact Pantones, deadlines"></textarea></div>
 
       <button class="btn" id="submit" disabled>Add riders and artwork to continue</button>
-      <div class="err" id="err"></div>
+      <div class="err" id="err" role="alert" aria-live="assertive"></div>
       <div id="confirm-area"></div>
 
       <div class="warn">
@@ -201,10 +206,11 @@ footer{margin-top:38px;font-size:12px;color:var(--text-dim);text-align:center;}
 
 <script>
 // ── Storage (Supabase) ──────────────────────────────────────────────────────
-// Browser holds only the publishable key: RLS lets it INSERT an order and
-// nothing else. Payment and artwork approval are server-controlled.
+// Browser holds only the publishable key. Racewear orders are created by the
+// server function so the browser cannot mint order ids or approval tokens.
 const SUPABASE_URL = "https://ohcclvcjdbftlnyrrzvt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_-u9yj16rZFqBZoQBkeLAQA_HTFbTtOf";
+const CREATE_FN = SUPABASE_URL + "/functions/v1/create-apparel-order";
 const NOTIFY_FN = SUPABASE_URL + "/functions/v1/apparel-notify";
 
 // ── Catalogue ───────────────────────────────────────────────────────────────
@@ -358,7 +364,14 @@ function renderZones(){
     const has = !!state.art[z.id];
     row.innerHTML = `<span class="z-name">${escapeHTML(z.label)}</span>`
       + `<span class="z-state ${has?'done':''}">${has ? "artwork added" : "empty &middot; " + z.cm[0] + "×" + z.cm[1] + "cm"}</span>`;
-    row.addEventListener("click", ()=>{ state.zone = z.id; renderZones(); $("zone-target").textContent = z.label; });
+    row.setAttribute("role", "button");
+    row.tabIndex = 0;
+    row.setAttribute("aria-pressed", z.id === state.zone ? "true" : "false");
+    const selectZone = () => { state.zone = z.id; renderZones(); $("zone-target").textContent = z.label; };
+    row.addEventListener("click", selectZone);
+    row.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); selectZone(); }
+    });
     box.appendChild(row);
   }
 }
@@ -402,17 +415,20 @@ function renderRoster(){
     const tdName = document.createElement("td");
     const inName = document.createElement("input");
     inName.type = "text"; inName.value = r.name; inName.placeholder = "Rider";
+    inName.setAttribute("aria-label", `Rider ${i + 1} name`);
     inName.addEventListener("input", ()=>{ r.name = inName.value; renderPreview(); refreshSubmit(); });
     tdName.appendChild(inName);
 
     const tdNum = document.createElement("td");
     const inNum = document.createElement("input");
     inNum.type = "text"; inNum.value = r.number; inNum.placeholder = "00"; inNum.style.width = "62px";
+    inNum.setAttribute("aria-label", `Rider ${i + 1} race number`);
     inNum.addEventListener("input", ()=>{ r.number = inNum.value.replace(/[^0-9]/g,"").slice(0,3); inNum.value = r.number; renderPreview(); });
     tdNum.appendChild(inNum);
 
     const tdSize = document.createElement("td");
     const sel = document.createElement("select");
+    sel.setAttribute("aria-label", `Rider ${i + 1} size`);
     for(const s of g.sizes){
       const o = document.createElement("option"); o.value = s; o.textContent = s;
       if(s === r.size) o.selected = true;
@@ -424,6 +440,7 @@ function renderRoster(){
     const tdQty = document.createElement("td");
     const inQty = document.createElement("input");
     inQty.type = "number"; inQty.min = "1"; inQty.max = "99"; inQty.value = r.qty; inQty.style.width = "64px";
+    inQty.setAttribute("aria-label", `Rider ${i + 1} quantity`);
     inQty.addEventListener("input", ()=>{
       const v = parseInt(inQty.value,10);
       r.qty = (Number.isFinite(v) && v > 0) ? Math.min(v,99) : 1;
@@ -433,7 +450,7 @@ function renderRoster(){
 
     const tdRm = document.createElement("td");
     const rm = document.createElement("button");
-    rm.className = "rm"; rm.type = "button"; rm.innerHTML = "&times;"; rm.title = "Remove rider";
+    rm.className = "rm"; rm.type = "button"; rm.innerHTML = "&times;"; rm.title = "Remove rider"; rm.setAttribute("aria-label", `Remove rider ${i + 1}`);
     rm.addEventListener("click", ()=>{ state.roster.splice(i,1); renderRoster(); renderPrice(); renderPreview(); refreshSubmit(); });
     tdRm.appendChild(rm);
 
@@ -538,7 +555,13 @@ const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v||"").trim());
 function readyState(){
   if(unitCount() === 0) return "Add at least one rider";
   if(!Object.keys(state.art).length) return "Add artwork to at least one placement";
-  if(!state.roster.every(r => r.name.trim())) return "Every rider needs a name";
+  // Name the row rather than the rule. "Every rider needs a name" is true and
+  // useless on a twelve-rider roster — you still have to hunt for the blank
+  // one. This says which.
+  const unnamed = state.roster.findIndex(r => !r.name.trim());
+  if(unnamed !== -1){
+    return `Rider ${unnamed + 1} needs a name`;
+  }
   if(!$("f-name").value.trim()) return "Add your name";
   if(!emailOk($("f-email").value)) return "Add a valid email";
   return null;
@@ -554,13 +577,11 @@ function refreshSubmit(){
 }
 
 async function saveApparelOrder(rec){
-  const res = await fetch(SUPABASE_URL + "/rest/v1/crf_apparel_orders", {
+  const res = await fetch(CREATE_FN, {
     method:"POST",
     headers:{
       "Content-Type":"application/json",
       "apikey": SUPABASE_KEY,
-      "Authorization":"Bearer " + SUPABASE_KEY,
-      "Prefer":"return=minimal",
     },
     body: JSON.stringify(rec),
   });
@@ -568,7 +589,7 @@ async function saveApparelOrder(rec){
     const detail = await res.text().catch(()=> "");
     throw new Error("Order could not be saved (" + res.status + ") " + detail.slice(0,200));
   }
-  return true;
+  return await res.json();
 }
 
 $("submit").addEventListener("click", async ()=>{
@@ -580,34 +601,23 @@ $("submit").addEventListener("click", async ()=>{
     const g = garment();
     const n = unitCount();
     const each = unitPrice(g, n);
-    const orderId = "CRFA-" + Date.now().toString(36).toUpperCase();
-    // The customer's own secret. It is what lets them open their approval page
-    // later; the database will not accept an approval decision without it.
-    const approvalToken = crypto.randomUUID();
-
     const zonesOut = {};
     for(const [zid, a] of Object.entries(state.art)){
       const z = zonesFor().find(x => x.id === zid);
       zonesOut[zid] = { label: z ? z.label : zid, file: a.name, px:[a.w, a.h], cm: z ? z.cm : null };
     }
 
-    await saveApparelOrder({
-      id: orderId,
-      garment: g.name,
+    const saved = await saveApparelOrder({
+      garment_key: state.garment,
       club_name: $("f-club").value.trim() || null,
       customer_name: $("f-name").value.trim(),
       customer_email: $("f-email").value.trim(),
       notes: $("f-notes").value.trim() || null,
       zones: zonesOut,
       roster: state.roster.map(r => ({ name:r.name.trim(), number:r.number, size:r.size, qty:r.qty })),
-      unit_count: n,
-      unit_price_cents: each,
-      total_cents: each * n,
-      currency: CURRENCY,
-      fx_usd_per_thb: THB_PER_USD,
-      download_token: crypto.randomUUID(),
-      approval_token: approvalToken,
     });
+    const orderId = saved.order_id;
+    const approvalToken = saved.approval_token;
 
     const approveUrl = new URL("approve.html", location.href).href
       + "?order=" + encodeURIComponent(orderId) + "&token=" + approvalToken;
@@ -629,7 +639,7 @@ $("submit").addEventListener("click", async ()=>{
       + `<div class="id">${escapeHTML(orderId)}</div>`
       + `<p class="hint">${n} garment${n===1?"":"s"} at ${money(each)} each &mdash; <b>${money(each*n)}</b> (about ${usd(each*n)}).</p>`
       + `<p class="hint" style="margin-top:8px;">We check your artwork at print size before anything is produced. <b>You pay after approval, not before.</b></p>`
-      + `<p class="hint" style="margin-top:10px;">Approve it here &mdash; keep this link, it is the only way back to it. We email it to ${escapeHTML($("f-email").value.trim())} as well:</p>`
+      + `<p class="hint" style="margin-top:10px;">Approve it here &mdash; keep this link, it is the only way back to it. The shop receives the order notification separately:</p>`
       + `<p style="margin-top:4px;word-break:break-all;"><a id="approve-link" href="${approveUrl}">${escapeHTML(approveUrl)}</a></p>`;
     $("confirm-area").innerHTML = "";
     $("confirm-area").appendChild(c);

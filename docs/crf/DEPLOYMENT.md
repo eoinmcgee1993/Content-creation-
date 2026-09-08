@@ -16,15 +16,15 @@ rework if done late come first.
 | `/` graphics kit builder | Live, 200 |
 | `/apparel` racewear builder | Live, 200 |
 | `/ecu` ECU template builder | Live, 200 |
-| `/mods` modifications guide | Live, 200 |
-| `/approve` artwork approval | Live, 200 |
+| `/mods` modifications guide | Repository-ready; live route currently 404 until bundle deploy |
+| `/approve` artwork approval | Repository-ready; live route currently 404 until bundle deploy |
 | `privacy.html`, `terms.html` | Written, **not deployed**, not linked |
 | Database | 4 tables, RLS on, grants narrowed, triggers in place |
-| Edge Functions | `stripe-webhook`, `kit-download`, `apparel-approval` all ACTIVE |
+| Edge Functions | Six CRF functions defined; live activation requires Supabase deployment |
 | Payments — kit | Stripe Payment Link live, webhook verified |
 | Payments — racewear | Manual invoice. No card path |
-| `/desk` order desk | Live and **enabled** — `crf_config.operator_key` is set |
-| Approval email | Built and deployed, **inert** until four `crf_config` rows exist |
+| `/desk` order desk | Repository-ready; live route currently 404 until bundle deploy |
+| Approval email | Built; inert until three `crf_config` rows exist and function is deployed |
 | CI deploy | **Not automated.** `NETLIFY_AUTH_TOKEN` revoked, so the Action's push trigger stays off. Deploys work on request through the Netlify connector |
 | Domain | Not purchased |
 | Trading name | Not decided |
@@ -115,7 +115,7 @@ Until then, the manual path is:
 ```bash
 cd crf-builder
 zip -r site.zip index.html apparel.html ecu.html approve.html mods.html \
-       desk.html kits
+       desk.html _redirects kits
 
 curl -X POST "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/builds" \
   -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
@@ -128,6 +128,14 @@ The multipart field must be named `zip`, and the endpoint is `/builds` —
 **Done when:** a push to `crf-builder/**` deploys without anyone opening a
 terminal.
 
+The current manual deploy must also include `_redirects`; it maps `/mods`,
+`/approve` and `/desk` to the staged HTML files. After uploading, verify those
+three extensionless routes explicitly. Deploy the new
+`supabase/functions/create-apparel-order` function and apply
+`supabase/migrations/003_crf_racewear_order_security.sql` before enabling the
+updated racewear page. The migration intentionally removes `anon` insert on
+`crf_apparel_orders`; without both steps, the page cannot create orders.
+
 ---
 
 ## Phase 4 — Close the racewear promise
@@ -139,11 +147,11 @@ because a human is watching the table.
 This is the one gap that will produce a complaint rather than a bug report, so
 it is the highest-value automation left.
 
-**Minimum version — two emails, both triggered from the database:**
+**Minimum version — one approval email, triggered from the database:**
 
-1. **To the customer, on order:** their approval link. They have it on screen
-   already, but nobody keeps a browser tab.
-2. **To the operator, on order:** that a quote came in, with the order id.
+1. **To the customer email stored on the order:** the approval link and order
+   summary. The destination is read from the authenticated order row, never
+   from the request.
 
 **How.** A new Edge Function (`apparel-notify`), called from the browser
 immediately after the order insert, sending through an email provider. It needs
@@ -158,8 +166,8 @@ repository.
 **Optional, same phase:** a third mail to the operator when the customer
 approves, fired from `apparel-approval` on the state transition.
 
-**Done when:** placing a racewear order sends the customer their approval link
-without anyone doing anything.
+**Done when:** placing a racewear order notifies the customer and leaves a
+durable approval link on screen without anyone doing anything.
 
 ---
 

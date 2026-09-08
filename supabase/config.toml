@@ -7,3 +7,9 @@ verify_jwt = false   # Called by database webhook (service-role bearer token)
 
 [functions.fulfill-order]
 verify_jwt = false   # Called by checkout platform webhook
+
+[functions.create-apparel-order]
+verify_jwt = false   # Public customer endpoint authenticates and validates in the function
+
+[functions.apparel-notify]
+verify_jwt = false   # Approval-token-authenticated customer endpoint

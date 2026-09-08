@@ -68,10 +68,9 @@
         "name": "crf_apparel_orders",
         "pk": "id (text)",
         "rls": true,
-        "anon_grants": [
-          "INSERT"
-        ],
-        "trigger": "crf_apparel_force_unpaid_trg"
+        "anon_grants": [],
+        "trigger": "crf_apparel_force_server_values_trg",
+        "note": "Created only by create-apparel-order through the service role; the database generates id, approval_token, download_token, and pending/unpaid state."
       },
       {
         "name": "crf_config",
@@ -79,7 +78,7 @@
         "rls": true,
         "anon_grants": [],
         "policies": 0,
-        "note": "RLS on with zero policies and no grants: service-role only. Holds stripe_webhook_secret, resend_api_key, notify_from, notify_operator, site_base_url, operator_key."
+        "note": "RLS on with zero policies and no grants: service-role only. Holds stripe_webhook_secret, resend_api_key, notify_from, site_base_url, operator_key."
       }
     ],
     "edge_functions": [
@@ -112,13 +111,26 @@
         ]
       },
       {
+        "name": "create-apparel-order",
+        "verify_jwt": false,
+        "auth": "validated anonymous order payload; service-role insert",
+        "writes": [
+          "crf_apparel_orders.id",
+          "crf_apparel_orders.customer_email",
+          "crf_apparel_orders.customer_name",
+          "crf_apparel_orders.roster",
+          "crf_apparel_orders.total_cents"
+        ],
+        "note": "Recomputes price server-side and returns only the generated order id and approval token."
+      },
+      {
         "name": "apparel-notify",
         "verify_jwt": false,
         "auth": "(order_id, approval_token)",
         "writes": [
           "crf_apparel_orders.approval_email_sent_at"
         ],
-        "note": "Recipient is read from the order row, never the request. Approval link is built from crf_config.site_base_url. Sends once. Returns 200 {sent:false, reason:'not_configured'} until the four config rows exist."
+        "note": "Recipient is customer_email from the authenticated order row, never a browser-supplied address. Approval link is built from crf_config.site_base_url. Sends once. Returns 200 {sent:false, reason:'not_configured'} until resend_api_key, notify_from, and site_base_url exist."
       },
       {
         "name": "admin-orders",
@@ -308,12 +320,12 @@
     },
     "A3": {
       "kind": "sql",
-      "expect": "anon holds INSERT on exactly crf_orders, crf_order_files, crf_apparel_orders and nothing on crf_config; crf_config has RLS on and zero policies",
+      "expect": "anon holds INSERT on exactly crf_orders and crf_order_files; crf_apparel_orders and crf_config have no anon grant, with crf_config RLS on and zero policies",
       "query": "select table_name, privilege_type from information_schema.role_table_grants where table_schema='public' and grantee='anon' and table_name like 'crf%';"
     },
     "A4": {
       "kind": "http",
-      "expect": "three functions ACTIVE; an unsigned POST to stripe-webhook returns 400"
+      "expect": "six functions ACTIVE; an unsigned POST to stripe-webhook returns 400"
     },
     "A5": {
       "kind": "external",
@@ -339,7 +351,7 @@
   "invariants": [
     {
       "id": "I1",
-      "statement": "anon holds INSERT and nothing else on every crf_ table",
+      "statement": "anon holds INSERT only on crf_orders and crf_order_files; it has no privilege on crf_apparel_orders or crf_config",
       "check": "information_schema.role_table_grants"
     },
     {

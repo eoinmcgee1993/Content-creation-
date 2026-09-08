@@ -62,7 +62,8 @@ Static pages → Supabase Postgres (insert only) → Edge Functions (service rol
 → Stripe. No server, no framework, no build step, no user accounts.
 
 ```
-browser ──INSERT──▶ crf_orders, crf_order_files, crf_apparel_orders
+browser ──INSERT──▶ crf_orders, crf_order_files
+browser ──POST───▶ /functions/v1/create-apparel-order
 browser ──POST───▶ /functions/v1/kit-download        (order_id + download_token, paid only)
 browser ──POST───▶ /functions/v1/apparel-approval    (order_id + approval_token, artwork only)
 Stripe  ──POST───▶ /functions/v1/stripe-webhook      (HMAC-SHA256 signed)
@@ -210,8 +211,6 @@ create policy crf_orders_anon_insert         on public.crf_orders
   for insert to anon with check (true);
 create policy crf_order_files_anon_insert    on public.crf_order_files
   for insert to anon with check (true);
-create policy crf_apparel_orders_anon_insert on public.crf_apparel_orders
-  for insert to anon with check (true);
 -- crf_config gets NO policy. That is the point.
 
 revoke all on public.crf_orders, public.crf_order_files,
@@ -220,7 +219,6 @@ revoke all on public.crf_orders, public.crf_order_files,
 
 grant insert on public.crf_orders         to anon, authenticated;
 grant insert on public.crf_order_files    to anon, authenticated;
-grant insert on public.crf_apparel_orders to anon, authenticated;
 -- crf_config: nothing to anon or authenticated, ever.
 ```
 
@@ -243,7 +241,6 @@ The same table holds the rest, all optional and all inert while unset:
 |---|---|
 | `resend_api_key` | the approval email |
 | `notify_from` | its sender — needs a verified sending domain |
-| `notify_operator` | where the internal heads-up goes |
 | `site_base_url` | the base the emailed approval link is built from |
 | `operator_key` | the order desk |
 
@@ -324,19 +321,30 @@ them turns the endpoint into an order-id oracle.
 
 ---
 
+### 4.3a `create-apparel-order`
+
+- **Request:** garment key, customer details, artwork metadata and roster.
+- **Authentication:** public function endpoint; `anon` has no direct insert
+  grant on `crf_apparel_orders`.
+- **Then:** validate the garment, roster quantities, email and server-owned
+  pricing; insert through the service-role client. The database trigger
+  generates the order id, approval token and download token.
+- **Response:** `{order_id, approval_token}`. Caller-supplied ids and tokens
+  are ignored.
+
 ### 4.4 `apparel-notify`
 
 - **Request:** `POST {order_id, token: uuid}`
 - **Authentication:** the pair `(id, approval_token)`.
-- **Sends** the approval link to the customer and a heads-up to the operator.
-- **The recipient is read from the order row, never from the request.** Taking
-  it from the request makes this an open relay sending from your own domain.
+- **Sends** the approval notification to `customer_email` from the
+  authenticated order row, never to an address supplied in the request. The
+  approval link is also shown on the confirmation page.
 - **The link is built from `crf_config.site_base_url`**, never from the
   request, so a link you send cannot be made to point elsewhere.
 - **Sends once.** Stamps `approval_email_sent_at`; a second call is a no-op.
   The insert trigger clears that column, so a browser cannot pre-set it to
   suppress the mail.
-- With any of the four config rows unset, returns 200 `{sent: false, reason:
+- With any of the three config rows unset, returns 200 `{sent: false, reason:
   "not_configured"}` and sends nothing.
 
 ### 4.5 `admin-orders`
@@ -378,12 +386,14 @@ Page-level constants to substitute:
 | `index.html` | `STRIPE_LINKS.digital` | `${STRIPE_PAYMENT_LINK}` |
 | `index.html` | `DOWNLOAD_FN` | `${SUPABASE_URL}/functions/v1/kit-download` |
 | `apparel.html` | Supabase URL / key | as above |
+| `apparel.html` | `CREATE_FN` | `${SUPABASE_URL}/functions/v1/create-apparel-order` |
 | `approve.html` | `FN` | `${SUPABASE_URL}/functions/v1/apparel-approval` |
 | `apparel.html` | `NOTIFY_FN` | `${SUPABASE_URL}/functions/v1/apparel-notify` |
 | `desk.html` | `FN` | `${SUPABASE_URL}/functions/v1/admin-orders` |
 
-The publishable key in page source is correct and intended: with the grants in
-§3.4 it confers the ability to insert an order and nothing more.
+The publishable key in page source is correct and intended: it can create the
+graphics-kit order and call public customer functions, but has no direct
+racewear insert grant or CRF table read.
 
 **Checkout linking.** The kit page appends
 `?client_reference_id=<order id>` to the Payment Link. That parameter is the
@@ -434,7 +444,7 @@ from the other pages until they are live.
 | 1 | Create Supabase project, record ref and publishable key | — | A1 |
 | 2 | Apply §3.1–3.3 (tables, indexes, triggers) | 1 | A2 |
 | 3 | Apply §3.4 (RLS, policies, grants) | 2 | A3 |
-| 4 | Deploy the five Edge Functions, `verify_jwt=false` | 3 | A4 |
+| 4 | Deploy the six Edge Functions, `verify_jwt=false` | 3 | A4 |
 | 5 | Create the Stripe Payment Link and the webhook endpoint pointing at `${SUPABASE_URL}/functions/v1/stripe-webhook`, subscribed to `checkout.session.completed` | 4 | A5 |
 | 6 | Write `${STRIPE_WEBHOOK_SECRET}` into `crf_config` (§3.5) | 5 | A6 |
 | 7 | Substitute page constants (§5) and deploy the archive | 6 | A7 |
@@ -450,15 +460,15 @@ Each must pass before the next step. A failure is a stop, not a retry loop.
 - **A1** — `${SUPABASE_URL}/rest/v1/` responds.
 - **A2** — All four tables exist; both trigger functions exist with
   `prosrc` containing `payment_status`; `select count(*) from crf_orders` = 0.
-- **A3** — This returns exactly three rows, all `INSERT`, and none for
-  `crf_config`:
+- **A3** — This returns exactly two rows, both `INSERT`, for `crf_orders` and
+  `crf_order_files`, and none for `crf_apparel_orders` or `crf_config`:
   ```sql
   select table_name, privilege_type
   from information_schema.role_table_grants
   where table_schema='public' and grantee='anon' and table_name like 'crf%';
   ```
   And `crf_config` has RLS enabled with zero policies.
-- **A4** — All five functions report status `ACTIVE`. An unsigned POST to
+- **A4** — All six functions report status `ACTIVE`. An unsigned POST to
   `stripe-webhook` returns **400**, not 500 and not 200. A POST to
   `admin-orders` with any key returns **401** while `operator_key` is unset.
 - **A5** — Stripe shows the endpoint as enabled and a test delivery reaches the

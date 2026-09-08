@@ -184,8 +184,9 @@ The page promises "you pay after approval, not before", and the terms say we
 produce from the approved artwork. That promise has to be recorded somewhere the
 customer cannot forge and we cannot quietly change.
 
-On order the browser generates a second UUID, `approval_token`, stores it with
-the order, and shows the customer their approval URL —
+On order, `create-apparel-order` validates the request and generates the order
+id plus both tokens under the service-role key. The browser cannot insert
+directly into the order table. It shows the customer their approval URL —
 `approve.html?order=…&token=…`. That link is the only way back.
 
 `approve.html` calls the `apparel-approval` Edge Function, which:
@@ -355,8 +356,9 @@ belong to the digital-product project that shares this repository. They call
 Gemini, Resend and Lemon Squeezy and touch `scraped_signals` / `sales_funnels`.
 They are not part of the CRF site and nothing here calls them.
 
-The CRF Edge Functions are exactly five: `stripe-webhook`, `kit-download`,
-`apparel-approval`, `apparel-notify` and `admin-orders`.
+The CRF Edge Functions are exactly six: `stripe-webhook`, `kit-download`,
+`apparel-approval`, `apparel-notify`, `create-apparel-order` and
+`admin-orders`.
 
 ---
 
@@ -376,12 +378,11 @@ The CRF Edge Functions are exactly five: `stripe-webhook`, `kit-download`,
    entity, address, contact email, governing law. The file marks blanks in red
    and shows a banner, so it cannot be published half-filled by accident. They
    are not linked from any page and not in the deploy bundle.
-4. **The approval email is built but not switched on.** `apparel-notify`
-   sends the customer their approval link and the operator a heads-up, and it
-   is deployed. It stays inert until four `crf_config` rows exist — a sending
-   key, a from address, an operator address and the site base URL — and the
-   from address needs a verified sending domain, which needs the name. Until
-   then the order still saves and the link is still on screen.
+4. **The approval notification is built but not switched on.** `apparel-notify`
+   sends the approval link to the `customer_email` stored on the authenticated
+   order row; the link is also shown on screen. It stays inert until three
+   `crf_config` rows exist — a sending key, a from address and the site base
+   URL.
 5. **The operator view is built but not switched on.** `desk.html` and
    `admin-orders` are done; set `crf_config.operator_key` to enable it. The
    page is unlinked and carries a noindex tag. It is not deployed yet — see

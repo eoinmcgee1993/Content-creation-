@@ -1,18 +1,18 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-// Sends the two emails a racewear order is supposed to produce: the approval
-// link to the customer, and a heads-up to whoever fulfils the order.
+// Sends the racewear approval notification to the email stored on the order.
+// The approval link remains on the confirmation page as a fallback.
 //
 // The racewear page tells the customer "we check your artwork at print size
-// and email you to approve it". Until this existed, nothing sent that email
-// and the sentence was true only because a person was watching the table.
+// and email you to approve it". The link is shown on screen, while this
+// function notifies the customer without turning the public endpoint into a
+// recipient-controlled mail relay.
 //
 // Three properties matter more than the mail itself:
 //
-//   1. The recipient is never taken from the request. It is read from the
-//      order row. Otherwise this endpoint is an open relay that sends mail
-//      from our domain to any address an attacker names.
+//   1. The recipient is read from the authenticated order row, never from
+//      the request body, so this endpoint cannot be used as an open relay.
 //   2. The approval link is built from a base URL held in crf_config, not
 //      from anything the caller supplies, so a link we send can never point
 //      somewhere else.
@@ -28,7 +28,6 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 //
 //   resend_api_key     the sending key
 //   notify_from        e.g. "Orders <orders@example.com>" — a verified sender
-//   notify_operator    where the internal heads-up goes
 //   site_base_url      e.g. "https://example.com" — used to build the link
 //
 // With any of those missing the function returns 200 and sends nothing, so
@@ -41,12 +40,12 @@ const supabase = createClient(
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type",
+  "Access-Control-Allow-Headers": "apikey, authorization, content-type",
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const CONFIG_KEYS = ["resend_api_key", "notify_from", "notify_operator", "site_base_url"];
+const CONFIG_KEYS = ["resend_api_key", "notify_from", "site_base_url"];
 
 function json(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
@@ -131,8 +130,30 @@ Deno.serve(async (req: Request) => {
   }
   if (!order) return json({ error: "No such order" }, 404);
 
-  if (order.approval_email_sent_at) {
-    return json({ sent: false, reason: "already_sent" }, 200);
+  if (order.approval_email_sent_at) return json({ sent: false, reason: "already_sent" }, 200);
+
+  const claimTime = new Date().toISOString();
+  const { data: claim, error: claimErr } = await supabase
+    .from("crf_apparel_orders")
+    .update({ approval_email_sent_at: claimTime })
+    .eq("id", order.id)
+    .eq("approval_token", token)
+    .is("approval_email_sent_at", null)
+    .select("id")
+    .maybeSingle();
+  if (claimErr) {
+    console.error("notification claim failed", claimErr);
+    return json({ error: "Notification unavailable" }, 500);
+  }
+  if (!claim) return json({ sent: false, reason: "already_sent" }, 200);
+
+  async function releaseClaim() {
+    const { error } = await supabase
+      .from("crf_apparel_orders")
+      .update({ approval_email_sent_at: null })
+      .eq("id", order.id)
+      .eq("approval_email_sent_at", claimTime);
+    if (error) console.error("notification claim release failed", error);
   }
 
   let cfg: Record<string, string>;
@@ -140,6 +161,7 @@ Deno.serve(async (req: Request) => {
     cfg = await loadConfig();
   } catch (e) {
     console.error("config read failed", e);
+    await releaseClaim();
     return json({ error: "Configuration unavailable" }, 500);
   }
 
@@ -148,6 +170,7 @@ Deno.serve(async (req: Request) => {
     // Not an error. Sending is not switched on yet; the order is still saved
     // and the customer still has their link on screen.
     console.log("notify skipped, unset config:", missing.join(", "));
+    await releaseClaim();
     return json({ sent: false, reason: "not_configured" }, 200);
   }
 
@@ -167,9 +190,9 @@ Deno.serve(async (req: Request) => {
       <p>Thanks ${esc(order.customer_name)} — we have your order.</p>
       <p><b>${esc(order.id)}</b><br>
          ${esc(order.unit_count)} × ${esc(order.garment)}${
-      order.club_name ? ` for ${esc(order.club_name)}` : ""
+      order.club_name ? `<br>${esc(order.club_name)}` : ""
     }<br>
-         Total ${esc(total)}</p>
+         ${esc(total)}</p>
       <p>We check your artwork at print size before anything is produced.
          Open the link below to see it and approve it — or ask for changes.
          <b>You pay after approval, not before.</b></p>
@@ -178,32 +201,7 @@ Deno.serve(async (req: Request) => {
     `.trim(),
   });
 
-  const operatorSent = await send(cfg.resend_api_key, {
-    from: cfg.notify_from,
-    to: [cfg.notify_operator],
-    subject: `New racewear order ${order.id} — ${order.unit_count} × ${order.garment}`,
-    html: `
-      <p><b>${esc(order.id)}</b></p>
-      <p>${esc(order.customer_name)} &lt;${esc(order.customer_email)}&gt;${
-      order.club_name ? `<br>${esc(order.club_name)}` : ""
-    }<br>
-         ${esc(order.unit_count)} × ${esc(order.garment)}<br>
-         ${esc(total)}</p>
-      <p>Awaiting artwork approval: <a href="${esc(link)}">${esc(link)}</a></p>
-    `.trim(),
-  });
+  if (!customerSent) await releaseClaim();
 
-  // Only stamp it if the customer's mail actually went. The operator's copy
-  // failing is worth a log line, not a reason to withhold a resend of the one
-  // that matters.
-  if (customerSent) {
-    const { error: stampErr } = await supabase
-      .from("crf_apparel_orders")
-      .update({ approval_email_sent_at: new Date().toISOString() })
-      .eq("id", order.id)
-      .eq("approval_token", token);
-    if (stampErr) console.error("stamp failed", stampErr);
-  }
-
-  return json({ sent: customerSent, operator_notified: operatorSent }, 200);
+  return json({ sent: customerSent }, 200);
 });
