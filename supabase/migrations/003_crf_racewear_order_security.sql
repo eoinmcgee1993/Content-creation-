@@ -10,9 +10,16 @@ language plpgsql
 set search_path to ''
 as $$
 begin
-  new.id := 'CRFA-' || upper(replace(public.uuid_generate_v4()::text, '-', ''));
-  new.approval_token := public.uuid_generate_v4();
-  new.download_token := public.uuid_generate_v4();
+  -- gen_random_uuid(), not uuid_generate_v4(). The latter comes from uuid-ossp,
+  -- which Supabase installs into the extensions schema rather than public, so
+  -- under `search_path = ''` the qualified call public.uuid_generate_v4() may
+  -- not resolve at all. This trigger runs on every racewear order and the same
+  -- migration revokes the browser's INSERT, so a failure here takes the whole
+  -- order path down with no fallback. gen_random_uuid() is built into Postgres
+  -- and always resolves.
+  new.id := 'CRFA-' || upper(replace(gen_random_uuid()::text, '-', ''));
+  new.approval_token := gen_random_uuid();
+  new.download_token := gen_random_uuid();
   new.payment_status := 'unpaid';
   new.stripe_session_id := null;
   new.stripe_payment_intent := null;
