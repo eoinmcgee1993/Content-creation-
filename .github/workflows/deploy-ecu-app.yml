@@ -23,18 +23,17 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Stage the pages that are meant to be public
-        # An explicit list, not the whole folder.
+        # Still an explicit list, though it no longer carries the whole burden.
         #
-        # crf-builder also holds privacy.html, terms.html and legal-details.js.
-        # Those are finished except for four facts about the business — the
-        # entity, a service address, a contact email and the governing law —
-        # and legal-details.js renders the blanks in red with a banner across
-        # the page. Deploying the directory wholesale, which is what this
-        # workflow used to do, would put them live with those placeholders
-        # showing the moment the push trigger is re-enabled.
+        # privacy.html, terms.html and legal-details.js used to sit in
+        # crf-builder and reached production that way, serving [LEGAL ENTITY
+        # NAME] placeholders on a live URL. They now live in
+        # docs/crf/legal-drafts/, outside any publish root, so no host can ship
+        # them by accident and this list is a second line rather than the only
+        # one. See that directory's README before publishing them.
         #
-        # When those four values are filled in, add the two pages and the
-        # script to this list and link them from the footers.
+        # Keeping the list explicit means a new file in crf-builder has to be
+        # named here to go live, which is the behaviour we want.
         run: |
           set -euo pipefail
           mkdir -p _publish
