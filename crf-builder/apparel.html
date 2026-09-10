@@ -206,11 +206,24 @@ footer{margin-top:38px;font-size:12px;color:var(--text-dim);text-align:center;}
 
 <script>
 // ── Storage (Supabase) ──────────────────────────────────────────────────────
-// Browser holds only the publishable key. Racewear orders are created by the
-// server function so the browser cannot mint order ids or approval tokens.
+// Browser holds only the publishable key, and anon has INSERT and nothing else
+// on this table, so this page can create an order and can neither read one back
+// nor change one.
+//
+// The order id and both tokens are minted here rather than server-side. That is
+// deliberate for now: create-apparel-order and migration 003 move it to the
+// server, and those two must ship in the same release as this page, because 003
+// revokes the INSERT the request below depends on. Shipping any one of the three
+// alone takes racewear ordering down. Until they go out together this stays on
+// PostgREST.
+//
+// What makes that safe in the meantime is that the browser cannot declare an
+// order paid or approved. A BEFORE INSERT trigger overwrites payment_status,
+// artwork_status, both Stripe columns and every timestamp on the way in, so the
+// worst a crafted insert produces is a junk order sitting unpaid in the queue.
 const SUPABASE_URL = "https://ohcclvcjdbftlnyrrzvt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_-u9yj16rZFqBZoQBkeLAQA_HTFbTtOf";
-const CREATE_FN = SUPABASE_URL + "/functions/v1/create-apparel-order";
+const ORDERS_URL = SUPABASE_URL + "/rest/v1/crf_apparel_orders";
 const NOTIFY_FN = SUPABASE_URL + "/functions/v1/apparel-notify";
 
 // ── Catalogue ───────────────────────────────────────────────────────────────
@@ -577,11 +590,16 @@ function refreshSubmit(){
 }
 
 async function saveApparelOrder(rec){
-  const res = await fetch(CREATE_FN, {
+  const res = await fetch(ORDERS_URL, {
     method:"POST",
     headers:{
       "Content-Type":"application/json",
       "apikey": SUPABASE_KEY,
+      "Authorization":"Bearer " + SUPABASE_KEY,
+      // return=minimal, not return=representation. anon has no SELECT, so
+      // asking for the row back is refused with a 401 and a saved order then
+      // reports itself as a failure.
+      "Prefer":"return=minimal",
     },
     body: JSON.stringify(rec),
   });
@@ -589,7 +607,7 @@ async function saveApparelOrder(rec){
     const detail = await res.text().catch(()=> "");
     throw new Error("Order could not be saved (" + res.status + ") " + detail.slice(0,200));
   }
-  return await res.json();
+  return true;
 }
 
 $("submit").addEventListener("click", async ()=>{
@@ -607,17 +625,32 @@ $("submit").addEventListener("click", async ()=>{
       zonesOut[zid] = { label: z ? z.label : zid, file: a.name, px:[a.w, a.h], cm: z ? z.cm : null };
     }
 
-    const saved = await saveApparelOrder({
-      garment_key: state.garment,
+    // Same shape migration 003 mints server-side, so the id format does not
+    // change when order creation moves to the server. Random rather than a
+    // timestamp: a time-derived id is enumerable, and one order tells you
+    // roughly how to guess the neighbouring ones.
+    const orderId = "CRFA-" + crypto.randomUUID().replace(/-/g, "").toUpperCase();
+    // The customer's own secret. It is what lets them open their approval page
+    // later; the approval endpoint will not act without the matching pair.
+    const approvalToken = crypto.randomUUID();
+
+    await saveApparelOrder({
+      id: orderId,
+      garment: g.name,
       club_name: $("f-club").value.trim() || null,
       customer_name: $("f-name").value.trim(),
       customer_email: $("f-email").value.trim(),
       notes: $("f-notes").value.trim() || null,
       zones: zonesOut,
       roster: state.roster.map(r => ({ name:r.name.trim(), number:r.number, size:r.size, qty:r.qty })),
+      unit_count: n,
+      unit_price_cents: each,
+      total_cents: each * n,
+      currency: CURRENCY,
+      fx_usd_per_thb: THB_PER_USD,
+      download_token: crypto.randomUUID(),
+      approval_token: approvalToken,
     });
-    const orderId = saved.order_id;
-    const approvalToken = saved.approval_token;
 
     const approveUrl = new URL("approve.html", location.href).href
       + "?order=" + encodeURIComponent(orderId) + "&token=" + approvalToken;
@@ -639,7 +672,12 @@ $("submit").addEventListener("click", async ()=>{
       + `<div class="id">${escapeHTML(orderId)}</div>`
       + `<p class="hint">${n} garment${n===1?"":"s"} at ${money(each)} each &mdash; <b>${money(each*n)}</b> (about ${usd(each*n)}).</p>`
       + `<p class="hint" style="margin-top:8px;">We check your artwork at print size before anything is produced. <b>You pay after approval, not before.</b></p>`
-      + `<p class="hint" style="margin-top:10px;">Approve it here &mdash; keep this link, it is the only way back to it. The shop receives the order notification separately:</p>`
+      // No promise of an email here. apparel-notify is called below, but it
+      // sends nothing until a verified sending domain exists, and until then
+      // this link on screen is genuinely the only way back to the approval
+      // page. Telling someone to watch their inbox for mail that cannot be
+      // sent is how an order gets abandoned.
+      + `<p class="hint" style="margin-top:10px;">Approve it here. <b>Keep this link</b> &mdash; it is the only way back to it:</p>`
       + `<p style="margin-top:4px;word-break:break-all;"><a id="approve-link" href="${approveUrl}">${escapeHTML(approveUrl)}</a></p>`;
     $("confirm-area").innerHTML = "";
     $("confirm-area").appendChild(c);
