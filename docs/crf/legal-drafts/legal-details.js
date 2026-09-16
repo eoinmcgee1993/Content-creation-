@@ -14,7 +14,7 @@
 //          presence in is worse than naming none.
 window.CRF_LEGAL = {
   entity:  "Eoin McGee trading as StreetSweeperCustoms",
-  address: "",
+  address: "Room 208, Sunset Boulevard 2, Banglamung, Pattaya, Chonburi 20150, Thailand",
   email:   "eoinmcgee1993@gmail.com",
   law:     "Thailand",
 };
