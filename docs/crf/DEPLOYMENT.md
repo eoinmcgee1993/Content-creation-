@@ -16,16 +16,17 @@ rework if done late come first.
 | `/` graphics kit builder | Live, 200 |
 | `/apparel` racewear builder | Live, 200 |
 | `/ecu` ECU template builder | Live, 200 |
-| `/mods` modifications guide | Repository-ready; live route currently 404 until bundle deploy |
-| `/approve` artwork approval | Repository-ready; live route currently 404 until bundle deploy |
-| `privacy.html`, `terms.html` | Written, **not deployed**, not linked |
+| `/mods` modifications guide | Live, 200 |
+| `/approve` artwork approval | Live, 200 |
+| `privacy.html`, `terms.html` | Drafts moved to `docs/crf/legal-drafts/`, outside any publish root |
 | Database | 4 tables, RLS on, grants narrowed, triggers in place |
 | Edge Functions | Six CRF functions defined; live activation requires Supabase deployment |
 | Payments — kit | Stripe Payment Link live, webhook verified |
 | Payments — racewear | Manual invoice. No card path |
-| `/desk` order desk | Repository-ready; live route currently 404 until bundle deploy |
+| `/desk` order desk | Live, 200 |
 | Approval email | Built; inert until three `crf_config` rows exist and function is deployed |
-| CI deploy | **Not automated.** `NETLIFY_AUTH_TOKEN` revoked, so the Action's push trigger stays off. Deploys work on request through the Netlify connector |
+| Hosting | **Vercel.** Netlify is gone and `crf-garage.netlify.app` answers 404 everywhere |
+| CI deploy | Automatic on push to `main` of `eoinmcgee1993/crf-builder` |
 | Domain | Not purchased |
 | Trading name | Not decided |
 
@@ -85,58 +86,32 @@ placeholder.
 
 ---
 
-## Phase 3 — Restore automated deploys
+## Phase 3 — Hosting (done, recorded here because the old plan is gone)
 
-Manual deploys are fine for one person shipping occasionally and stop being fine
-the moment anything is urgent.
+The site moved from Netlify to Vercel. Netlify is not paused, it is gone:
+`crf-garage.netlify.app` returns 404 on every route, which is what finally took
+the placeholder privacy policy off the internet.
 
-1. Netlify → User settings → Applications → new personal access token.
-2. Store it as the GitHub repository secret `NETLIFY_AUTH_TOKEN`.
-3. Uncomment the push trigger in `.github/workflows/deploy-ecu-app.yml`, scoped
-   to `crf-builder/**` so the other project in this repository does not trigger
-   it.
-4. Push a trivial change and confirm the workflow deploys it.
+Live at `https://crf-eoins-projects-99ff5888.vercel.app`, deploying
+automatically on push to `main` of `eoinmcgee1993/crf-builder`. The storefront
+is plain HTML in `public/`; `next.config.mjs` carries `beforeFiles` rewrites so
+`/`, `/apparel`, `/ecu`, `/mods`, `/approve` and `/desk` keep the URLs they
+already had. The `/` rewrite is what stops `app/page.tsx` taking the home page.
 
-**The workflow publishes an explicit list of files, not the folder.** It used
-to deploy `crf-builder/` wholesale, which would have put `privacy.html`,
-`terms.html` and their placeholder banner live the moment the trigger was
-re-enabled. It now stages the six intended pages plus `kits/` and deploys
-that. When Phase 2 is done, add the two pages and `legal-details.js` to that
-list — the same list the manual command above uses.
+**The legal drafts are the reason the old "deploy an explicit file list" rule
+existed.** That rule is now enforced by where the files live rather than by
+remembering: `privacy.html`, `terms.html` and `legal-details.js` are in
+`docs/crf/legal-drafts/` in this repository, outside any publish root, so no
+host can serve them by accident. Phase 2 moves them into `public/`, and that
+move is the deliberate act that publishes them.
 
-**Do not connect `crf-garage` to the repository.** It is deployed by upload
-only, and that is deliberate: the root `netlify.toml` publishes
-`digital-renaissance/site`, a different project here, so linking the site
-would make its next build serve the wrong project on this domain. If it ever
-must be linked, give it a base directory of `crf-builder` first.
-
-Until then, the manual path is:
-
-```bash
-cd crf-builder
-zip -r site.zip index.html apparel.html ecu.html approve.html mods.html \
-       desk.html _redirects kits
-
-curl -X POST "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/builds" \
-  -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
-  -F "zip=@site.zip;type=application/zip"
-```
-
-The multipart field must be named `zip`, and the endpoint is `/builds` —
-`/deploys` is refused.
-
-**Done when:** a push to `crf-builder/**` deploys without anyone opening a
-terminal.
-
-The current manual deploy must also include `_redirects`; it maps `/mods`,
-`/approve` and `/desk` to the staged HTML files. After uploading, verify those
-three extensionless routes explicitly. Deploy the new
-`supabase/functions/create-apparel-order` function and apply
-`supabase/migrations/003_crf_racewear_order_security.sql` before enabling the
-updated racewear page. The migration intentionally removes `anon` insert on
-`crf_apparel_orders`; without both steps, the page cannot create orders.
-
----
+**Still unshipped, and deliberately so:** `supabase/functions/create-apparel-order`
+and `supabase/migrations/003_crf_racewear_order_security.sql`. The racewear page
+was reverted to writing through PostgREST because it was calling a function that
+had never been deployed, which would have failed every order. The migration
+removes `anon` insert on `crf_apparel_orders`, so applying it without shipping
+the page and the function in the same change breaks ordering. They go out as one
+unit or not at all.
 
 ## Phase 4 — Close the racewear promise
 
