@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-<title>CRF Garage — Privacy Policy</title>
+<title>StreetSweeperCustoms — Privacy Policy</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -47,24 +47,18 @@ footer a{color:var(--text-dim);margin:0 8px;}
 
   <nav class="site-nav" aria-label="Site sections">
     <a href="./index.html">Graphics Kit Builder</a>
+    <a href="./mockup.html">Kit Mockup</a>
     <a href="./apparel.html">Racewear Builder</a>
     <a href="./ecu.html">ECU Template Builder</a>
     <a href="./privacy.html" class="is-active" aria-current="page">Privacy</a>
   </nav>
 
   <div class="todo" id="legal-incomplete" style="display:none;"></div>
-  <div class="eyebrow">CRF Garage</div>
+  <div class="eyebrow">StreetSweeperCustoms</div>
   <h1>Privacy Policy</h1>
   <p class="updated">Last updated 21 August 2026</p>
 
-  <div class="todo">
-    <strong>Before publishing:</strong> replace <code><span data-legal="entity">[ENTITY NOT SET]</span></code>, <code><span data-legal="address">[ADDRESS NOT SET]</span></code> and
-    <code><span data-legal="email">[EMAIL NOT SET]</span></code> throughout. This document describes exactly what the site actually collects and where it
-    goes — it was written against the live database schema, not from a template — but it is not legal advice, and the
-    identity of the data controller has to be your real registered details.
-  </div>
-
-  <p>This policy covers <strong>crf-garage.netlify.app</strong> and its three tools: the Graphics Kit Builder, the
+  <p>This policy covers <strong>crf-eoins-projects-99ff5888.vercel.app</strong> and its three tools: the Graphics Kit Builder, the
   Racewear Builder and the ECU Template Builder.</p>
 
   <p>The data controller is <strong><span data-legal="entity">[ENTITY NOT SET]</span></strong>, <strong><span data-legal="address">[ADDRESS NOT SET]</span></strong>. For any question
@@ -78,9 +72,8 @@ footer a{color:var(--text-dim);margin:0 8px;}
   <div class="tbl-scroll">
   <table>
     <tr><th>Data</th><th>Why</th><th>Where it is stored</th></tr>
-    <tr><td>Email address</td><td>To send your file and notify you when the map is updated</td><td>Netlify Forms</td></tr>
-    <tr><td>Motorcycle model selected</td><td>To know which variant you took</td><td>Netlify Forms</td></tr>
-    <tr><td>IP address and browser user-agent</td><td>Recorded automatically by Netlify with each submission, for spam filtering</td><td>Netlify Forms</td></tr>
+    <tr><td>Email address</td><td>To send your file and notify you when the map is updated</td><td>Supabase</td></tr>
+    <tr><td>Motorcycle model selected</td><td>To know which variant you took</td><td>Supabase</td></tr>
   </table>
   </div>
 
@@ -132,8 +125,8 @@ footer a{color:var(--text-dim);margin:0 8px;}
   <h2>4. Who else can see it</h2>
   <p>Your data is processed by a small number of providers, each only for the function described:</p>
   <ul>
-    <li><strong>Supabase</strong> — the database holding orders and artwork.</li>
-    <li><strong>Netlify</strong> — hosts the site and receives ECU Template Builder email submissions.</li>
+    <li><strong>Supabase</strong> — the database holding orders, artwork and ECU Template Builder submissions.</li>
+    <li><strong>Vercel</strong> — hosts the site.</li>
     <li><strong>Stripe</strong> — processes payments.</li>
     <li><strong>The manufacturer or print shop</strong> producing your order, who receives only what is needed to make it.</li>
   </ul>
@@ -141,16 +134,15 @@ footer a{color:var(--text-dim);margin:0 8px;}
 
   <h2>5. How long we keep it</h2>
   <ul>
-    <li><strong>Orders and roster details:</strong> kept while the order is produced and for a reasonable period after,
-        so we can handle reprints, disputes and accounting obligations.</li>
-    <li><strong>Uploaded artwork and finished files:</strong> kept so you can re-download a file you paid for, and so a
-        kit can be reproduced if damaged in transit.</li>
-    <li><strong>Email addresses from the ECU tool:</strong> kept until you ask to be removed.</li>
+    <li><strong>Orders and roster details:</strong> 24 months from delivery, so we can handle a reprint or a dispute.
+        Deleted after that.</li>
+    <li><strong>Invoices and payment records:</strong> 5 years, because Thai accounting and tax law requires it. These
+        are kept even where you ask us to delete everything else, and they are used for nothing but accounting.</li>
+    <li><strong>Uploaded artwork and finished files:</strong> 24 months from delivery, so you can re-download a file you
+        paid for and so a kit can be remade if it is damaged in transit. Deleted after that, or sooner if you ask.</li>
+    <li><strong>Email addresses from the ECU tool:</strong> until you ask to be removed, or 24 months after you last
+        used the tool, whichever comes first.</li>
   </ul>
-  <div class="todo">
-    <strong>Set your real retention periods here.</strong> "A reasonable period" is not good enough for PDPA or GDPR —
-    pick actual durations (for example 24 months for orders, 7 years where tax law requires it) and state them.
-  </div>
 
   <h2>6. Your rights</h2>
   <p>Wherever you are, you can ask us to:</p>
@@ -183,8 +175,7 @@ footer a{color:var(--text-dim);margin:0 8px;}
     <a href="./apparel.html">Racewear</a> ·
     <a href="./ecu.html">ECU Templates</a> ·
     <a href="./privacy.html">Privacy</a> ·
-    <a href="./terms.html">Terms</a>
-  </footer>
+    <a href="./terms.html">Terms</a> &middot; <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a></footer>
 </div>
 <script src="./legal-details.js"></script>
 </body>

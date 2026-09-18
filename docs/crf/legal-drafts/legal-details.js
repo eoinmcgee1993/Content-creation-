@@ -2,7 +2,7 @@
 // from here, so filling these in once fills in both pages.
 //
 // entity   Your legal name. If there is no company, that is your own name,
-//          trading as CRF Garage. It must match the name Stripe has, because
+//          trading as StreetSweeperCustoms. It must match the name Stripe has, because
 //          that is the name on your customers' card statements and receipts.
 // address  A real postal address. "Online only" is not a category consumer law
 //          recognises, and selling at a distance in the EU and UK requires a
@@ -13,10 +13,10 @@
 // law      The country you actually trade from. Naming one you have no
 //          presence in is worse than naming none.
 window.CRF_LEGAL = {
-  entity:  "",
-  address: "",
-  email:   "",
-  law:     "",
+  entity:  "Eoin McGee trading as StreetSweeperCustoms",
+  address: "Room 208, Sunset Boulevard 2, Banglamung, Pattaya, Chonburi 20150, Thailand",
+  email:   "eoinmcgee1993@gmail.com",
+  law:     "Thailand",
 };
 
 // Anything still blank is called out on the page rather than left as a silent
