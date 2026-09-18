@@ -128,12 +128,15 @@ export function summarise(daily, days = 30) {
   }
 
   const latest = rows[rows.length - 1];
-  const window = lastDays(rows, days + 1);
+  // Not named `window`: this runs in a browser too, where that shadows the
+  // global inside this function and quietly hands an array to anything here
+  // that later expects the real one.
+  const windowRows = lastDays(rows, days + 1);
   // The comparison point is the row that opens the window, not "days ago" by
   // date. Snapshots can be missing; walking the array cannot silently compare
   // against a gap.
-  const baseline = window.length > 1 ? window[0] : null;
-  const period = window.length > 1 ? window.slice(1) : window;
+  const baseline = windowRows.length > 1 ? windowRows[0] : null;
+  const period = windowRows.length > 1 ? windowRows.slice(1) : windowRows;
 
   return {
     latest: latest.metric_date,

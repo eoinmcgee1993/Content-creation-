@@ -133,6 +133,33 @@ implementations to keep in agreement, and the first time they disagree nobody
 knows which is lying. A Claude artifact and a ChatGPT app importing the same
 module cannot tell the user different stories about the same week.
 
+## The engine knows nothing about Supabase
+
+`engine.js` imports nothing, references no host API, and contains no mention of
+a database. It takes plain arrays of plain objects and returns plain objects.
+It does not know whether its rows came from PostgREST, a CSV export, an MCP
+tool result or a fixture — and it must not learn.
+
+That is what lets the same calculation run in all of these without a rewrite:
+
+| Where | How it consumes the engine |
+|---|---|
+| The dashboard | `import { brief } from "./engine.js"` in a `<script type="module">` |
+| A Deno Edge Function | Copy the file in and `import` it — no npm, no bundler |
+| An n8n Function node | Paste the module, or fetch it from the deployed static host |
+| An MCP tool | `import` it in the tool's handler and return `brief()` as the result |
+| Node / CI | `node --test *.test.js` |
+
+A rule like this decays quietly: someone adds one `import` for convenience and
+nothing breaks until the day the engine is needed somewhere that cannot resolve
+it. So it is enforced rather than documented — `engine.portability.test.js`
+fails if the engine acquires a dependency, touches a host global, or mentions a
+database.
+
+It has already earned its place: it caught a local variable named `window`
+inside `summarise()`, which shadowed the browser global in a file that runs in
+browsers.
+
 A few decisions inside the engine that are easy to get wrong, and are tested:
 
 - **Growth from zero is `null`, not infinity.** A dashboard printing `Infinity%`
@@ -160,7 +187,7 @@ of them consume the same engine and the same endpoint.
 | ChatGPT Apps SDK app | Needs the data spine first; full MCP support is also plan-gated (Business/Enterprise for write, Pro read-only in developer mode) |
 | Claude artifact front end | Same engine, ~an afternoon, once there is real data to point it at |
 | Growth / Content / Revenue / Strategy agents | These are prompts over `brief()`, not code. Worth writing when the numbers are real, or they get tuned against fiction |
-| Daily brief to email / Telegram | Needs a sending domain and a scheduled assistant session. The `brief()` payload it would send already exists |
+| Daily brief to email | Needs a sending domain and a scheduled assistant session. The `brief()` payload it would send already exists. Telegram is explicitly out of scope |
 | Content engine (V2: ideas → draft → approve → publish) | Substack's MCP is read-only, so the last step has no API. `digital-renaissance/CONTENT_OS.md` is where that half of the loop lives |
 
 The dashboard's "Ask your publication" box is the honest version of the

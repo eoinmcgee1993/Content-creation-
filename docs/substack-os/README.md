@@ -17,8 +17,9 @@ cron job, which is the one thing about this system that surprises people.
 | Piece | File | What it does |
 |---|---|---|
 | Schema | `supabase/migrations/005_substack_os.sql` | Daily snapshots, post stats, secrets |
-| Analytics engine | `substack-os/engine.js` | Every derived number, computed once |
+| Analytics engine | `substack-os/engine.js` | Every derived number, computed once. Zero dependencies, no database, runs anywhere |
 | Engine tests | `substack-os/engine.test.js` | 21 tests over the arithmetic |
+| Portability guard | `substack-os/engine.portability.test.js` | 6 tests that fail if the engine gains a dependency or a host API |
 | Sample data | `substack-os/sample-data.js` | Seeded fake publication, for `?demo=1` |
 | Dashboard | `substack-os/index.html` | Plain HTML/CSS/JS, no build step |
 | Ingest | `supabase/functions/substack-ingest/` | Assistant → database, idempotent |
@@ -72,10 +73,12 @@ There is no lint or build step here, by the same choice the rest of this
 repository makes. This is what replaces them.
 
 ```bash
-# 1. The engine's arithmetic. 21 tests.
-#    Note the glob: `node --test substack-os` (directory form) is broken on
+# 1. The engine's arithmetic and its runtime independence. 27 tests.
+cd substack-os && npm test
+#    There is no install step and no dependency to fetch — package.json exists
+#    to name one canonical test command and mark the directory as ESM.
+#    Do not use `node --test substack-os` (directory form): it is broken on
 #    Node 22.22 and reports a module-resolution error, not a test failure.
-node --test substack-os/*.test.js
 
 # 2. The dashboard renders, with no console errors, at desktop and phone width.
 npx http-server substack-os -p 8127   # open /index.html?demo=1
