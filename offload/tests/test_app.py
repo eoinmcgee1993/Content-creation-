@@ -3,14 +3,14 @@
 import csv
 import os
 import tempfile
+import threading
 
 import pytest
-
-os.environ.setdefault("EMAIL_PROVIDER", "")  # keep provider sync disabled in tests
 
 
 @pytest.fixture()
 def client(tmp_path, monkeypatch):
+    monkeypatch.delenv("EMAIL_PROVIDER", raising=False)
     signups = tmp_path / "signups.csv"
     monkeypatch.setenv("SIGNUPS_PATH", str(signups))
     # import after env is set so module-level paths pick it up
@@ -71,3 +71,30 @@ def test_subscribe_rejects_bad_email(client):
     assert resp.status_code == 400
     assert resp.get_json()["ok"] is False
     assert not os.path.exists(signups)
+
+
+def test_record_signup_is_safe_under_concurrent_writers(client):
+    _, signups = client
+    import offload.app as appmod
+
+    def write(i):
+        appmod._record_signup(
+            {
+                "timestamp": "t",
+                "email": f"user{i}@example.com",
+                "source": "test",
+                "provider": "none",
+                "provider_synced": "disabled",
+            }
+        )
+
+    threads = [threading.Thread(target=write, args=(i,)) for i in range(20)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    lines = signups.read_text(encoding="utf-8").splitlines()
+    header_lines = [line for line in lines if line.startswith("timestamp,email,")]
+    assert len(header_lines) == 1
+    assert len(lines) == 1 + 20  # one header + one row per writer
