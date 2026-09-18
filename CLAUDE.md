@@ -82,9 +82,12 @@ no root `pytest.ini`/`conftest.py`):
 - `offload/` — Flask waitlist app: `pytest offload/tests -q`
 - `audits/` — ads/SEO audit report generator: `pytest audits/tests -q`
 - `kdp-compiler/` — Node PDF interior compiler: `npm test` (from inside the directory)
+- `substack-os/` — Substack analytics engine: `npm test` (from inside the directory).
+  No install step and no dependencies; `package.json` exists only to name the
+  command and mark the directory as ESM.
 
 The first three also run in CI (`.github/workflows/{landing,offload,audits}.yml`,
-path-filtered to their own directory) — `kdp-compiler/` does not yet.
+path-filtered to their own directory) — `kdp-compiler/` and `substack-os/` do not yet.
 
 **Deploy targets, and the cross-cutting traps to know about:**
 - `render.yaml` is one Render blueprint provisioning `landing/` (service
