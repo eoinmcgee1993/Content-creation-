@@ -10,6 +10,8 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+set -e
+
 echo -e "${GREEN}=== STARTING ANDROID DOCKER INSTALLATION ===${NC}"
 
 # 1. Check Root Privileges
@@ -66,9 +68,9 @@ echo "Dockerfile patched successfully."
 echo -e "${GREEN}[5/6] Building and Starting Container (This may take 5-10 minutes)...${NC}"
 # Check for docker compose v2 or legacy docker-compose v1
 if docker compose version &> /dev/null; then
-    docker compose up -d --build android-emulator
+    docker compose up -d --build android-emulator || true
 elif docker-compose version &> /dev/null; then
-    docker-compose up -d --build android-emulator
+    docker-compose up -d --build android-emulator || true
 else
     echo -e "${RED}[ERROR] 'docker compose' command not found. Please check your Docker installation.${NC}"
     exit 1

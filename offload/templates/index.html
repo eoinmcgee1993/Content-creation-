@@ -195,6 +195,11 @@
   .reveal.in { opacity:1; transform:none; }
   @media (prefers-reduced-motion: reduce){ .reveal { opacity:1; transform:none; transition:none; } }
 </style>
+<noscript>
+<style>
+  .reveal { opacity:1 !important; transform:none !important; }
+</style>
+</noscript>
 </head>
 <body>
 
@@ -231,6 +236,7 @@
       </div>
 
       <div class="signup prose">
+        {% if error %}<p class="form-err" role="alert">{{ error }}</p>{% endif %}
         <form class="join" id="form1" action="/subscribe" method="post" novalidate>
           <input type="hidden" name="source" value="hero" />
           <div class="field">

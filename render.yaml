@@ -63,6 +63,8 @@ services:
       - key: MAILERLITE_API_KEY
         sync: false
       - key: MAILERLITE_GROUP_ID
+        sync: false
+
   # MediaFetch — installable reel-downloader PWA (optional Stripe paywall).
   - type: web
     name: mediafetch
