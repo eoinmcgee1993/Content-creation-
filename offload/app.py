@@ -11,6 +11,7 @@ Rename the product in ONE place: the ``BRAND`` constant below (or set the
 from __future__ import annotations
 
 import csv
+import fcntl
 import os
 import re
 from datetime import datetime, timezone
@@ -39,13 +40,16 @@ EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 def _record_signup(row: dict[str, str]) -> None:
-    new_file = not os.path.exists(SIGNUPS_PATH)
     os.makedirs(os.path.dirname(SIGNUPS_PATH) or ".", exist_ok=True)
     with open(SIGNUPS_PATH, "a", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=SIGNUP_FIELDS)
-        if new_file:
-            writer.writeheader()
-        writer.writerow(row)
+        fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+        try:
+            writer = csv.DictWriter(fh, fieldnames=SIGNUP_FIELDS)
+            if os.fstat(fh.fileno()).st_size == 0:
+                writer.writeheader()
+            writer.writerow(row)
+        finally:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
 
 
 def _wants_json() -> bool:
