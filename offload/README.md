@@ -10,9 +10,12 @@ CSV is always the source of truth.
 
 ## Rename the product
 
-The brand name lives in **one place**: the `BRAND` constant in `offload/app.py`
-(or set the `OFFLOAD_BRAND` env var). It flows into every template. Change it there
-and the whole site updates.
+The brand name has two edit points that must agree: the `BRAND` constant's
+default in `offload/app.py` (`os.environ.get("OFFLOAD_BRAND", "Offload")`),
+and the `OFFLOAD_BRAND` env var set in `render.yaml`'s `offload-waitlist`
+service. In production, the `render.yaml` value always wins — `app.py`'s
+`"Offload"` is only a local/dev fallback. It flows into every template, so
+update both to keep local runs and the deployed site in sync.
 
 ## Run locally
 
