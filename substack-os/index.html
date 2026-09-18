@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Substack OS</title>
+<!--
+  Plain HTML, CSS and one module script. No framework, no bundler, no CDN —
+  it opens from a file:// URL or any static host and keeps working offline.
+
+  The publication key is NEVER in this file. It is entered once and kept in
+  localStorage, the same way the CRF order desk handles its operator key: a
+  secret committed to a repository is a secret that has to be rotated.
+
+  Open with ?demo=1 to render seeded sample data with no backend at all.
+-->
+<style>
+  :root {
+    --bg: #0a0d12; --panel: #11151c; --line: #1e2530;
+    --ink: #e8edf5; --dim: #8b97a8; --faint: #5a6675;
+    --up: #45d67a; --down: #f2686a; --accent: #5aa9ff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-size: 14px; line-height: 1.5; padding: 24px 16px 64px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: baseline;
+           flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--line);
+           padding-bottom: 14px; margin-bottom: 22px; }
+  h1 { font-size: 17px; margin: 0; letter-spacing: 0.14em; text-transform: uppercase; }
+  .meta { color: var(--faint); font-size: 12px; }
+  button { font: inherit; background: var(--panel); color: var(--ink);
+           border: 1px solid var(--line); border-radius: 6px;
+           padding: 7px 13px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  section { margin-bottom: 26px; }
+  h2 { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+       color: var(--dim); margin: 0 0 11px; font-weight: 600; }
+  .panel { background: var(--panel); border: 1px solid var(--line);
+           border-radius: 10px; padding: 16px; }
+  .kpis { display: grid; gap: 12px;
+          grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .kpi .label { color: var(--dim); font-size: 11px; letter-spacing: 0.1em;
+                text-transform: uppercase; }
+  .kpi .value { font-size: 27px; margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
+  .delta { font-size: 12px; } .up { color: var(--up); } .down { color: var(--down); }
+  .nil { color: var(--faint); }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th { text-align: left; color: var(--dim); font-size: 10px; font-weight: 600;
+       letter-spacing: 0.1em; text-transform: uppercase;
+       padding: 0 8px 8px 0; border-bottom: 1px solid var(--line); }
+  td { padding: 9px 8px 9px 0; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  .num { text-align: right; }
+  .scroll-x { overflow-x: auto; }
+  .rank { color: var(--faint); width: 26px; }
+  .title { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  ul.notes { margin: 0; padding-left: 18px; }
+  ul.notes li { margin-bottom: 7px; }
+  ul.notes li:last-child { margin-bottom: 0; }
+  textarea { width: 100%; min-height: 66px; resize: vertical; font: inherit;
+             background: var(--bg); color: var(--ink); border: 1px solid var(--line);
+             border-radius: 6px; padding: 10px; }
+  .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+  .hint { color: var(--faint); font-size: 12px; margin: 8px 0 0; }
+  .banner { border: 1px solid var(--line); border-left: 3px solid var(--accent);
+            background: var(--panel); border-radius: 6px; padding: 11px 14px;
+            margin-bottom: 20px; font-size: 13px; color: var(--dim); }
+  .error { border-left-color: var(--down); color: var(--ink); }
+  svg { display: block; width: 100%; height: 76px; }
+  @media (max-width: 560px) {
+    .title { max-width: 150px; }
+    .kpi .value { font-size: 23px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Substack OS</h1>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+  <main id="main" hidden>
+    <section>
+      <h2>Now</h2>
+      <div class="panel kpis" id="kpis"></div>
+    </section>
+
+    <section>
+      <h2 id="chart-title">Subscribers</h2>
+      <div class="panel"><div id="chart"></div></div>
+    </section>
+
+    <section>
+      <h2>Worth a look</h2>
+      <div class="panel"><ul class="notes" id="notes"></ul></div>
+    </section>
+
+    <section>
+      <h2>Top posts</h2>
+      <div class="panel scroll-x"><table id="posts"></table></div>
+    </section>
+
+    <section>
+      <h2>Ask your publication</h2>
+      <div class="panel">
+        <textarea id="question" placeholder="Why did subscriber growth spike last week?"></textarea>
+        <div class="row">
+          <button id="copy">Copy question + data</button>
+          <span class="hint" id="copied"></span>
+        </div>
+        <p class="hint">
+          Copies your question together with the computed brief, to paste into Claude
+          or ChatGPT. This page has no model behind it and does not pretend to —
+          the analysis happens where the assistant already is.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <div class="row">
+    <button id="reconfigure">Settings</button>
+    <button id="reload">Refresh</button>
+  </div>
+</div>
+
+<script type="module">
+import { brief, series, summarise } from "./engine.js";
+
+const STORE = "substack-os.config";
+const $ = (id) => document.getElementById(id);
+
+// Post titles come from Substack and are not ours. Everything that reaches
+// innerHTML goes through here first.
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => (
+  { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+));
+
+const nf = new Intl.NumberFormat("en-GB");
+const int = (v) => (v === null || v === undefined ? "—" : nf.format(Math.round(v)));
+const pct = (v, dp = 1) => (v === null || v === undefined ? "—" : `${(v * 100).toFixed(dp)}%`);
+
+function money(cents, currency = "usd") {
+  if (cents === null || cents === undefined) return "—";
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency", currency: currency.toUpperCase(), maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
+function delta(abs, fraction, format = int) {
+  if (abs === null || abs === undefined) return '<span class="delta nil">no comparison</span>';
+  const cls = abs > 0 ? "up" : abs < 0 ? "down" : "nil";
+  // A negative value formats its own sign; only a positive one needs adding.
+  const sign = abs > 0 ? "+" : "";
+  const share = fraction === null || fraction === undefined ? "" : ` (${sign}${(fraction * 100).toFixed(1)}%)`;
+  return `<span class="delta ${cls}">${sign}${esc(format(abs))}${esc(share)}</span>`;
+}
+
+function banner(message, isError = false) {
+  const el = $("banner");
+  el.textContent = message;
+  el.className = isError ? "banner error" : "banner";
+  el.hidden = false;
+}
+
+/* ---------- rendering ---------- */
+
+function renderKpis(s) {
+  $("kpis").innerHTML = [
+    ["Subscribers", int(s.current.subscribers), delta(s.change.subscribers, s.change.subscribers_pct)],
+    ["Paid", int(s.current.paid_subscribers), `<span class="delta nil">${esc(pct(s.current.paid_conversion))} of list</span>`],
+    ["Annualised revenue", money(s.current.arr_cents, s.current.currency),
+      delta(s.change.arr_cents, s.change.arr_pct, (c) => money(c, s.current.currency))],
+    [`Net growth · ${s.window_days}d`, int(s.totals.net_growth), `<span class="delta nil">${esc(int(s.totals.new_subscribers))} in, ${esc(int(s.totals.unsubscribes))} out</span>`],
+  ].map(([label, value, sub]) => `
+    <div class="kpi">
+      <div class="label">${esc(label)}</div>
+      <div class="value">${esc(value)}</div>
+      ${sub}
+    </div>`).join("");
+}
+
+// Inline SVG rather than a charting library: one fewer dependency, and no
+// build step to add. Missing days break the line instead of being drawn as
+// zero, so a gap in the data reads as a gap.
+function renderChart(points) {
+  const values = points.map((p) => p.value).filter((v) => v !== null);
+  if (values.length < 2) {
+    $("chart").innerHTML = '<span class="hint">Not enough history to draw yet.</span>';
+    return;
+  }
+  const W = 960, H = 76, PAD = 3;
+  const min = Math.min(...values), max = Math.max(...values);
+  const span = max - min || 1;
+  const x = (i) => PAD + (i / (points.length - 1)) * (W - PAD * 2);
+  const y = (v) => H - PAD - ((v - min) / span) * (H - PAD * 2);
+
+  let d = "", pen = false;
+  points.forEach((p, i) => {
+    if (p.value === null) { pen = false; return; }
+    d += `${pen ? "L" : "M"}${x(i).toFixed(1)} ${y(p.value).toFixed(1)} `;
+    pen = true;
+  });
+
+  $("chart").innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" ` +
+    `aria-label="${esc(`${int(min)} to ${int(max)} over ${points.length} days`)}">` +
+    `<path d="${d.trim()}" fill="none" stroke="var(--accent)" stroke-width="2" ` +
+    `stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>` +
+    `<div class="hint">${esc(points[0].date)} → ${esc(points[points.length - 1].date)} · ` +
+    `low ${esc(int(min))} · high ${esc(int(max))}</div>`;
+}
+
+// Sentences assembled from the engine's numbers. No model is involved, so the
+// panel claims nothing the data does not already say.
+function renderNotes(b) {
+  const notes = [];
+
+  for (const a of b.anomalies.slice(0, 3)) {
+    const label = a.metric.replace(/_/g, " ");
+    notes.push(
+      `${a.date}: ${label} came in at ${int(a.value)}, ${a.direction} a baseline of ` +
+      `${int(a.baseline_mean)} (${Math.abs(a.z).toFixed(1)}σ). Worth knowing what happened that day.`,
+    );
+  }
+
+  const top = b.by_category.filter((c) => c.share !== null).slice(0, 2);
+  if (top.length) {
+    const share = top.reduce((sum, c) => sum + c.share, 0);
+    notes.push(
+      `${top.map((c) => c.key).join(" and ")} account for ${pct(share, 0)} of signups ` +
+      `across ${top.reduce((n, c) => n + c.posts, 0)} posts.`,
+    );
+  }
+
+  const days = b.by_day.filter((d) => d.share !== null).slice(0, 3);
+  if (days.length) {
+    const share = days.reduce((sum, d) => sum + d.share, 0);
+    notes.push(`Posts published on ${days.map((d) => d.key).join(", ")} produced ${pct(share, 0)} of signups.`);
+  }
+
+  const best = b.best_converting[0];
+  if (best && best.conversion !== null) {
+    notes.push(`Best converting post: “${best.title ?? best.post_id}” at ${pct(best.conversion, 2)} of readers.`);
+  }
+
+  $("notes").innerHTML = notes.length
+    ? notes.map((n) => `<li>${esc(n)}</li>`).join("")
+    : '<li class="nil">Nothing unusual, and not enough history for patterns yet.</li>';
+}
+
+function renderPosts(posts) {
+  if (!posts.length) {
+    $("posts").innerHTML = '<tr><td class="nil">No posts ingested yet.</td></tr>';
+    return;
+  }
+  const head =
+    "<tr><th></th><th>Post</th><th class='num'>Views</th><th class='num'>Signups</th>" +
+    "<th class='num'>Conv.</th><th class='num'>vs median</th></tr>";
+
+  $("posts").innerHTML = head + posts.map((p, i) => `
+    <tr>
+      <td class="rank">${String(i + 1).padStart(2, "0")}</td>
+      <td class="title" title="${esc(p.title ?? p.post_id)}">${esc(p.title ?? p.post_id)}</td>
+      <td class="num">${esc(int(p.views))}</td>
+      <td class="num">${esc(int(p.signups))}</td>
+      <td class="num">${esc(pct(p.conversion, 2))}</td>
+      <td class="num">${p.vs_baseline === null ? "—" : esc(p.vs_baseline.toFixed(2) + "×")}</td>
+    </tr>`).join("");
+}
+
+/* ---------- data ---------- */
+
+function config() {
+  try { return JSON.parse(localStorage.getItem(STORE) ?? "null"); } catch { return null; }
+}
+
+function askForConfig() {
+  const endpoint = prompt("substack-metrics function URL\n(https://<project>.supabase.co/functions/v1/substack-metrics)", config()?.endpoint ?? "");
+  if (!endpoint) return null;
+  const key = prompt("Dashboard key (the dashboard_key row in substack_config)");
+  if (!key) return null;
+  const publication = prompt("Publication identifier", config()?.publication ?? "");
+  if (!publication) return null;
+
+  const next = { endpoint: endpoint.trim(), key: key.trim(), publication: publication.trim() };
+  try { localStorage.setItem(STORE, JSON.stringify(next)); } catch { /* private mode: this session only */ }
+  return next;
+}
+
+async function fetchMetrics(cfg, days = 90) {
+  const res = await fetch(cfg.endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key: cfg.key, publication: cfg.publication, days }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(detail.error ?? `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+
+let current = { daily: [], posts: [] };
+
+function render(daily, posts, label) {
+  current = { daily, posts };
+  const b = brief(daily, posts, { days: 30, topN: 5 });
+
+  renderKpis(summarise(daily, 30));
+  renderChart(series(daily, "subscribers", 90));
+  renderNotes(b);
+  renderPosts(b.top_posts);
+
+  $("chart-title").textContent = `Subscribers · last ${Math.min(daily.length, 90)} days`;
+  $("meta").textContent = `${label} · latest ${b.generated_for ?? "—"}`;
+  $("main").hidden = false;
+}
+
+async function load() {
+  const demo = new URLSearchParams(location.search).get("demo");
+  if (demo) {
+    const s = await import("./sample-data.js");
+    banner("Sample data. Nothing here is real — drop the ?demo=1 to connect a publication.");
+    render(s.sampleDaily(), s.samplePosts(), "sample");
+    return;
+  }
+
+  const cfg = config() ?? askForConfig();
+  if (!cfg) {
+    banner("Not configured. Press Settings to point this at your substack-metrics function, or open ?demo=1 to see it with sample data.");
+    return;
+  }
+
+  try {
+    const data = await fetchMetrics(cfg);
+    $("banner").hidden = true;
+    render(data.daily, data.posts, esc(data.publication));
+  } catch (err) {
+    banner(`Could not load: ${err.message}`, true);
+  }
+}
+
+$("reconfigure").addEventListener("click", () => { if (askForConfig()) location.reload(); });
+$("reload").addEventListener("click", () => location.reload());
+
+$("copy").addEventListener("click", async () => {
+  const question = $("question").value.trim() || "What changed, and what caused it?";
+  const payload =
+    `${question}\n\nHere is the computed brief for my publication:\n\n` +
+    "```json\n" + JSON.stringify(brief(current.daily, current.posts), null, 2) + "\n```";
+  try {
+    await navigator.clipboard.writeText(payload);
+    $("copied").textContent = "Copied.";
+  } catch {
+    $("copied").textContent = "Clipboard blocked — select the text manually.";
+  }
+  setTimeout(() => { $("copied").textContent = ""; }, 4000);
+});
+
+load();
+</script>
+</body>
+</html>
