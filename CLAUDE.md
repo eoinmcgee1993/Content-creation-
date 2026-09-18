@@ -66,14 +66,53 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
-## 5. Project overview
+## 5. Repository structure
 
-**Note:** this repository holds several unrelated projects. Sections 5–9 below
-describe **CRF** — the Honda CRF250L/300L storefront in `crf-builder/`. Other
-projects here (`digital-renaissance/`, `trading-dashboard/`, `landing/`,
-`kdp-compiler/`, and others) have their own conventions and their own deploy
-targets; do not apply these rules to them, and do not change their files while
-working on CRF.
+This repo hosts many small, independent projects and prototypes, not one
+application — most share no code, stack, or deploy target. Before working in
+a subdirectory, check for its own `README.md`; when one exists it is
+authoritative for that project's purpose and commands. Session setup
+(`scripts/setup.sh`) installs the root `requirements.txt` — a shared
+grab-bag of Python deps spanning several unrelated projects, not scoped to
+any one of them — plus `ffmpeg` and the Higgsfield CLI.
+
+**Projects with a test suite, run scoped to their own directory** (there is
+no root `pytest.ini`/`conftest.py`):
+- `landing/` — Flask lead-capture app: `pytest landing/tests -q`
+- `offload/` — Flask waitlist app: `pytest offload/tests -q`
+- `audits/` — ads/SEO audit report generator: `pytest audits/tests -q`
+- `kdp-compiler/` — Node PDF interior compiler: `npm test` (from inside the directory)
+
+The first three also run in CI (`.github/workflows/{landing,offload,audits}.yml`,
+path-filtered to their own directory) — `kdp-compiler/` does not yet.
+
+**Deploy targets, and the cross-cutting traps to know about:**
+- `render.yaml` is one Render blueprint provisioning `landing/` (service
+  `audit-landing`), `offload/` (`offload-waitlist`), and `mediafetch/`
+  (`mediafetch`) as separate services.
+- `landing/` *also* deploys to Vercel independently, via `api/index.py` +
+  root `vercel.json` — two live deploy targets for one app.
+- The root `netlify.toml` publishes **`digital-renaissance/site`**. Any
+  other static project connected to this repo's Netlify site (rather than
+  deployed by its own upload/GitHub Action) would be silently overridden by
+  that config — this has already shaped how `crf-builder/` and
+  `trading-dashboard/` deploy (see their own docs/workflows).
+- A single `supabase/` project's migrations serve multiple unrelated apps
+  (`crf-builder/`'s racewear/ECU tables, `mediafetch/`'s subscriptions) in
+  one shared Postgres schema — check existing migration numbering and table
+  names before adding a new one, to avoid collisions.
+
+Everything else in the repo (`digikim/`, `gates-unbound/`, `launchwhere/`,
+`local-downloader/`, `sales/`, `plugins/`, `trading/`, `gridstrike-core/`,
+and more) is a standalone script, static page, or experiment with no shared
+build or test process — read its own `README.md` before touching it.
+
+## 6. Project overview
+
+**Note:** sections 6–10 below describe **CRF** specifically — see section 5
+for how this fits into the rest of the repo. These CRF rules apply only to
+`crf-builder/`; do not apply them to, or change files in, any other project
+while working on CRF.
 
 **What this is:** a static storefront selling three things to owners of a Honda
 CRF250L / CRF300L — a print-ready graphics-kit SVG, custom club racewear, and a
@@ -92,7 +131,7 @@ email sending domain, and the Stripe merchant name a buyer sees at checkout.
 **Read `docs/crf/` before changing anything here** — `SYSTEM.md` for how it
 works, `DEPLOYMENT.md` for what is left, `BLUEPRINT.md` for the contracts.
 
-## 6. Architecture rules
+## 7. Architecture rules
 
 - **The browser can create, and can do nothing else.** It holds only the
   publishable key, and `anon` has `INSERT` and no other grant on any `crf_`
@@ -115,7 +154,7 @@ works, `DEPLOYMENT.md` for what is left, `BLUEPRINT.md` for the contracts.
 - Schema changes are additive. Ship the code that stops using a column before
   the migration that removes it.
 
-## 7. Coding standards
+## 8. Coding standards
 
 - **Plain HTML, CSS and JavaScript in one file per page.** No framework, no
   bundler, no build step — that is a deliberate constraint, not an oversight.
@@ -130,7 +169,7 @@ works, `DEPLOYMENT.md` for what is left, `BLUEPRINT.md` for the contracts.
   that was already paid for once. Several comments here exist because someone
   nearly shipped a lean fuel map or an open mail relay.
 
-## 8. Validation (must pass before any task is complete)
+## 9. Validation (must pass before any task is complete)
 
 **There is no lint, test, or build command in this project.** Saying so is the
 honest answer, not a gap to paper over — there is nothing to compile. What
@@ -157,13 +196,13 @@ order missing its file. They are written out in `docs/crf/DEPLOYMENT.md`.
 **Changing an Edge Function means driving it over HTTPS** — the happy path and
 the refusals. Reading the diff is not verification.
 
-## 9. Task handling
+## 10. Task handling
 
 Work toward one milestone at a time.
 
 1. Restate the milestone and its success condition in one line before starting.
 2. Implement the smallest complete version that meets that condition.
-3. Run the validation list in section 8.
+3. Run the validation list in section 9.
 4. Stop, summarize what changed, and wait for review before the next milestone.
 
 Governing rule: ship before build. A working, shipped, smaller version beats an
