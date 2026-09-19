@@ -187,7 +187,7 @@ of them consume the same engine and the same endpoint.
 | ChatGPT Apps SDK app | Needs the data spine first; full MCP support is also plan-gated (Business/Enterprise for write, Pro read-only in developer mode) |
 | Claude artifact front end | Same engine, ~an afternoon, once there is real data to point it at |
 | Growth / Content / Revenue / Strategy agents | These are prompts over `brief()`, not code. Worth writing when the numbers are real, or they get tuned against fiction |
-| Daily brief to email | Needs a sending domain and a scheduled assistant session. The `brief()` payload it would send already exists. Telegram is explicitly out of scope |
+| Daily brief to email | Needs a sending domain and a scheduled assistant session. The `brief()` payload it would send already exists |
 | Content engine (V2: ideas → draft → approve → publish) | Substack's MCP is read-only, so the last step has no API. `digital-renaissance/CONTENT_OS.md` is where that half of the loop lives |
 
 The dashboard's "Ask your publication" box is the honest version of the
