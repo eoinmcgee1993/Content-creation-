@@ -1,0 +1,27 @@
+{
+  "brand": "DEGEN DIARIES",
+  "cadence": ["TUESDAY", "FRIDAY"],
+  "tagline": "The twice-weekly newspaper for the internet age.",
+  "voice": {
+    "style": "Irish newspaper wit meets serious editorial desk",
+    "rules": [
+      "Funny without becoming a meme page",
+      "Sharp headlines, clean reporting",
+      "Never invent facts, quotes or sources",
+      "Separate reporting from opinion",
+      "Prefer primary sources",
+      "Preserve source links and publication dates"
+    ]
+  },
+  "sections": [
+    {"slug":"money","name":"MONEY","description":"Crypto, markets, business and financial madness"},
+    {"slug":"machine","name":"MACHINE","description":"AI, software, robotics and technology"},
+    {"slug":"sport","name":"SPORT","description":"Sport, personalities and sporting chaos"},
+    {"slug":"culture","name":"CULTURE","description":"Music, film, books, fashion and internet culture"},
+    {"slug":"rabbit-hole","name":"THE RABBIT HOLE","description":"The weird stuff worth knowing"},
+    {"slug":"dossier","name":"THE DOSSIER","description":"One substantial investigation or deep dive"}
+  ],
+  "article_types": ["BRIEF","SIGNAL","DEEP DIVE","FIELD NOTE","DOSSIER","THE WEIRD ONE"],
+  "issue_pages": 12,
+  "price": {"currency":"EUR","monthly":3.99}
+}
