@@ -1,0 +1,22 @@
+name: DEGEN DIARIES build
+on:
+  push:
+    branches: [main]
+    paths: ["degen-diaries/**"]
+  pull_request:
+    paths: ["degen-diaries/**"]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: degen-diaries
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: degen-diaries/package.json
+      - run: npm install
+      - run: npm run build
