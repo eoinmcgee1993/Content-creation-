@@ -1,0 +1,17 @@
+{
+  "name": "degen-diaries",
+  "private": true,
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "latest",
+    "drizzle-orm": "latest"
+  },
+  "devDependencies": {
+    "dotenv": "latest",
+    "drizzle-kit": "latest"
+  }
+}
