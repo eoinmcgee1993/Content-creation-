@@ -1,3 +1,3 @@
 import "./globals.css";
-export const metadata={title:"DEGEN DIARIES",description:"The twice-weekly newspaper for the internet age."};
+export const metadata={title:"DEGEN DIARIES | The twice-weekly newspaper for the internet age.",description:"An original digital newspaper covering money, technology, human enhancement, culture, strange stories and investigations.",metadataBase:new URL(process.env.NEXT_PUBLIC_APP_URL||"http://localhost:3000")};
 export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>}
