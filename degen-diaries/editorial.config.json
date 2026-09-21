@@ -14,9 +14,9 @@
     ]
   },
   "sections": [
-    {"slug":"money","name":"MONEY","description":"Crypto, markets, business and financial madness"},
+    {"slug":"money","name":"MONEY","description":"Crypto, markets, business, side hustles and money generation ideas"},
     {"slug":"machine","name":"MACHINE","description":"AI, software, robotics and technology"},
-    {"slug":"sport","name":"SPORT","description":"Sport, personalities and sporting chaos"},
+    {"slug":"biohack","name":"BIOHACK","description":"Human performance, experimental medicine and the science of becoming something slightly more complicated"},
     {"slug":"culture","name":"CULTURE","description":"Music, film, books, fashion and internet culture"},
     {"slug":"rabbit-hole","name":"THE RABBIT HOLE","description":"The weird stuff worth knowing"},
     {"slug":"dossier","name":"THE DOSSIER","description":"One substantial investigation or deep dive"}
