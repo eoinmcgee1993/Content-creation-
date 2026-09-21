@@ -1,0 +1,5 @@
+import { db } from "../../../db";
+import { stories } from "../../../db/schema";
+import { desc, eq } from "drizzle-orm";
+export async function GET(req:Request){const section=new URL(req.url).searchParams.get("section");const rows=await db.select().from(stories).where(section?eq(stories.section,section):undefined).orderBy(desc(stories.createdAt));return Response.json(rows)}
+export async function POST(req:Request){const b=await req.json();for(const k of ["section","articleType","headline","body","slug","sourceUrl"])if(!b[k])return Response.json({error:k+" required"},{status:400});const [story]=await db.insert(stories).values({issueId:b.issueId??null,section:b.section,articleType:b.articleType,headline:b.headline,dek:b.dek??null,body:b.body,slug:b.slug,status:"draft",sourceUrl:b.sourceUrl,sourceTitle:b.sourceTitle??null,sourcePublisher:b.sourcePublisher??null,pageNumber:b.pageNumber??null,featured:Boolean(b.featured)}).returning();return Response.json(story,{status:201})}
