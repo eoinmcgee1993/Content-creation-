@@ -77,7 +77,7 @@ export const subscribers = pgTable(
   "subscribers",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    clerkUserId: text("clerk_user_id").notNull().unique(),
+    clerkUserId: text("clerk_user_id").unique(),
     email: text("email").notNull(),
     stripeCustomerId: text("stripe_customer_id").unique(),
     stripeSubscriptionId: text("stripe_subscription_id").unique(),
