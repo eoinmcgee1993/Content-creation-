@@ -196,6 +196,11 @@ productized/
     SETUP.md                            — buyer-facing setup walkthrough
     GUMROAD_LISTING.md                  — the Gumroad product page copy
     PRICING_STRATEGY.md                 — the $49 pricing rationale and launch plan
+  n8n-growth-fabric/
+    README.md                           — the product README, ships with the workflows
+    SETUP.md                            — per-pipeline credential/variable/placeholder walkthrough
+    GUMROAD_LISTING.md                  — the Gumroad product page copy
+    PRICING_STRATEGY.md                 — why $39, not $49 — and the later bundle plan
 ```
 
 The four files under `edgevault-fulfillment-kit/` are the complete package for
@@ -203,3 +208,10 @@ Asset 1, written to ship alongside a copy of the six Edge Functions and the
 migration pulled out of `supabase/`. Nothing in `supabase/` or `crf-builder/`
 was changed to produce this — the source keeps running exactly as it does
 today; extraction is copy-out, not rewrite-in-place.
+
+The four files under `n8n-growth-fabric/` are the complete package for
+Asset 2, written against the actual node parameters in
+`n8n-workflows/*.json` and `database-schema.sql` — every credential,
+n8n Variable, and inline placeholder each pipeline needs was read out of the
+JSON, not inferred from the workflow names. Nothing in `n8n-workflows/` was
+changed; the three JSON files and the schema ship as-is.
