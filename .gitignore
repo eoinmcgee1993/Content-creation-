@@ -17,3 +17,6 @@ landing/static/sample-audit-report.*
 sales/sales-sheet.pdf
 # Downloaded media artifacts
 downloads/
+
+# Local secrets (e.g. higgsfield-seedance HF_KEY) — never commit
+.env.local
