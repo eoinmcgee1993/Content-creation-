@@ -1,0 +1,23 @@
+{
+  "skill_name": "productize-code-asset",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "go through this repo like a ruthless CTO and tell me what I could actually sell on gumroad. no ebooks or prompt packs, working code only. package the best one properly - readme, setup, listing, price",
+      "expected_output": "AUDIT.md grounded in git history and read source, with explicit rejects; one product package of four docs whose every claim traces to code; legal facts left as placeholders; honest 'not for' section.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I've got three n8n workflow exports in n8n-workflows/. Write me a Gumroad listing and a setup guide for selling them as a pack, and make an instagram carousel for it",
+      "expected_output": "Setup guide that lists every $vars / YOUR_ placeholder (including inside Code nodes and sheet pickers), passes the mechanical cross-check, and flags behaviour like continueOnFail and unset error workflows; listing that makes no claim true of only some pipelines; 1080x1350 carousel rendered from HTML with the overflow check passing.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "make the gumroad cover, thumbnail and some IG slides for productized/edgevault-fulfillment-kit and write up what's still blocking the launch. use higgsfield for the images if you can",
+      "expected_output": "Typeset Gumroad and Instagram assets via productized/brand/build.py; Higgsfield credits and CLI auth checked before any generation, with a queued script and cost if blocked; blueprint listing the missing release build (zip, reference pages, assembled migration) as launch blockers.",
+      "files": []
+    }
+  ]
+}
