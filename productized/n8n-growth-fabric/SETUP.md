@@ -1,7 +1,8 @@
 # Setup
 
-Every value below was checked against the actual node parameters in the
-JSON files, not guessed from the workflow names. Three kinds of value show
+Every `$vars` reference and `YOUR_…` placeholder in the three JSON files is
+listed below, found by searching each file end to end — Code nodes and
+sheet pickers included, not just node parameters. Three kinds of value show
 up, and n8n treats them differently — knowing which is which up front saves
 you a re-import:
 
@@ -26,9 +27,8 @@ Creates `system_execution_logs` plus one table per pipeline, the indexes
 each pipeline's dedup query needs, and two dashboard views. Safe to re-run —
 everything is `CREATE TABLE IF NOT EXISTS`.
 
-Then create one n8n **Postgres credential** pointing at this database — all
-three workflows use a node literally named to match (`postgres`), and every
-`postgres` node in all three pipelines uses the same one.
+Then create one n8n **Postgres credential** pointing at this database. Every
+Postgres node in all three pipelines uses the same one.
 
 ## 2. Import the workflows
 
@@ -45,6 +45,7 @@ credential or unresolved variable, which is a useful checklist on its own.
 | OpenAI API key | Credential (`openAiApi`) | Every `lmChatOpenAi` node in all three pipelines. One key, attach it everywhere. |
 | Postgres | Credential (`postgres`) | Same one from step 1. |
 | Error logging endpoint | Inline placeholder | Every pipeline's `Send Error to Webhook Log` node has the URL hardcoded as `https://YOUR_ERROR_LOGGING_WEBHOOK_URL`. Point it at a Slack webhook, a second n8n workflow, whatever you actually watch. It won't error if you skip it — it'll just POST to a URL that doesn't exist. |
+| Error workflow | Workflow setting | **Required for the error branch to run at all.** n8n only fires an Error Trigger for a workflow that names it as its error workflow, and none of the three ship with one set. In each workflow: Settings → Error workflow → select that same workflow. |
 
 ### Pipeline 1 — Newsletter Engine
 
@@ -62,9 +63,12 @@ News `httpRequest` are all public, unauthenticated feeds.
 | What | Kind | Notes |
 |---|---|---|
 | Google Sheets OAuth2 | Credential (`googleSheetsOAuth2Api`) | For the trigger (`Product Queue - Row Added`) and the `Mark Row LIVE` node. Both need to point at the same sheet — your product queue, one row per product, with a status column the trigger watches. |
+| Product sheet id | Inline placeholder | `YOUR_GOOGLE_SHEET_ID`, in both the trigger and `Mark Row LIVE` (the document picker). The id from your sheet's URL — the same sheet in both nodes. |
+| Amazon Associates tag | Inline placeholder | `YOUR_AFFILIATE_TAG-20`, inside the **Code** node `Spec Normalizer & Payload Builder` (`const affiliateTag = …`). **Without your real tag every link carries the placeholder and earns nothing** — the one value in this pack that fails silently. |
 | Rainforest API key | **Variable** `RAINFOREST_API_KEY` | Sent as a query param, not a stored credential. rainforestapi.com issues the key. |
 | Fal.ai API key | Credential (`httpHeaderAuth`, named "Fal.ai API Key" in the node) | For the `Fal.ai - Generate Product Image` node — set the header value to `Key <your-fal-key>` per Fal's auth docs. |
 | Telegram bot token | Credential (`telegramApi`) | For `Telegram - Send Photo Post`. Create a bot via @BotFather, add it to your channel/group. |
+| Telegram chat | **Variable** `TELEGRAM_CHANNEL_ID` | The channel or group the bot posts to (e.g. `@yourchannel`, or a numeric id). The bot needs permission to post there. |
 | Instagram access token | **Variable** `INSTAGRAM_ACCESS_TOKEN` | Long-lived Page/Instagram access token via Meta's Graph API Explorer or a System User. Passed as a query param on both Instagram nodes. |
 | Instagram Business account id | **Variable** `INSTAGRAM_USER_ID` | The Instagram Business Account id linked to your Facebook Page. |
 | Facebook Page access token | **Variable** `FACEBOOK_PAGE_ACCESS_TOKEN` | For `Facebook Page - Post Photo`. |
@@ -85,6 +89,7 @@ Page; auto-posting is a policy-sensitive surface.
 | Apollo industry tag | Inline placeholder | The request body has `"organization_industry_tag_ids": ["YOUR_SAAS_INDUSTRY_TAG_ID"]` — Apollo's API needs a real tag id for your target industry; look it up via Apollo's own tag-search endpoint or dashboard. |
 | Lead targeting | Node parameter | The same request body hardcodes `person_titles` (Founder/CEO/Co-Founder/Managing Director) and `person_locations` (`["Thailand", "Southeast Asia"]`) — this is sample targeting, not a placeholder that breaks if left alone, but you'll want to point it at your own ICP before running it for real. |
 | Google Sheets OAuth2 | Credential (`googleSheetsOAuth2Api`) | For `Mark CONTACTED` — logs delivery status to a sheet alongside the Postgres row. |
+| Log sheet id | Inline placeholder | `YOUR_MASTER_LOG_SHEET_ID`, in `Mark CONTACTED` (the document picker). |
 | Gmail OAuth2 | Credential (`gmailOAuth2`) | For `Gmail - Send Personalized Email`. Sends from whatever account you authenticate. |
 | Schedule | Node parameter | `Weekday 9 AM Trigger` ships as `0 9 * * 1-5`. |
 
@@ -105,9 +110,16 @@ Do this one pipeline at a time, not all three at once:
 3. Watch it run node-by-node in the n8n editor — this is where a missing
    credential or an unresolved `$vars` reference shows up immediately as a
    red node, before it's live on a schedule.
-4. Check `system_execution_logs` for the row it wrote.
-5. Query `v_daily_pipeline_summary` — you should see one row for today with
-   your pipeline's name.
+4. Check the row it wrote. Where depends on the pipeline and the outcome:
+   - **01** — a `newsletter_campaigns` row and a `SUCCESS` row in
+     `system_execution_logs` (or a `REWRITTEN` row carrying Agent B's
+     reasoning, if it rejected the draft).
+   - **02** — an `affiliate_publications` row. Only a failed asset step
+     writes to `system_execution_logs` (as `FAILED`).
+   - **03** — a `b2b_outreach_leads` row: `PASSED`, or `FAILED_FILTER` plus a
+     `FAILED` row in `system_execution_logs` with the compliance reason.
+5. `v_daily_pipeline_summary` reads `system_execution_logs`, so it shows
+   every pipeline 01 run but only the failures of 02 and 03.
 
 Only move to the next pipeline once one full run is clean.
 
@@ -120,12 +132,16 @@ Only move to the next pipeline once one full run is clean.
 - **`$vars.SOMETHING` renders as empty string / literal text.** The
   Variable wasn't created, or was created with a different name than the
   node references. Variable names are case-sensitive and must match exactly.
-- **Pipeline 2 publishes to Telegram but not Instagram/Facebook.** Those two
-  fail independently and don't block Telegram — check
-  `Log Asset Generation Failure` in Postgres for the specific Graph API
-  error (expired token is the most common one).
+- **Pipeline 2 publishes to Telegram but not Instagram/Facebook.** Each
+  publish node continues on failure, so the others still run — and the
+  Graph API error is in that node's output in the n8n execution view, not
+  in Postgres. (`Log Asset Generation Failure` only fires when the copy step
+  came back empty.) An expired Meta token is the usual suspect.
 - **Pipeline 3 sends nothing, ever.** Check `Compliance Status Router` —
   if `Agent B` is rejecting every draft, the compliance prompt may be
-  miscalibrated for your industry/tone. Read a few rows in
-  `b2b_outreach_leads.compliance_status` for the actual rejection reasons
-  before assuming the pipeline is broken.
+  miscalibrated for your industry/tone. Its reasons are in the
+  `error_message` of the `B2B_OUTBOUND` / `FAILED` rows in
+  `system_execution_logs` — read a few before assuming the pipeline is
+  broken.
+- **The error webhook never fires.** The workflow's Settings → Error
+  workflow isn't set; see "Common to all three" above.

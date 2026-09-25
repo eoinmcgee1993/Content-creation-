@@ -2,6 +2,14 @@
 
 Project-level Claude Code skills, auto-discovered from this directory.
 
+## productize-code-asset
+
+Audit a repo for sellable code, package it (README, setup, Gumroad listing,
+pricing), render the Gumroad and Instagram brand pack, and write the launch
+blueprint — with every claim verified against source. Built from the session
+that produced `productized/`, which is its reference implementation.
+`evals/evals.json` holds three test prompts that haven't been run yet.
+
 ## Higgsfield (`higgsfield-*`)
 
 Five skills for Higgsfield AI generation, vendored from
