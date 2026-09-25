@@ -1,7 +1,7 @@
 # SEO Content Audit
 
 ## Skill Purpose
-Perform a comprehensive SEO audit of a webpage or website, covering on-page SEO, content quality (E-E-A-T), keyword analysis, technical SEO, and content strategy. This skill combines automated analysis via `scripts/analyze_page.py` with expert-level manual review to produce an actionable SEO audit document.
+Perform a comprehensive SEO audit of a webpage or website, covering on-page SEO, content quality (E-E-A-T), keyword analysis, technical SEO, and content strategy. This skill combines automated analysis via `~/.claude/skills/market/scripts/analyze_page.py` with expert-level manual review to produce an actionable SEO audit document.
 
 ## When to Use
 - User provides a URL and asks for SEO analysis, audit, or recommendations
@@ -12,11 +12,19 @@ Perform a comprehensive SEO audit of a webpage or website, covering on-page SEO,
 
 ## How to Execute
 
+### Step 0: Real Data First
+Read `~/.claude/skills/market/DATA-SOURCES.md` first. It sets the Semrush probe, the fallback order, and the labels every figure must carry.
+
+If Semrush is available, pull `domain_overview` and `organic_research` for the
+domain (and `site_audit` if the user has a Semrush project for it). These give
+real rankings, keywords and crawl issues. Everything after Step 1 is then
+checked against them rather than guessed.
+
 ### Step 1: Run Automated Analysis
 Use the Python analysis script to gather baseline data:
 
 ```bash
-python3 scripts/analyze_page.py <url>
+python3 ~/.claude/skills/market/scripts/analyze_page.py <url>
 ```
 
 This script extracts:
@@ -33,7 +41,7 @@ This script extracts:
 - Canonical tag
 - Robots meta directives
 
-Capture the JSON output and use it as the foundation for the manual analysis.
+Capture the JSON output and use it as the foundation for the manual analysis. `analysis.scores.seo` (0-10) and `analysis.seo_deductions` are computed. Report that score with its deductions, labelled **Computed**, and keep it separate from your own judgement scores.
 
 ### Step 2: On-Page SEO Checklist
 Evaluate each element and score it as Pass, Needs Work, or Fail.

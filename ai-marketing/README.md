@@ -10,6 +10,26 @@ A comprehensive marketing analysis and automation skill system for [Claude Code]
 
 ---
 
+> **This is a modified fork** (source and pinned commit in [`UPSTREAM.md`](UPSTREAM.md)).
+> Changes from upstream:
+> - **Semrush first.** SEO, traffic and competitor figures come from the Semrush MCP
+>   when the account has API units, or from a Semrush export you supply. Otherwise the
+>   suite falls back to on-page analysis and says so in the report header. The rules live in
+>   [`market/DATA-SOURCES.md`](market/DATA-SOURCES.md).
+> - **Every figure is labelled** Semrush estimate / Computed / Judgement / Assumed.
+>   Revenue impact is a low/mid/high range with its inputs shown, not one number.
+> - **`analyze_page.py` shows its working.** `seo_deductions` lists each point lost.
+>   It also checks canonical and sitemap, and no longer counts `alt=""` (correct for
+>   decorative images) as missing alt text.
+> - **Script paths fixed.** Skills called `scripts/...` relative to wherever Claude was
+>   running, so the scripts silently never ran after `install.sh`. They now use
+>   `~/.claude/skills/market/scripts/`.
+>
+> The Semrush path is untested: the connected account had no API units when this
+> was written. Treat it as unproven until one real run has used it.
+
+---
+
 ## What This Does
 
 Type a command in Claude Code and get instant, actionable marketing analysis:

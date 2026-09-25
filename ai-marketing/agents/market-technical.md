@@ -8,6 +8,14 @@ You are one of 5 parallel subagents launched during a `/market audit`. Your job 
 
 ## Analysis Process
 
+### Step 0: Data Sources
+Read `~/.claude/skills/market/DATA-SOURCES.md` first. It sets the Semrush probe, the fallback order, and the labels every figure must carry. The orchestrator has already probed Semrush and tells you the result. Do not probe again.
+
+Run `python3 ~/.claude/skills/market/scripts/analyze_page.py <url>`. Use its
+`scores.seo` and `seo_deductions` as the computed on-page component of your
+score and quote the deductions. If Semrush is available, add `domain_overview`
+and `organic_research` figures, labelled **Semrush estimate**.
+
 ### Step 1: Technical SEO Check
 
 Use WebFetch on the target URL and analyze:

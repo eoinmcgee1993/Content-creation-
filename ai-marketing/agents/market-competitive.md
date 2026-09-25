@@ -9,6 +9,9 @@ You are one of 5 parallel subagents launched during a `/market audit`. Your job 
 ## Analysis Process
 
 ### Step 1: Identify Competitors
+Read `~/.claude/skills/market/DATA-SOURCES.md` first. It sets the Semrush probe, the fallback order, and the labels every figure must carry. The orchestrator has already probed Semrush. If it is available, take
+competitors from `competitors_research` first and use the search steps below only
+to fill gaps. Otherwise use the search steps below and say the list is **Judgement**.
 
 1. Fetch the target website homepage with WebFetch
 2. Identify the product/service category

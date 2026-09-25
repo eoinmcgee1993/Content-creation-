@@ -12,6 +12,15 @@ The user runs `/market audit <url>`. This is the flagship command of the entire 
 
 Before launching subagents, perform these discovery steps:
 
+### 1.0 Probe Semrush Once
+Read `~/.claude/skills/market/DATA-SOURCES.md`. Make the single probe call it describes, then record
+the outcome (available, or unavailable plus the error `code`). Include that outcome in every
+subagent's brief. Subagents must not probe on their own: five failing calls
+cost five times as much and tell you nothing extra.
+
+If Semrush is available, also pull `traffic_overview` for the target now. That
+visits figure feeds the revenue model in 3.3.
+
 ### 1.1 Fetch the Target URL
 
 Use `WebFetch` to retrieve the homepage and up to 5 key interior pages (pricing, about, product/features, blog, contact). Store raw content for subagent consumption.
@@ -179,24 +188,21 @@ Collect all recommendations from subagents and classify them:
 
 ### 3.3 Revenue Impact Estimates
 
-For each recommendation, estimate the revenue impact:
+Follow the "Revenue impact" section of `~/.claude/skills/market/DATA-SOURCES.md`. In short, show the three
+inputs (visits, conversion lift, value per conversion), each with its source label, and
+give a low/mid/high range instead of a single figure. Visits come from Semrush
+`traffic_overview` when available and are otherwise **Assumed**. Lift and value
+are always **Assumed** unless the user supplied them.
 
-```
-Revenue Impact Formula:
-  Current Monthly Traffic x Conversion Rate Improvement x Average Deal Value
-  = Estimated Monthly Revenue Lift
+Upstream presented these as calculations. Without a real traffic figure they
+are illustrations, and a client-facing report must not read as if they were
+measured.
 
-Example:
-  10,000 visitors x 0.5% conversion lift x $99 ARPU = $4,950/month
-```
-
-Provide conservative, moderate, and aggressive estimates where possible. Use these qualifiers:
-
-| Impact Level | Monthly Revenue Lift | Confidence |
-|-------------|---------------------|------------|
-| High Impact | >$5,000/mo or >20% improvement | Based on clear evidence from audit |
-| Medium Impact | $1,000-$5,000/mo or 5-20% improvement | Based on industry benchmarks |
-| Low Impact | <$1,000/mo or <5% improvement | Incremental optimization |
+| Impact Level | Meaning |
+|-------------|---------|
+| High | Mid estimate >$5,000/mo, or a clear evidenced defect on a primary conversion path |
+| Medium | Mid estimate $1,000-$5,000/mo |
+| Low | Mid estimate <$1,000/mo, or incremental polish |
 
 ### 3.4 Competitor Comparison Table
 
@@ -224,7 +230,8 @@ Write the final report to `MARKETING-AUDIT.md` in the current directory with thi
 **URL:** [url]
 **Date:** [current date]
 **Business Type:** [detected type]
-**Overall Marketing Score: [X]/100 (Grade: [letter])**
+**Data source:** [Semrush + on-page analysis | on-page analysis only (Semrush unavailable: <code>)]
+**Overall Marketing Score: [X]/100 (Grade: [letter])**. SEO sub-score is Computed/Semrush; the rest is Judgement against the rubrics below.
 
 ---
 
@@ -299,12 +306,20 @@ resource requirements, and projected ROI.]
 
 ## Revenue Impact Summary
 
-| Recommendation | Est. Monthly Impact | Confidence | Timeline |
-|---------------|-------------------|------------|----------|
-| [recommendation 1] | $X,XXX | High/Med/Low | X weeks |
-| [recommendation 2] | $X,XXX | High/Med/Low | X weeks |
-| ... | | | |
-| **Total Potential** | **$XX,XXX/mo** | | |
+**Inputs**
+
+| Input | Value | Source |
+|-------|-------|--------|
+| Monthly visits | [n] | Semrush estimate / Assumed |
+| Conversion-rate lift | [low / mid / high] | Assumed |
+| Value per conversion | $[n] | User-supplied / Assumed |
+
+| Recommendation | Low | Mid | High | Timeline |
+|---------------|-----|-----|------|----------|
+| [recommendation 1] | $X | $X | $X | X weeks |
+| ... | | | | |
+
+[If visits are Assumed, say so in one sentence here and in the Executive Summary.]
 
 ---
 
@@ -348,7 +363,8 @@ Top 3 Strategic Moves:
   2. [move]
   3. [move]
 
-Estimated Revenue Impact: $X,XXX-$XX,XXX/month
+Data source: [Semrush + on-page | on-page only (Semrush: <code>)]
+Revenue range (illustrative, see inputs): $X,XXX-$XX,XXX/month
 
 Full report saved to: MARKETING-AUDIT.md
 ```

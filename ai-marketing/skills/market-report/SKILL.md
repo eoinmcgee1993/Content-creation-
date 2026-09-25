@@ -128,19 +128,10 @@ For each of the 6 categories, provide:
 5. **Recommendations** -- Specific, actionable improvements ranked by impact
 6. **Revenue Impact Estimate** -- Estimated financial impact of implementing recommendations
 
-**Revenue Impact Estimation Framework:**
-```
-Impact = (Estimated traffic change * Conversion rate change * Average deal value) * Confidence factor
-
-Example:
-- Current monthly traffic: 10,000
-- Recommended SEO improvements could increase traffic 30%: +3,000 visits
-- Current conversion rate: 2%, CRO could improve to 3%: +1% = +130 conversions
-- Average deal value: $500
-- Estimated monthly revenue impact: $65,000
-- Confidence factor (conservative): 0.5
-- Conservative estimate: $32,500/month additional revenue
-```
+**Revenue Impact:** follow the "Revenue impact" section of `~/.claude/skills/market/DATA-SOURCES.md`. Show
+the inputs with source labels and a low/mid/high range. Never give one confident
+figure, and never apply a "confidence factor" to an assumed number to make it
+look calibrated.
 
 ### Step 4: Competitor Comparison Summary
 If competitor data is available from `/market competitors`, include:
@@ -247,7 +238,7 @@ Include methodology notes so the client understands how scores were derived:
 
 **Tools Used:**
 - List any tools or scripts used in the analysis
-- Reference to scripts/analyze_page.py if used
+- Reference to ~/.claude/skills/market/scripts/analyze_page.py if used
 
 **Glossary:**
 - Define marketing terms that a non-marketer client may not know
@@ -327,12 +318,16 @@ Generate a file called `MARKETING-REPORT.md` with:
 ---
 
 ## Revenue Impact Summary
-| Recommendation | Estimated Monthly Impact | Confidence | Priority |
-|---|---|---|---|
-| [Rec 1] | $X,XXX | High/Medium/Low | 1 |
-| [Rec 2] | $X,XXX | High/Medium/Low | 2 |
-| ... | ... | ... | ... |
-| **Total Estimated Impact** | **$XX,XXX/month** | | |
+| Input | Value | Source |
+|---|---|---|
+| Monthly visits | [n] | Semrush estimate / Assumed |
+| Conversion-rate lift | [low / mid / high] | Assumed |
+| Value per conversion | $[n] | User-supplied / Assumed |
+
+| Recommendation | Low | Mid | High | Priority |
+|---|---|---|---|---|
+| [Rec 1] | $X | $X | $X | 1 |
+| ... | ... | ... | ... | ... |
 
 ---
 
@@ -364,7 +359,7 @@ Generate a file called `MARKETING-REPORT.md` with:
 ## Key Principles
 - This report should be impressive enough to use as a sales tool. A well-crafted marketing report can open the door to a client engagement.
 - Always lead with insights and opportunities, not criticism. Frame everything through the lens of growth potential.
-- Quantify everything possible. "$32,000/month in unrealized revenue" is more compelling than "you're leaving money on the table."
+- Quantify what can be quantified, and label each figure's source as `~/.claude/skills/market/DATA-SOURCES.md` defines. "$8k-$30k/month at the stated assumptions" survives a client asking "where did that come from?"; an unlabelled "$32,000/month" does not.
 - Make the action plan so specific that someone could hand it to a junior marketer and they could execute it.
 - Use professional formatting: consistent headers, tables for data, checkboxes for action items, clear visual hierarchy.
 - If data from previous skills is available, reference specific findings. If not, be transparent about what's based on analysis vs estimation.

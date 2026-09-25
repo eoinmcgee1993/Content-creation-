@@ -68,7 +68,9 @@ mkdir -p "$AGENTS_DIR"
 echo -e "${BLUE}Installing main skill...${NC}"
 mkdir -p "$SKILLS_DIR/market"
 cp "$SCRIPT_DIR/market/SKILL.md" "$SKILLS_DIR/market/SKILL.md"
+cp "$SCRIPT_DIR/market/DATA-SOURCES.md" "$SKILLS_DIR/market/DATA-SOURCES.md"
 echo -e "  ${GREEN}✓${NC} market/SKILL.md (orchestrator)"
+echo -e "  ${GREEN}✓${NC} market/DATA-SOURCES.md (Semrush + labelling rules)"
 
 # Install sub-skills
 echo -e "\n${BLUE}Installing sub-skills...${NC}"

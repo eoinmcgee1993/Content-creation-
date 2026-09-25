@@ -232,7 +232,9 @@ class MarketingPageParser(HTMLParser):
     def get_results(self):
         """Compile all findings into a structured result."""
         # Count images without alt text
-        images_without_alt = sum(1 for img in self.images if not img.get("has_alt") or not img.get("alt"))
+        # Only a missing attribute counts. alt="" is the correct markup for a
+        # decorative image; counting it flagged sites Semrush's audit passes.
+        images_without_alt = sum(1 for img in self.images if not img.get("has_alt"))
         images_with_lazy = sum(1 for img in self.images if img.get("loading") == "lazy")
 
         # Analyze heading hierarchy
@@ -390,26 +392,41 @@ def analyze(url):
     # Generate marketing scores
     scores = {}
 
-    # SEO Score
+    # SEO Score. Every deduction is recorded so a report can quote the working
+    # instead of presenting a bare number; the skills treat this as the only
+    # computed SEO figure and label everything else as judgement.
     seo_score = 10
+    seo_deductions = []
     seo = page_results["seo"]
+
+    def deduct(points, reason):
+        nonlocal seo_score
+        seo_score -= points
+        seo_deductions.append({"points": -points, "reason": reason})
+
     if not seo["title"]:
-        seo_score -= 3
+        deduct(3, "missing <title>")
     elif not seo["title_ok"]:
-        seo_score -= 1
+        deduct(1, f"title length {seo['title_length']} outside 30-60")
     if not seo["meta_description"]:
-        seo_score -= 3
+        deduct(3, "missing meta description")
     elif not seo["meta_description_ok"]:
-        seo_score -= 1
+        deduct(1, f"meta description length {seo['meta_description_length']} outside 120-160")
     if not seo["headings"].get("h1"):
-        seo_score -= 2
+        deduct(2, "no H1")
     if seo["images_without_alt"] > 0:
-        seo_score -= min(2, seo["images_without_alt"])
+        deduct(min(2, seo["images_without_alt"]), f"{seo['images_without_alt']} image(s) without alt text")
     if seo["heading_issues"]:
-        seo_score -= 1
+        deduct(1, "; ".join(seo["heading_issues"]))
     if not seo["has_viewport"]:
-        seo_score -= 1
+        deduct(1, "no viewport meta")
+    if not seo["canonical"]:
+        deduct(1, "no canonical link")
+    # A sitemap declared in robots.txt counts even at a non-standard path.
+    if not page_results["sitemap"]["exists"] and not page_results["robots"].get("has_sitemap_reference"):
+        deduct(1, "no /sitemap.xml and none declared in robots.txt")
     scores["seo"] = max(0, seo_score)
+    page_results["seo_deductions"] = seo_deductions
 
     # CTA Score
     cta_score = 5

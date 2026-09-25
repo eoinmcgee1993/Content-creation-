@@ -37,6 +37,12 @@ Use multiple methods to identify competitors:
 - Look for "integrations" pages that mention similar tools
 - Check the target site's blog for competitor mentions
 
+**Method 0: Semrush (preferred when available)**
+Read `~/.claude/skills/market/DATA-SOURCES.md` first. It sets the Semrush probe, the fallback order, and the labels every figure must carry. If Semrush is available, `competitors_research` lists the domains that
+actually compete with the target in organic and paid search, with keyword overlap.
+Start from that list, and use Methods 1-4 only to add competitors search data
+misses (e.g. offline or brand-new ones). Label Semrush-derived rows **Semrush estimate**.
+
 **Method 3: Review Platform Discovery**
 - Search G2, Capterra, Trustpilot for the product category
 - Note top-rated competitors in the same category
@@ -49,10 +55,10 @@ Use multiple methods to identify competitors:
 
 ### 1.3 Automated Data Collection
 
-Use the Python script at `scripts/competitor_scanner.py` for automated data collection when available:
+Use the Python script at `~/.claude/skills/market/scripts/competitor_scanner.py` for automated data collection when available:
 
 ```
-python scripts/competitor_scanner.py --url [competitor-url] --output json
+python3 ~/.claude/skills/market/scripts/competitor_scanner.py [competitor-url-1] [competitor-url-2] ...
 ```
 
 The script can collect:
