@@ -149,10 +149,13 @@ Bug fixes and security-relevant updates are free for existing buyers.
 
 ---
 
-### Suggested assets to capture before publishing (not included here)
+### Listing images
 
-- A screenshot or short screen-recording of the architecture diagram from
-  `README.md` (render it, don't ship ASCII art as the hero image).
+The rendered set — cover, how-it-works, what's-included, thumbnail, and an
+Instagram carousel — is in `productized/brand/edgevault/`; see
+`productized/MASTER_BLUEPRINT.md`. Still worth capturing once the release
+build exists:
+
 - A terminal capture of the six verification queries/checks in `SETUP.md`
   actually passing — this is the single most convincing screenshot for a
   security-conscious buyer.

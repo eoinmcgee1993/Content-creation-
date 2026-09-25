@@ -28,11 +28,10 @@ ceiling.
 
 **Above a single template ($15–35),** because this is genuinely three
 production-shaped pipelines plus a shared schema and two dashboard views,
-not one workflow with a different prompt copy-pasted three times — the
-dedup logic, the error-trigger branch, and the dual-agent guardrail pattern
-are each implemented three separate times with real per-pipeline variation
-(different trigger types, different structured-output schemas, different
-downstream actions).
+not one workflow with a different prompt copy-pasted three times — dedup
+and an error branch in all three, the dual-agent guardrail in two, with real
+per-pipeline variation (different trigger types, different structured-output
+schemas, different downstream actions).
 
 **Below EdgeVault's $49,** for two honest reasons: the setup burden is
 heavier (six-plus external services across the pack vs. two for EdgeVault),

@@ -57,8 +57,7 @@ misconfiguration doesn't undo it.
 ```
 supabase/
   migrations/
-    001_initial_schema.sql          orders + order-files tables, indexes
-    003_order_security.sql          RLS policies, grants, BEFORE INSERT triggers
+    0001_schema.sql                 tables, indexes, BEFORE INSERT triggers, RLS policies, grants
   functions/
     stripe-webhook/index.ts         HMAC-SHA256 verified, constant-time compare,
                                      300s replay window, 500-on-failure so Stripe retries

@@ -54,11 +54,19 @@ supabase/functions/apparel-approval/index.ts       token-gated state machine, on
 supabase/functions/create-apparel-order/index.ts   server-owned order creation + pricing
 supabase/functions/apparel-notify/index.ts         idempotent transactional email
 supabase/functions/admin-orders/index.ts           operator read view, shared-secret auth
-supabase/migrations/001_initial_schema.sql
-supabase/migrations/003_crf_racewear_order_security.sql
+docs/crf/BLUEPRINT.md §3                           crf_ tables, indexes, triggers, RLS, grants (exact SQL)
+supabase/migrations/003_crf_racewear_order_security.sql   the racewear order trigger
 crf-builder/*.html                                 reference client pattern (insert-only browser)
 docs/crf/BLUEPRINT.md, docs/crf/SYSTEM.md           the spec this was built and re-verified against
 ```
+
+*Corrected 2026-09-25:* the first version of this list named
+`supabase/migrations/001_initial_schema.sql`, which belongs to a different
+project (`scraped_signals`, `sales_funnels`). The `crf_orders`,
+`crf_order_files` and `crf_config` DDL isn't in `supabase/migrations/` at
+all — it was applied to the live project directly and exists in the repo
+only as the SQL in `docs/crf/BLUEPRINT.md` §3. The release build assembles
+the kit's single migration from there.
 
 **Why it clears the 70% bar, with evidence, not vibes:**
 
@@ -191,6 +199,8 @@ Everything else in the repo, in one line each:
 ```
 productized/
   AUDIT.md                              — this file
+  MASTER_BLUEPRINT.md                   — launch doc: blockers, brand system, Gumroad + Instagram packages
+  brand/                                — rendered assets, build.py, queued Higgsfield script
   edgevault-fulfillment-kit/
     README.md                           — the product README, ships with the code
     SETUP.md                            — buyer-facing setup walkthrough
@@ -210,8 +220,15 @@ was changed to produce this — the source keeps running exactly as it does
 today; extraction is copy-out, not rewrite-in-place.
 
 The four files under `n8n-growth-fabric/` are the complete package for
-Asset 2, written against the actual node parameters in
-`n8n-workflows/*.json` and `database-schema.sql` — every credential,
-n8n Variable, and inline placeholder each pipeline needs was read out of the
-JSON, not inferred from the workflow names. Nothing in `n8n-workflows/` was
-changed; the three JSON files and the schema ship as-is.
+Asset 2, written against `n8n-workflows/*.json` and `database-schema.sql`.
+Nothing in `n8n-workflows/` was changed; the three JSON files and the schema
+ship as-is.
+
+*Corrected 2026-09-25:* the first pass read node parameters but not Code
+nodes or sheet pickers, and missed four setup values (`TELEGRAM_CHANNEL_ID`,
+the Amazon affiliate tag, two sheet ids). It also overstated the pack: only
+pipelines 01 and 03 have a second, approving agent. A line-by-line pass
+turned up real workflow defects too — pipeline 02's duplicate check can't
+match, SQL is built by string interpolation from third-party data, and the
+error branches are inert until wired. The package docs now say so; the fixes
+are launch blockers in `MASTER_BLUEPRINT.md`.
