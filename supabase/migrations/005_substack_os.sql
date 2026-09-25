@@ -57,8 +57,12 @@ create table if not exists public.substack_posts (
   primary key (publication, post_id)
 );
 
+-- NULLS LAST matches substack-metrics' only ordering
+-- (published_at.desc.nullslast). Postgres defaults DESC to NULLS FIRST, so
+-- the index could not serve that query and every read sorted the whole
+-- publication before applying its LIMIT.
 create index if not exists substack_posts_published_idx
-  on public.substack_posts (publication, published_at desc);
+  on public.substack_posts (publication, published_at desc nulls last);
 
 -- Secrets for this project live here, in the same shape crf_config uses: RLS
 -- on, zero policies, every grant revoked, so only a service-role client inside

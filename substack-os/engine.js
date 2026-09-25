@@ -76,6 +76,31 @@ function stddev(values) {
 }
 
 /**
+ * A calendar date as YYYY-MM-DD, from whatever a row source hands over.
+ *
+ * ARCHITECTURE.md lists an n8n Function node and a CSV import as row sources,
+ * and both hand over a Date object for a date column. The previous version
+ * sliced String(value), which turns a Date into "Mon Mar 02" — wrong text, and
+ * wrong ORDER too, because "Mon" sorts before "Sun". Anything that is not a
+ * real date returns null and its row is dropped: a row that cannot be placed
+ * in time cannot be placed in the ordering either.
+ */
+function toISODate(v) {
+  if (v instanceof Date) {
+    return Number.isNaN(v.getTime()) ? null : v.toISOString().slice(0, 10);
+  }
+  if (typeof v === "number") {
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+  }
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+}
+
+/**
  * Sort daily snapshots oldest-first and attach the fields the schema
  * deliberately does not store, because they are derived and would drift.
  *
@@ -85,18 +110,20 @@ function stddev(values) {
  */
 export function normaliseDaily(rows) {
   return [...(rows ?? [])]
-    .filter((r) => r && r.metric_date)
-    .sort((a, b) => String(a.metric_date).localeCompare(String(b.metric_date)))
-    .map((r, i, all) => {
+    .filter((r) => r && r.metric_date !== null && r.metric_date !== undefined)
+    .map((r) => ({ row: r, date: toISODate(r.metric_date) }))
+    .filter((x) => x.date !== null)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(({ row: r, date }, i, all) => {
       const subscribers = num(r.subscribers);
       const paid = num(r.paid_subscribers);
       const free = num(r.free_subscribers) ?? sub(subscribers, paid);
       const gained = num(r.new_subscribers);
       const lost = num(r.unsubscribes);
-      const prevSubs = i > 0 ? num(all[i - 1].subscribers) : null;
+      const prevSubs = i > 0 ? num(all[i - 1].row.subscribers) : null;
       return {
         ...r,
-        metric_date: String(r.metric_date).slice(0, 10),
+        metric_date: date,
         subscribers,
         paid_subscribers: paid,
         free_subscribers: free,
@@ -124,7 +151,10 @@ export function lastDays(daily, days) {
 export function summarise(daily, days = 30) {
   const rows = normaliseDaily(daily);
   if (rows.length === 0) {
-    return { latest: null, window_days: days, current: {}, change: {}, totals: {} };
+    return {
+      latest: null, baseline_date: null, window_days: days, span_days: null,
+      current: {}, change: {}, totals: {},
+    };
   }
 
   const latest = rows[rows.length - 1];
@@ -138,9 +168,23 @@ export function summarise(daily, days = 30) {
   const baseline = windowRows.length > 1 ? windowRows[0] : null;
   const period = windowRows.length > 1 ? windowRows.slice(1) : windowRows;
 
+  // window_days is what was ASKED for; span_days is what was actually
+  // compared. On a history with gaps — snapshots every four days, say — the
+  // baseline sits 31 array positions back but 120 calendar days back, and
+  // labelling that "30d" is a lie a front end had no way to catch, because
+  // the baseline date was not in the return shape either.
+  const spanDays = baseline
+    ? Math.round(
+        (Date.parse(`${latest.metric_date}T00:00:00Z`) -
+          Date.parse(`${baseline.metric_date}T00:00:00Z`)) / 86_400_000,
+      )
+    : null;
+
   return {
     latest: latest.metric_date,
+    baseline_date: baseline?.metric_date ?? null,
     window_days: days,
+    span_days: spanDays,
     current: {
       subscribers: latest.subscribers,
       paid_subscribers: latest.paid_subscribers,
@@ -159,7 +203,12 @@ export function summarise(daily, days = 30) {
     totals: {
       new_subscribers: sum(period, "new_subscribers"),
       unsubscribes: sum(period, "unsubscribes"),
-      net_growth: sum(period, "net_growth"),
+      // Derived from the two figures above, NOT summed from each row's own
+      // net_growth. Summing per-row net_growth silently skips every day
+      // missing either side, so the tile could read "75" directly above the
+      // words "210 in, 15 out". Whatever this reports now equals what is
+      // rendered beside it.
+      net_growth: sub(sum(period, "new_subscribers"), sum(period, "unsubscribes")),
       views: sum(period, "views"),
     },
   };
@@ -178,8 +227,16 @@ export function series(daily, metric = "subscribers", days = 30) {
  * day itself — a point must not be allowed to drag the mean it is measured
  * against, or a genuine spike partly hides itself. Days with a flat baseline
  * (sd = 0) are skipped rather than reported as infinitely unusual.
+ *
+ * `baseline` counts array positions; `minSamples` counts how many of them
+ * actually carry a value. Without the second guard two real points among
+ * twelve nulls produce a confident 9σ, and a publication with sparse ingest
+ * fills the panel with meaningless sigma figures.
  */
-export function detectAnomalies(daily, { metric = "new_subscribers", baseline = 14, threshold = 2 } = {}) {
+export function detectAnomalies(
+  daily,
+  { metric = "new_subscribers", baseline = 14, threshold = 2, minSamples = 8 } = {},
+) {
   const rows = normaliseDaily(daily);
   const out = [];
 
@@ -188,6 +245,7 @@ export function detectAnomalies(daily, { metric = "new_subscribers", baseline = 
     if (value === null) continue;
 
     const prior = rows.slice(i - baseline, i).map((r) => num(r[metric]));
+    if (prior.filter((v) => v !== null).length < minSamples) continue;
     const m = mean(prior);
     const sd = stddev(prior);
     if (m === null || sd === null || sd === 0) continue;
@@ -240,10 +298,18 @@ export function postPerformance(posts) {
   });
 }
 
-/** Top posts by any numeric field, highest first. Posts missing it are dropped, not zeroed. */
-export function rankPosts(posts, { by = "views", limit = 10 } = {}) {
+/**
+ * Top posts by any numeric field, highest first. Posts missing it are dropped,
+ * not zeroed.
+ *
+ * `minViews` matters when ranking by a RATE: a one-view post converts at 100%
+ * and otherwise tops the list the dashboard quotes as a sentence. It defaults
+ * to 0 so ranking by a count is unaffected.
+ */
+export function rankPosts(posts, { by = "views", limit = 10, minViews = 0 } = {}) {
   return postPerformance(posts)
     .filter((p) => num(p[by]) !== null)
+    .filter((p) => minViews <= 0 || (p.views !== null && p.views >= minViews))
     .sort((a, b) => num(b[by]) - num(a[by]))
     .slice(0, limit);
 }
@@ -298,6 +364,11 @@ export function byDayOfWeek(posts, metric = "signups") {
  */
 export function brief(daily, posts, { days = 30, topN = 3 } = {}) {
   const rows = normaliseDaily(daily);
+  // Scale the conversion floor to the publication rather than hard-coding a
+  // constant, with a small absolute minimum so a brand-new publication whose
+  // median post has 8 views does not quote a 1-view post as its best.
+  const medianViews = median(postPerformance(posts).map((p) => p.views));
+  const minViews = medianViews ? Math.max(30, Math.round(medianViews * 0.1)) : 0;
   return {
     generated_for: rows.length ? rows[rows.length - 1].metric_date : null,
     summary: summarise(rows, days),
@@ -307,7 +378,7 @@ export function brief(daily, posts, { days = 30, topN = 3 } = {}) {
       ...detectAnomalies(rows, { metric: "unsubscribes" }),
     ].sort((a, b) => Math.abs(b.z) - Math.abs(a.z)).slice(0, 5),
     top_posts: rankPosts(posts, { by: "views", limit: topN }),
-    best_converting: rankPosts(posts, { by: "conversion", limit: topN }),
+    best_converting: rankPosts(posts, { by: "conversion", limit: topN, minViews }),
     by_category: byCategory(posts).slice(0, 5),
     by_day: byDayOfWeek(posts),
   };

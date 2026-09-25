@@ -14,12 +14,15 @@ and its constraints.
 npx http-server . -p 8127     # then open http://127.0.0.1:8127/index.html?demo=1
 ```
 
-Renders seeded sample data with no database and no Substack account.
+Renders seeded sample data with no database and no Substack account. Use
+`?demo=gappy` to see a publication whose snapshots are not daily — the case
+where the window asked for and the span actually compared differ, which the
+dashboard now says out loud instead of mislabelling.
 
 ## Test
 
 ```bash
-npm test      # 27 tests: 21 over the arithmetic, 6 guarding portability
+npm test      # 67 tests: arithmetic, portability, and both Edge Functions
 ```
 
 No install step and no dependencies. `package.json` exists to name one
@@ -34,6 +37,8 @@ reports a module-resolution error rather than a test failure.
 | `engine.js` | Every derived number. Zero dependencies, no database, no host APIs |
 | `engine.test.js` | The arithmetic: growth, churn, anomalies, attribution |
 | `engine.portability.test.js` | Fails if the engine gains a dependency or a runtime |
+| `functions.test.js` | Integration tests for both Edge Functions |
+| `function-harness.js` | Loads the real function source under Node with a stubbed database |
 | `index.html` | Dashboard. Plain HTML/CSS/JS, no build step |
 | `sample-data.js` | Seeded fake publication, for `?demo=1` |
 

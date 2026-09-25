@@ -176,7 +176,10 @@ function renderKpis(s) {
     ["Paid", int(s.current.paid_subscribers), `<span class="delta nil">${esc(pct(s.current.paid_conversion))} of list</span>`],
     ["Annualised revenue", money(s.current.arr_cents, s.current.currency),
       delta(s.change.arr_cents, s.change.arr_pct, (c) => money(c, s.current.currency))],
-    [`Net growth · ${s.window_days}d`, int(s.totals.net_growth), `<span class="delta nil">${esc(int(s.totals.new_subscribers))} in, ${esc(int(s.totals.unsubscribes))} out</span>`],
+    // span_days, not window_days: on a history with gaps the baseline can sit
+    // far further back than the window asked for, and labelling a 120-day
+    // delta "30d" is simply wrong.
+    [`Net growth · ${s.span_days ?? s.window_days}d`, int(s.totals.net_growth), `<span class="delta nil">${esc(int(s.totals.new_subscribers))} in, ${esc(int(s.totals.unsubscribes))} out</span>`],
   ].map(([label, value, sub]) => `
     <div class="kpi">
       <div class="label">${esc(label)}</div>
@@ -311,13 +314,17 @@ let current = { daily: [], posts: [] };
 function render(daily, posts, label) {
   current = { daily, posts };
   const b = brief(daily, posts, { days: 30, topN: 5 });
+  const s = summarise(daily, 30);
 
-  renderKpis(summarise(daily, 30));
+  renderKpis(s);
   renderChart(series(daily, "subscribers", 90));
   renderNotes(b);
   renderPosts(b.top_posts);
 
   $("chart-title").textContent = `Subscribers · last ${Math.min(daily.length, 90)} days`;
+  if (s.span_days !== null && s.span_days !== s.window_days) {
+    banner(`Snapshots are not daily: the "${s.span_days}d" figures compare ${s.baseline_date} with ${s.latest}.`);
+  }
   $("meta").textContent = `${label} · latest ${b.generated_for ?? "—"}`;
   $("main").hidden = false;
 }
@@ -326,8 +333,11 @@ async function load() {
   const demo = new URLSearchParams(location.search).get("demo");
   if (demo) {
     const s = await import("./sample-data.js");
-    banner("Sample data. Nothing here is real — drop the ?demo=1 to connect a publication.");
-    render(s.sampleDaily(), s.samplePosts(), "sample");
+    // ?demo=gappy shows what a publication with non-daily snapshots looks
+    // like — the case where the window asked for and the span compared differ.
+    const gappy = demo === "gappy";
+    banner(`Sample data${gappy ? ", snapshots every 4 days" : ""}. Nothing here is real — drop the ?demo to connect a publication.`);
+    render(s.sampleDaily(gappy ? { days: 40, everyNDays: 4 } : {}), s.samplePosts(), "sample");
     return;
   }
 
@@ -340,7 +350,7 @@ async function load() {
   try {
     const data = await fetchMetrics(cfg);
     $("banner").hidden = true;
-    render(data.daily, data.posts, esc(data.publication));
+    render(data.daily, data.posts, data.publication);
   } catch (err) {
     banner(`Could not load: ${err.message}`, true);
   }

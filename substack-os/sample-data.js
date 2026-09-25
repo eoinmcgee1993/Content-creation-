@@ -28,7 +28,13 @@ const TITLES = [
   "Why Your Best Post Failed", "The Long Tail Was A Lie",
 ];
 
-export function sampleDaily({ days = 120, seed = 7 } = {}) {
+/**
+ * `everyNDays` produces the gappy case: snapshots taken every few days rather
+ * than daily. The engine's window walks array positions, so a 30-position
+ * baseline is then 120 calendar days back — which the dashboard has to say
+ * out loud instead of labelling "30d".
+ */
+export function sampleDaily({ days = 120, seed = 7, everyNDays = 1 } = {}) {
   const rand = rng(seed);
   const rows = [];
   let subscribers = 9_400;
@@ -36,7 +42,7 @@ export function sampleDaily({ days = 120, seed = 7 } = {}) {
   const start = Date.UTC(2026, 4, 1);
 
   for (let i = 0; i < days; i++) {
-    const date = new Date(start + i * 86_400_000);
+    const date = new Date(start + i * everyNDays * 86_400_000);
     // One deliberate spike, so anomaly detection has something true to find.
     const spike = i === days - 6 ? 140 : 0;
     const gained = Math.round(18 + rand() * 22) + spike;
