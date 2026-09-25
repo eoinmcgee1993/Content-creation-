@@ -72,6 +72,24 @@ function text(v: unknown, max: number): string | null {
   return s === "" || s.length > max ? null : s;
 }
 
+/**
+ * An optional free-text field. Absent or empty is null; present but too long
+ * is `undefined`, which the caller must refuse rather than store as null.
+ *
+ * text() collapses "absent" and "longer than max" into the same null, so an
+ * over-long category was silently dropped and the post fell out of the
+ * "posts about X generated N% of signups" figure the system exists to
+ * produce — while the response still said {ok:true}. Same silent-substitution
+ * defect the currency check above exists to prevent.
+ */
+function optionalText(v: unknown, max: number): string | null | undefined {
+  if (v === null || v === undefined) return null;
+  if (typeof v !== "string") return undefined;
+  const s = v.trim();
+  if (s === "") return null;
+  return s.length > max ? undefined : s;
+}
+
 // Counts are non-negative integers. A float here means the caller derived a
 // number it should have sent raw, and money as a float is the bug the whole
 // minor-units rule exists to prevent — so both are refused rather than rounded.
@@ -140,6 +158,17 @@ Deno.serve(async (req: Request) => {
   const currency = label(body?.currency, "usd", /^[a-z]{3}$/);
   if (currency === null) return json({ error: "currency must be a 3-letter ISO code" }, 400);
 
+  // Present but not an array is refused, not skipped. An assistant holding a
+  // single snapshot naturally emits `"daily": {…}`; that used to be dropped
+  // to [] and, if `posts` was non-empty, answered {ok:true, daily:0} — the
+  // day lost with no error and a permanent hole in the history.
+  for (const field of ["daily", "posts"] as const) {
+    const v = body?.[field];
+    if (v !== undefined && v !== null && !Array.isArray(v)) {
+      return json({ error: `${field} must be an array` }, 400);
+    }
+  }
+
   const dailyIn = Array.isArray(body?.daily) ? body.daily : [];
   const postsIn = Array.isArray(body?.posts) ? body.posts : [];
 
@@ -158,7 +187,11 @@ Deno.serve(async (req: Request) => {
     const out: Record<string, unknown> = {
       publication, metric_date, currency, source, captured_at: new Date().toISOString(),
     };
+    // Only columns the caller actually sent. Writing every whitelisted column
+    // on every upsert means a narrower re-ingest — a refresh of one metric —
+    // overwrites everything the earlier run captured with null.
     for (const f of DAILY_INT_FIELDS) {
+      if (!(f in (row ?? {}))) continue;
       const v = count(row?.[f]);
       if (v === undefined) return json({ error: `daily[${i}].${f} must be a non-negative integer` }, 400);
       out[f] = v;
@@ -171,24 +204,34 @@ Deno.serve(async (req: Request) => {
     const post_id = text(row?.post_id, 200);
     if (!post_id) return json({ error: `posts[${i}]: post_id is required` }, 400);
 
-    let published_at: string | null = null;
-    if (row?.published_at !== null && row?.published_at !== undefined) {
-      const raw = text(row.published_at, 40);
-      const d = raw ? new Date(raw) : null;
-      if (!d || Number.isNaN(d.getTime())) {
-        return json({ error: `posts[${i}].published_at is not a valid timestamp` }, 400);
+    const out: Record<string, unknown> = {
+      publication, post_id, currency, captured_at: new Date().toISOString(),
+    };
+
+    if ("published_at" in (row ?? {})) {
+      if (row.published_at === null) {
+        out.published_at = null;
+      } else {
+        const raw = text(row.published_at, 40);
+        const d = raw ? new Date(raw) : null;
+        if (!d || Number.isNaN(d.getTime())) {
+          return json({ error: `posts[${i}].published_at is not a valid timestamp` }, 400);
+        }
+        out.published_at = d.toISOString();
       }
-      published_at = d.toISOString();
     }
 
-    const out: Record<string, unknown> = {
-      publication, post_id, published_at, currency,
-      title: text(row?.title, 500),
-      traffic_source: text(row?.traffic_source, 100),
-      category: text(row?.category, 100),
-      captured_at: new Date().toISOString(),
-    };
+    for (const [f, max] of [["title", 500], ["traffic_source", 100], ["category", 100]] as const) {
+      if (!(f in (row ?? {}))) continue;
+      const v = optionalText(row?.[f], max);
+      if (v === undefined) {
+        return json({ error: `posts[${i}].${f} must be a string of at most ${max} characters` }, 400);
+      }
+      out[f] = v;
+    }
+
     for (const f of POST_INT_FIELDS) {
+      if (!(f in (row ?? {}))) continue;
       const v = count(row?.[f]);
       if (v === undefined) return json({ error: `posts[${i}].${f} must be a non-negative integer` }, 400);
       out[f] = v;
@@ -196,13 +239,56 @@ Deno.serve(async (req: Request) => {
     posts.push(out);
   }
 
+  // Two rows sharing a conflict key in ONE payload make Postgres raise
+  // "ON CONFLICT DO UPDATE command cannot affect row a second time"
+  // (SQLSTATE 21000). That surfaced as an opaque 500 with nothing stored, so
+  // the caller retried the same bad payload forever. Name the duplicate.
+  const firstDuplicate = (rows: Record<string, unknown>[], key: string) => {
+    const seen = new Set<unknown>();
+    for (const r of rows) {
+      if (seen.has(r[key])) return r[key];
+      seen.add(r[key]);
+    }
+    return null;
+  };
+
+  const dupDate = firstDuplicate(daily, "metric_date");
+  if (dupDate !== null) {
+    return json({ error: `daily contains ${dupDate} more than once` }, 400);
+  }
+  const dupPost = firstDuplicate(posts, "post_id");
+  if (dupPost !== null) {
+    return json({ error: `posts contains ${dupPost} more than once` }, 400);
+  }
+
+  // Rows now carry only the columns their caller supplied, so a batch can hold
+  // more than one column shape. PostgREST needs one shape per request, so
+  // upsert each shape separately — in practice one group, since a caller
+  // sends uniform rows.
+  async function upsertByShape(
+    table: string,
+    rows: Record<string, unknown>[],
+    onConflict: string,
+  ) {
+    const groups = new Map<string, Record<string, unknown>[]>();
+    for (const r of rows) {
+      const key = Object.keys(r).sort().join(",");
+      (groups.get(key) ?? groups.set(key, []).get(key)!).push(r);
+    }
+    for (const group of groups.values()) {
+      const { error } = await supabase.from(table).upsert(group, { onConflict });
+      if (error) return error;
+    }
+    return null;
+  }
+
   // Upsert, not insert. Re-running a day is the normal case, not an error:
   // Substack revises recent numbers, and an ingest that failed halfway has to
   // be safe to repeat.
   if (daily.length) {
-    const { error } = await supabase
-      .from("substack_daily_metrics")
-      .upsert(daily, { onConflict: "publication,metric_date" });
+    const error = await upsertByShape(
+      "substack_daily_metrics", daily, "publication,metric_date",
+    );
     if (error) {
       console.error("daily upsert failed", error);
       return json({ error: "Could not store daily metrics" }, 500);
@@ -210,9 +296,7 @@ Deno.serve(async (req: Request) => {
   }
 
   if (posts.length) {
-    const { error } = await supabase
-      .from("substack_posts")
-      .upsert(posts, { onConflict: "publication,post_id" });
+    const error = await upsertByShape("substack_posts", posts, "publication,post_id");
     if (error) {
       console.error("post upsert failed", error);
       return json({ error: "Could not store posts" }, 500);

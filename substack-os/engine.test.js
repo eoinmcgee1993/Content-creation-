@@ -205,3 +205,119 @@ test("brief assembles without throwing on empty inputs", () => {
   assert.deepEqual(b.top_posts, []);
   assert.deepEqual(b.anomalies, []);
 });
+
+/* ---------------------------------------------------------------------------
+ * Regressions. Each of these reproduced a defect found reviewing the merged
+ * code; each failed before the fix in the same commit.
+ * ------------------------------------------------------------------------ */
+
+test("net growth equals the in/out figures rendered beside it", () => {
+  // unsubscribes present on only half the days. Summing each row's own
+  // net_growth skipped those days, so the tile read one number above a
+  // sub-line that contradicted it.
+  const rows = [];
+  for (let i = 1; i <= 8; i++) {
+    rows.push(day(`2026-03-0${i}`, { new_subscribers: 30, unsubscribes: i <= 4 ? 5 : null }));
+  }
+  const t = summarise(rows, 7).totals;
+  assert.equal(t.new_subscribers - t.unsubscribes, t.net_growth,
+    `tile would read ${t.net_growth} above "${t.new_subscribers} in, ${t.unsubscribes} out"`);
+});
+
+test("net growth is unknown, not zero, when nothing is known about churn", () => {
+  const rows = [day("2026-03-01", { unsubscribes: null }), day("2026-03-02", { unsubscribes: null })];
+  assert.equal(summarise(rows, 1).totals.net_growth, null);
+});
+
+test("an anomaly needs a baseline with enough real points behind it", () => {
+  // Two values among twelve nulls used to yield a confident 9σ.
+  const rows = [];
+  for (let i = 1; i <= 14; i++) {
+    rows.push(day(`2026-03-${String(i).padStart(2, "0")}`,
+      { new_subscribers: i === 1 ? 10 : i === 2 ? 12 : null }));
+  }
+  rows.push(day("2026-03-15", { new_subscribers: 20 }));
+  assert.deepEqual(detectAnomalies(rows, { metric: "new_subscribers", baseline: 14 }), []);
+});
+
+test("a full baseline still reports its anomaly", () => {
+  const rows = [];
+  for (let i = 1; i <= 14; i++) {
+    rows.push(day(`2026-03-${String(i).padStart(2, "0")}`, { new_subscribers: 10 + (i % 3) }));
+  }
+  rows.push(day("2026-03-15", { new_subscribers: 147 }));
+  assert.equal(detectAnomalies(rows, { metric: "new_subscribers", baseline: 14 }).length, 1);
+});
+
+test("summarise reports the span it actually compared, not the one requested", () => {
+  // Snapshots every four days: the baseline is 30 array positions back but
+  // 120 calendar days back. Labelling that "30d" was unfalsifiable before,
+  // because the baseline date was not in the return shape.
+  const rows = [];
+  for (let i = 0; i < 31; i++) {
+    rows.push(day(new Date(Date.UTC(2026, 0, 1) + i * 4 * 86_400_000).toISOString().slice(0, 10)));
+  }
+  const s = summarise(rows, 30);
+  assert.equal(s.window_days, 30);
+  assert.equal(s.span_days, 120);
+  assert.equal(s.baseline_date, "2026-01-01");
+});
+
+test("span_days equals window_days on a daily, gapless history", () => {
+  const rows = [];
+  for (let i = 1; i <= 8; i++) rows.push(day(`2026-03-0${i}`));
+  const s = summarise(rows, 7);
+  assert.equal(s.span_days, 7);
+});
+
+test("a one-view post is not quoted as the best converting post", () => {
+  const posts = [
+    { post_id: "tiny", views: 1, free_signups: 1, paid_signups: 0 },
+    { post_id: "big", views: 20000, free_signups: 600, paid_signups: 40 },
+    { post_id: "mid", views: 9000, free_signups: 200, paid_signups: 10 },
+  ];
+  assert.notEqual(brief([], posts).best_converting[0].post_id, "tiny");
+});
+
+test("rankPosts leaves counts unfiltered unless a floor is asked for", () => {
+  const posts = [{ post_id: "tiny", views: 1 }, { post_id: "big", views: 20000 }];
+  assert.equal(rankPosts(posts, { by: "views" }).length, 2);
+  assert.equal(rankPosts(posts, { by: "views", minViews: 30 }).length, 1);
+});
+
+test("a Date object sorts and renders as a real date", () => {
+  // n8n and a CSV import both hand over Date objects. String(Date) begins
+  // with a weekday, so "Mon Mar 02" sorted before "Sun Mar 01" and the
+  // rendered date was the truncated weekday form.
+  const rows = normaliseDaily([
+    { metric_date: new Date("2026-03-02T00:00:00Z"), subscribers: 5 },
+    { metric_date: new Date("2026-03-01T00:00:00Z"), subscribers: 3 },
+  ]);
+  assert.deepEqual(rows.map((r) => r.metric_date), ["2026-03-01", "2026-03-02"]);
+  assert.deepEqual(rows.map((r) => r.subscribers), [3, 5]);
+});
+
+test("an epoch timestamp and a full ISO instant both normalise", () => {
+  const rows = normaliseDaily([
+    { metric_date: "2026-03-02T09:30:00Z", subscribers: 5 },
+    { metric_date: Date.UTC(2026, 2, 1), subscribers: 3 },
+  ]);
+  assert.deepEqual(rows.map((r) => r.metric_date), ["2026-03-01", "2026-03-02"]);
+});
+
+test("a row whose date cannot be parsed is dropped, not placed arbitrarily", () => {
+  const rows = normaliseDaily([
+    { metric_date: "2026-03-01", subscribers: 3 },
+    { metric_date: "not a date", subscribers: 999 },
+    { metric_date: {}, subscribers: 999 },
+  ]);
+  assert.deepEqual(rows.map((r) => r.subscribers), [3]);
+});
+
+test("churn still anchors to the previous day after re-sorting", () => {
+  const rows = normaliseDaily([
+    { metric_date: new Date("2026-03-02T00:00:00Z"), subscribers: 1200, unsubscribes: 50 },
+    { metric_date: new Date("2026-03-01T00:00:00Z"), subscribers: 1000 },
+  ]);
+  assert.equal(rows[1].churn_rate, 0.05);
+});

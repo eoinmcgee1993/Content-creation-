@@ -81,6 +81,10 @@ Deno.serve(async (req: Request) => {
 
   const publication = typeof body?.publication === "string" ? body.publication.trim() : "";
   if (!publication) return json({ error: "publication is required" }, 400);
+  // Same cap the write path enforces. This endpoint is reachable from any
+  // origin, and its input validation should not be weaker than the one
+  // guarding writes on the very same field.
+  if (publication.length > 200) return json({ error: "publication is too long" }, 400);
 
   const requested = Number(body?.days);
   const days = Number.isInteger(requested) && requested > 0
@@ -106,6 +110,12 @@ Deno.serve(async (req: Request) => {
         "free_signups, paid_signups, revenue_cents, currency, traffic_source, category",
       )
       .eq("publication", publication)
+      // Windowed like the daily rows. Returning every post ever while the
+      // daily figures covered 30 days meant the dashboard printed "AI and
+      // Money account for 71% of signups" — computed over three years of
+      // posts — directly beneath a 30-day net-growth tile, with nothing in
+      // the payload saying the two covered different spans.
+      .gte("published_at", `${since}T00:00:00Z`)
       .order("published_at", { ascending: false, nullsFirst: false })
       .limit(POST_LIMIT),
   ]);
@@ -119,6 +129,7 @@ Deno.serve(async (req: Request) => {
     generated_at: new Date().toISOString(),
     publication,
     window_days: days,
+    since,
     daily: daily.data ?? [],
     posts: posts.data ?? [],
   }, 200);

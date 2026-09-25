@@ -95,13 +95,23 @@ the *same* endpoint and nothing downstream changes.
 
 Rules the endpoint enforces, rather than trusting the caller:
 
-- **Upsert, never insert.** Re-running a day is normal — Substack revises recent
-  numbers, and a half-finished ingest has to be safe to repeat.
+- **Upsert, never insert, and only the columns you sent.** Re-running a day is
+  normal — Substack revises recent numbers, and a half-finished ingest has to
+  be safe to repeat. A row carries only the fields its caller supplied, so
+  refreshing one metric cannot null out everything an earlier run captured.
+  An explicit `null` still clears a column; an absent key leaves it alone.
+- **A duplicate key inside one payload is refused by name.** Two rows sharing a
+  date make Postgres raise `ON CONFLICT DO UPDATE command cannot affect row a
+  second time`, which reached the caller as an opaque 500 with nothing stored.
 - **Counts are non-negative integers.** A float in a money field is refused, not
   rounded. A typo'd currency is refused, not silently stored as `usd`.
 - **Only whitelisted columns are written.** A payload cannot set `captured_at`,
   cannot override the authenticated `publication`, and cannot smuggle an
   unrecognised key into the row.
+- **A present-but-invalid value is refused, never silently replaced.** An
+  over-long category, a `daily` that is an object rather than an array, a
+  typo'd currency: each is a 400 naming the field, not a quiet null and an
+  `{ok:true}`.
 - **An omitted metric is stored as `NULL`, never `0`.** A day with no snapshot
   did not have zero subscribers, and a chart that draws it as zero is lying.
 - **No CORS headers.** Every caller is a server or an assistant's HTTP client.
@@ -164,6 +174,16 @@ A few decisions inside the engine that are easy to get wrong, and are tested:
 
 - **Growth from zero is `null`, not infinity.** A dashboard printing `Infinity%`
   has a bug, not a great week.
+- **A reported window says the span actually compared.** The baseline is an
+  array position, so on a history with gaps it can sit far further back than
+  the days requested; `summarise` returns `span_days` and `baseline_date` so a
+  front end cannot label a 120-day delta "30d".
+- **A rate needs a denominator worth trusting.** `best_converting` excludes
+  posts below a floor scaled to the publication's median, or a single-view
+  post is quoted as converting at 100%.
+- **An anomaly needs a baseline with enough real points**, not merely enough
+  array positions — two values among twelve nulls otherwise yield a confident
+  9σ.
 - **Churn is measured against yesterday's subscriber count**, not today's.
   Using today's flatters the number on a growing publication.
 - **An anomaly is scored against the days *before* it**, excluding itself —

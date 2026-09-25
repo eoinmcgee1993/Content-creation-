@@ -18,8 +18,9 @@ cron job, which is the one thing about this system that surprises people.
 |---|---|---|
 | Schema | `supabase/migrations/005_substack_os.sql` | Daily snapshots, post stats, secrets |
 | Analytics engine | `substack-os/engine.js` | Every derived number, computed once. Zero dependencies, no database, runs anywhere |
-| Engine tests | `substack-os/engine.test.js` | 21 tests over the arithmetic |
-| Portability guard | `substack-os/engine.portability.test.js` | 6 tests that fail if the engine gains a dependency or a host API |
+| Engine tests | `substack-os/engine.test.js` | The arithmetic, including regressions for every defect found in review |
+| Portability guard | `substack-os/engine.portability.test.js` | Fails if the engine gains a dependency or a host API |
+| Function tests | `substack-os/functions.test.js` | Drives both Edge Functions: every refusal and both happy paths |
 | Sample data | `substack-os/sample-data.js` | Seeded fake publication, for `?demo=1` |
 | Dashboard | `substack-os/index.html` | Plain HTML/CSS/JS, no build step |
 | Ingest | `supabase/functions/substack-ingest/` | Assistant → database, idempotent |
@@ -73,7 +74,8 @@ There is no lint or build step here, by the same choice the rest of this
 repository makes. This is what replaces them.
 
 ```bash
-# 1. The engine's arithmetic and its runtime independence. 27 tests.
+# 1. The arithmetic, the engine's runtime independence, and both Edge
+#    Functions end to end. 67 tests.
 cd substack-os && npm test
 #    There is no install step and no dependency to fetch — package.json exists
 #    to name one canonical test command and mark the directory as ESM.
@@ -106,8 +108,9 @@ select conrelid::regclass, pg_get_constraintdef(oid) from pg_constraint
    and conrelid::regclass::text like 'substack%';
 ```
 
-**Still outstanding:** the two Edge Functions have been driven locally — every
-refusal and both happy paths — but not yet over HTTPS against a deployed
+**Still outstanding:** the two Edge Functions are covered by committed tests
+that drive the real handler against a stubbed database — every refusal and both
+happy paths — but they have still never run over HTTPS against a deployed
 project, because this repository has no Supabase credentials in it. Per the
 repository's own rule, that means they are not finished being verified. After
 `supabase functions deploy`, drive both live:
