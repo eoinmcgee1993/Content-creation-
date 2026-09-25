@@ -97,6 +97,7 @@ def run_ads_audit(fieldnames: list[str], rows: list[dict[str, str]]) -> AuditRes
                     "Cut spend on sub-1.0x ROAS campaigns and rebuild bidding "
                     "around profitable segments.",
                     estimated_monthly_leakage=max(0.0, loss),
+                    scope="account",
                 )
             )
 

@@ -15,10 +15,17 @@ class Finding:
     detail: str
     recommendation: str
     estimated_monthly_leakage: float = 0.0
+    # "campaign" leakage is attributed to a specific, disjoint set of campaigns,
+    # so such findings add up. "account" leakage restates the whole account's
+    # shortfall from the top down and therefore overlaps the campaign-level
+    # figures rather than adding to them.
+    scope: str = "campaign"
 
     def __post_init__(self) -> None:
         if self.severity not in SEVERITY_WEIGHT:
             raise ValueError(f"unknown severity: {self.severity}")
+        if self.scope not in ("campaign", "account"):
+            raise ValueError(f"unknown scope: {self.scope}")
 
 
 @dataclass
@@ -29,7 +36,22 @@ class AuditResult:
 
     @property
     def total_leakage(self) -> float:
-        return round(sum(f.estimated_monthly_leakage for f in self.findings), 2)
+        """Bounded, non-overlapping modelled monthly leakage.
+
+        Campaign-scoped findings each claim a disjoint set of campaigns, so they
+        add. Account-scoped findings restate the same money from the top down, so
+        the total is the larger of the two views — never their sum. Summing them
+        let a loss-making account report more recoverable spend than it spent,
+        which is the one number a client will always check.
+        """
+        campaign = sum(
+            f.estimated_monthly_leakage for f in self.findings if f.scope == "campaign"
+        )
+        account = max(
+            (f.estimated_monthly_leakage for f in self.findings if f.scope == "account"),
+            default=0.0,
+        )
+        return round(max(campaign, account), 2)
 
     @property
     def score(self) -> int:
