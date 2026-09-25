@@ -14,11 +14,11 @@ const artPageNumber = (index) => FRONT_MATTER_PAGES + index * 2 + 1;
 
 // Runs the compile gate over every page before anything is written, so a bad
 // batch fails up front and reports all offenders instead of one per run.
-async function assertArtPassesQA(artPaths) {
+async function assertArtPassesQA(artPaths, box) {
   const failures = [];
   for (const artPath of artPaths) {
     const report = await inspectLineArt(fs.readFileSync(artPath));
-    const verdict = GATES.compile(report);
+    const verdict = GATES.compile(report, box);
     if (!verdict.pass) failures.push(`${artPath}: ${verdict.reason}`);
   }
   if (failures.length) {
@@ -36,9 +36,9 @@ async function buildInterior({ artPaths, outputPath, useBleed = false }) {
     throw new Error(`Interior is ${interiorPages} pages. Max is ${maxPages}.`);
   }
 
-  await assertArtPassesQA(artPaths);
-
   const box = artBox(interiorPages, useBleed);
+  await assertArtPassesQA(artPaths, box);
+
   const doc = new PDFDocument({ size: [box.pageW, box.pageH], margin: 0, autoFirstPage: false });
   const out = fs.createWriteStream(outputPath);
   doc.pipe(out);
@@ -57,8 +57,10 @@ async function buildInterior({ artPaths, outputPath, useBleed = false }) {
 
     doc.image(buf, x, y, { width: fitted.w, height: fitted.h });
 
-    const pageNumX = box.pageW - box.outer - 36;
-    doc.fontSize(9).fillColor('#999999').text(String(artPageNumber(index)), pageNumX, box.pageH - 40, { width: 36, align: 'center' });
+    // Positioned off the trim box, not the physical page, so enabling bleed
+    // does not push the folio out into the trimmed-off margin.
+    const pageNumX = box.x + box.liveW - 36;
+    doc.fontSize(9).fillColor('#999999').text(String(artPageNumber(index)), pageNumX, box.trimTop + box.trimH - 40, { width: 36, align: 'center' });
 
     doc.addPage();
   }

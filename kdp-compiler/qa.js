@@ -3,7 +3,14 @@ const sharp = require('sharp');
 async function inspectLineArt(buf) {
   const img = sharp(buf);
   const meta = await img.metadata();
-  const { data } = await img.clone().greyscale().raw().toBuffer({ resolveWithObject: true });
+  // Flatten onto white before measuring. greyscale() alone drops the alpha
+  // channel rather than compositing it, so a transparent-background PNG reads
+  // as solid black and every ink measurement below comes out at 1.0.
+  const { data } = await img.clone()
+    .flatten({ background: '#ffffff' })
+    .greyscale()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
 
   let ink = 0, mid = 0;
   for (let i = 0; i < data.length; i++) {
@@ -14,7 +21,10 @@ async function inspectLineArt(buf) {
 
   let colour = false;
   if (meta.channels >= 3) {
-    const rgb = await img.clone().removeAlpha().raw().toBuffer();
+    // Same reason as above: flatten, don't removeAlpha. Dropping alpha exposes
+    // whatever RGB sits under fully transparent pixels, so an invisible
+    // coloured background would register as colour in the art.
+    const rgb = await img.clone().flatten({ background: '#ffffff' }).raw().toBuffer();
     for (let i = 0; i < rgb.length; i += 3) {
       const hi = Math.max(rgb[i], rgb[i + 1], rgb[i + 2]);
       const lo = Math.min(rgb[i], rgb[i + 1], rgb[i + 2]);
@@ -40,10 +50,16 @@ const GATES = {
     if (r.inkRatio > 0.35) return { pass: false, reason: 'too dense to colour' };
     return { pass: true };
   },
-  compile(r, minW = 2222, minH = 2963) {
+  // Art is scaled to fit the live box preserving aspect, so print quality
+  // depends on the effective DPI after that fit — not on raw pixel counts
+  // against a portrait threshold, which rejects landscape art that is well
+  // over 300 DPI simply for being shorter than a portrait page.
+  compile(r, box, minDpi = 300) {
     if (r.colour) return { pass: false, reason: 'colour pixels present' };
-    if (r.width < minW || r.height < minH) {
-      return { pass: false, reason: `${r.width}x${r.height} below ${minW}x${minH}` };
+    const ptPerPx = Math.min(box.liveW / r.width, box.liveH / r.height);
+    const dpi = 72 / ptPerPx;
+    if (dpi < minDpi) {
+      return { pass: false, reason: `${r.width}x${r.height} renders at ${Math.round(dpi)} DPI, below ${minDpi}` };
     }
     return { pass: true };
   }

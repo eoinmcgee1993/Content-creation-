@@ -13,7 +13,10 @@ async function run() {
 
   const files = fs.readdirSync(INPUT_DIR)
     .filter(file => file.toLowerCase().endsWith('.png'))
-    .sort();
+    // Numeric collation, not the default lexicographic sort — plain .sort()
+    // orders page-1, page-10, page-11, page-2, which binds the art out of
+    // sequence and stamps the wrong folio on every page after the ninth.
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
   if (files.length === 0) {
     console.error("No PNG files found in the 'input' directory.");
