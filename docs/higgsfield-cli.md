@@ -18,7 +18,7 @@ higgsfield auth logout     # remove stored credentials
 Check your credit balance:
 
 ```bash
-higgsfield account
+higgsfield account status
 ```
 
 ---
@@ -107,7 +107,7 @@ higgsfield product-photoshoot create \
 
 ## Soul ID (custom character refs)
 
-Train a consistent character from 5+ photos, then use the soul ID in generations:
+Train a consistent character from 5–20 photos, then use the soul ID in generations:
 
 ```bash
 # Train (Soul 2 — general use)
@@ -145,25 +145,39 @@ higgsfield marketing-studio dtc-ads generate --prompt "hero shot" --format-id <f
 
 ## Websites
 
-Build and deploy full-stack websites with a git-backed repo:
+Build and deploy full-stack websites with a git-backed repo.
+
+`--type` and `--category` are both required on create. `--type app` additionally
+requires `--template` (`app-detail` | `preset` | `studio` | `custom`); for
+`--type website` the template is optional (`scroll-scrub` for an animated site).
+Run `higgsfield website categories` for the valid category slugs.
 
 ```bash
-higgsfield website create --type website   # standalone site (no Higgsfield integration)
-higgsfield website create --type app       # Higgsfield-integrated app (Sign in + SDK)
-higgsfield website list                 # your sites
-higgsfield website deploy <website_id>  # build and ship
-higgsfield website status <website_id>  # live URLs + deploy state
-higgsfield website repo-access <id>                  # git clone URL + token
-higgsfield website secrets list <id>               # list env vars
-higgsfield website secrets set <id> KEY value      # set an env var (applied on next deploy)
-higgsfield website secrets delete <id> KEY         # remove an env var
-higgsfield website db tables <id>                  # list DB tables
-higgsfield website db rows <id> <table>            # read table rows
-higgsfield website db schema <id> <table>          # show table columns
-higgsfield website db query <id> "SELECT ..."      # run a read-only query
+# standalone site (no Higgsfield integration)
+higgsfield website create --type website --category cinematic --subdomain my-site
+
+# Higgsfield-integrated app (Sign in + SDK) — --template is required
+higgsfield website create --type app --category other --template studio --subdomain my-app
+
+higgsfield website list                  # your sites
+higgsfield website categories            # valid --category slugs
+higgsfield website deploy <website_id>   # build and ship
+higgsfield website status <website_id>   # live URLs + deploy state
+higgsfield website repo-access <id>                        # git clone URL + token
+higgsfield website secrets list <id>                       # list env vars
+higgsfield website secrets set <id> --name KEY             # set an env var (prompts for value)
+higgsfield website secrets set <id> --name KEY --value-stdin < secret.txt
+higgsfield website secrets delete <id> --name KEY          # remove an env var
+higgsfield website db tables <id>                          # list DB tables
+higgsfield website db rows <id> --table users --limit 20    # read table rows
+higgsfield website db schema <id> --table users             # show table columns
+higgsfield website db query <id> --sql "SELECT count(*) FROM users"
 higgsfield website rename <id> --subdomain new-slug  # change subdomain (old URL stops working)
-higgsfield website publish <id>                    # post to community feed
+higgsfield website publish <id>                     # post to community feed
 ```
+
+Secrets are staged and applied on the next deploy; a deleted secret likewise
+only disappears once you redeploy.
 
 ---
 
@@ -184,13 +198,25 @@ higgsfield game publish <game_id> --name "Space Runner"
 
 ## Global flags
 
+Only these two are genuinely global (plus `--help` / `--version`):
+
 | Flag | Effect |
 |------|--------|
 | `--json` | Raw JSON output (good for scripting) |
 | `--no-color` | Disable colour output |
-| `--wait` | Block until job completes (on `generate create`) |
-| `--wait-timeout` | Max wait time, e.g. `20m` |
-| `--wait-interval` | Poll interval, e.g. `5s` |
+
+### Waiting on jobs
+
+`--wait` is per-command, not global, and the timeout flags are spelled
+differently depending on the command:
+
+| Command | Wait flags |
+|---------|-----------|
+| `generate create`, `generate workflow` | `--wait`, `--wait-timeout 20m`, `--wait-interval 5s` |
+| `marketing-studio dtc-ads generate` | `--wait`, `--timeout 5m` (no interval flag) |
+
+Commands not listed here — `product-photoshoot generate`, `soul-id create`,
+`website deploy` — take no wait flags; poll their status command instead.
 
 ---
 
