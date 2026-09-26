@@ -3,20 +3,24 @@
 ## The shape
 
 ```
-Substack  ──MCP──▶  AI assistant  ──HTTPS──▶  substack-ingest  ──▶  Postgres
-                    (Claude / ChatGPT)                                  │
-                                                             substack-metrics
-                                                                        │
-                                            ┌───────────────────────────┤
-                                            ▼                           ▼
-                                   substack-os/engine.js        (same engine)
-                                            │                           │
-                                       dashboard              a future ChatGPT app
-                                                              or Claude artifact
+Substack  ──MCP──▶  AI assistant  ──▶  ingest.js  ──▶  data/<publication>.json
+                    (Claude / ChatGPT)                            │
+                                                              store.js
+                                                                  │
+                                            ┌─────────────────────┤
+                                            ▼                     ▼
+                                   substack-os/engine.js    (same engine)
+                                            │                     │
+                                       dashboard          a future ChatGPT app
+                                                          or Claude artifact
 ```
 
 One engine, any number of front ends. That is the whole idea, and everything
 below is in service of it.
+
+There is a second, optional storage route — `supabase/functions/substack-{ingest,metrics}`
+over Postgres — which produces identical rows and is described under *Two ways
+to store the history* below. Nothing above the store changes between them.
 
 ---
 
@@ -56,9 +60,65 @@ the *same* endpoint and nothing downstream changes.
 
 ---
 
+## Two ways to store the history
+
+The default is a file. This was a database, and moving off it was a deliberate
+correction rather than a workaround, so it is worth being exact about the reason.
+
+**One publication writing one snapshot a day is about 365 rows a year.** Postgres
+was never here for scale — it was here to keep the history Substack will not let
+you query. A JSON file in a private repository does that, and adds an audit trail
+for free: `git log -p substack-os/data/<publication>.json` is every revision of
+every number, which the database version would have needed a schema change to
+get.
+
+What it removes matters more than what it adds. No project to become
+unreachable, no service-role key, no two shared secrets, no HTTPS round trip
+that has to be driven before anyone can trust a number on the screen. The
+hosted route was blocked for a week on a project that reported healthy and
+refused every connection; a file has no equivalent failure.
+
+The trade is real and has an edge:
+
+| | File (`substack-os/data/`) | Hosted (`supabase/`) |
+|---|---|---|
+| Setup | none | project, migration, two secrets, two deploys |
+| Writers | one at a time | many, concurrently |
+| Readers | anything with a checkout | anything with the URL and key |
+| History | `git log` on the data file | `captured_at`, and whatever you add |
+| Secrets | none | `ingest_key`, `dashboard_key` |
+
+So: a phone with no checkout, or two people ingesting at once, wants the hosted
+route. One person on one machine does not, and paying a database's operational
+cost for one row a day is the kind of decision that looks like architecture and
+is actually just expense.
+
+Both remain in the tree, and `substack-os/store.js` and `substack-metrics`
+return **identical envelopes** — same keys, same ordering, same windowing, same
+clamps — so the dashboard cannot tell which one it is pointed at. Switching is a
+blank field in Settings, not a migration.
+
+Two write paths would normally mean two chances to disagree about what is
+acceptable, and the defects this system has already shipped were mostly
+validation defects. So the agreement is enforced rather than hoped for:
+`payload.js` holds the rules, and `store.test.js` drives every refusal through
+the real Edge Function handler *and* through the file store, failing if the two
+differ on the verdict or on the wording.
+
+---
+
 ## The ingest contract
 
-`POST` to the `substack-ingest` function URL:
+Identical for both routes. For the file, drop `key` — there is no network
+service to authenticate to, so permission to write the file is the whole of the
+authorisation:
+
+```bash
+node substack-os/ingest.js substack-os/data/the-brief.json < payload.json
+```
+
+For the hosted route, `POST` the same JSON plus `key` to the `substack-ingest`
+function URL:
 
 ```jsonc
 {
@@ -119,10 +179,17 @@ Rules the endpoint enforces, rather than trusting the caller:
 
 ## Security posture
 
-The same rule the rest of this repository runs on: **the browser can do
-nothing**. `anon` and `authenticated` hold no grant of any kind on any
-`substack_` table — not even `INSERT`, which the storefront tables do grant,
-because here there is no customer and nothing worth exposing.
+On the file route the question mostly dissolves: there is no endpoint to
+authenticate, no secret to leak and no grant to get wrong. What protects the
+history is the repository being private and the checkout being yours. The one
+rule that still bites is that **the data file is real business data** — do not
+publish `substack-os/data/` to a static host, and do not make the repository
+public without moving it out first.
+
+On the hosted route, the same rule the rest of this repository runs on applies:
+**the browser can do nothing**. `anon` and `authenticated` hold no grant of any
+kind on any `substack_` table — not even `INSERT`, which the storefront tables
+do grant, because here there is no customer and nothing worth exposing.
 
 Reads leave through `substack-metrics` under the service-role key, behind a
 shared secret, with constant-time comparison. Writes arrive through
@@ -155,6 +222,7 @@ That is what lets the same calculation run in all of these without a rewrite:
 | Where | How it consumes the engine |
 |---|---|
 | The dashboard | `import { brief } from "./engine.js"` in a `<script type="module">` |
+| A history file | `read()` in `store.js` hands it rows; neither knows about the other |
 | A Deno Edge Function | Copy the file in and `import` it — no npm, no bundler |
 | An n8n Function node | Paste the module, or fetch it from the deployed static host |
 | An MCP tool | `import` it in the tool's handler and return `brief()` as the result |

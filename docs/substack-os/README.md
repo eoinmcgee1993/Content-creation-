@@ -4,11 +4,14 @@ Publication analytics with a memory. Substack's own dashboard tells you what
 your subscriber count **is**; this tells you what **changed and what caused it**,
 because it keeps the daily history Substack does not let you query.
 
-Lives in `substack-os/` (engine + dashboard), `supabase/functions/substack-*`
-(ingest + read), `supabase/migrations/005_substack_os.sql` (schema).
+Lives in `substack-os/` — engine, dashboard, and the history itself as one JSON
+file per publication in `substack-os/data/`. **There is no database.** The
+hosted Postgres route (`supabase/functions/substack-*`,
+`supabase/migrations/005_substack_os.sql`) still exists and is optional.
 
-Read `ARCHITECTURE.md` next — in particular the section on why ingest is not a
-cron job, which is the one thing about this system that surprises people.
+Read `ARCHITECTURE.md` next — in particular *Two ways to store the history* for
+why a file, and *Why ingest is not a cron job*, which is the one thing about
+this system that surprises people.
 
 ---
 
@@ -16,28 +19,60 @@ cron job, which is the one thing about this system that surprises people.
 
 | Piece | File | What it does |
 |---|---|---|
-| Schema | `supabase/migrations/005_substack_os.sql` | Daily snapshots, post stats, secrets |
+| The history | `substack-os/data/<publication>.json` | Daily snapshots and post stats. This is the database |
+| Ingest | `substack-os/ingest.js` | Merges a payload into the history file, atomically |
+| Validation | `substack-os/payload.js` | Every rule both write paths enforce, in one place |
+| Store | `substack-os/store.js` | Upsert merge, and the read envelope the dashboard consumes |
 | Analytics engine | `substack-os/engine.js` | Every derived number, computed once. Zero dependencies, no database, runs anywhere |
 | Engine tests | `substack-os/engine.test.js` | The arithmetic, including regressions for every defect found in review |
 | Portability guard | `substack-os/engine.portability.test.js` | Fails if the engine gains a dependency or a host API |
 | Function tests | `substack-os/functions.test.js` | Drives both Edge Functions: every refusal and both happy paths |
+| Store tests | `substack-os/store.test.js` | The store, plus parity against the hosted route |
 | Sample data | `substack-os/sample-data.js` | Seeded fake publication, for `?demo=1` |
 | Dashboard | `substack-os/index.html` | Plain HTML/CSS/JS, no build step |
-| Ingest | `supabase/functions/substack-ingest/` | Assistant → database, idempotent |
-| Read | `supabase/functions/substack-metrics/` | Database → dashboard, service-role |
+| *Optional:* schema | `supabase/migrations/005_substack_os.sql` | The hosted route's tables and secrets |
+| *Optional:* ingest | `supabase/functions/substack-ingest/` | Assistant → Postgres, idempotent |
+| *Optional:* read | `supabase/functions/substack-metrics/` | Postgres → dashboard, service-role |
 
 ## See it now
 
 ```bash
 npx http-server substack-os -p 8127
-# then open http://127.0.0.1:8127/index.html?demo=1
+# the seeded sample publication, through a real history file:
+#   http://127.0.0.1:8127/index.html?pub=example-publication
+# the same numbers straight from the generator:
+#   http://127.0.0.1:8127/index.html?demo=1
 ```
 
-That renders seeded sample data with no database and no Substack account. It is
-the fastest way to see whether this is worth wiring up, and it is deliberately,
-obviously fake.
+Both are deliberately, obviously fake, and they agree — which is the fastest way
+to see that the file path and the in-memory path compute the same things.
 
 ## Wiring it to a real publication
+
+No project to provision and no secrets to set. Three steps:
+
+1. **Ingest a snapshot.** Have the assistant read the publication through MCP
+   and emit the payload in `ARCHITECTURE.md` § *The ingest contract*, then:
+
+   ```bash
+   node substack-os/ingest.js substack-os/data/the-brief.json < payload.json
+   ```
+
+   Re-running is the normal case, not an error. It upserts, so refreshing one
+   metric cannot null out what an earlier run captured.
+
+2. **Open the dashboard** at `?pub=the-brief`. Nothing to configure — no URL, no
+   key, no `localStorage`.
+
+3. **Commit the data file.** That is what makes the history durable and gives
+   you `git log -p` over every revision of every number.
+
+Keep `substack-os/data/` out of any public deploy: it is real business data, and
+the repository being private is the only thing protecting it.
+
+### Optional: the hosted route
+
+Worth it only for more than one writer, or a reader with no checkout.
 
 1. **Apply the migration.** `supabase/migrations/005_substack_os.sql`.
 
@@ -60,11 +95,9 @@ obviously fake.
    supabase functions deploy substack-metrics
    ```
 
-4. **Ingest a snapshot.** See `ARCHITECTURE.md` § *The ingest contract*.
-
-5. **Open the dashboard** and give it the `substack-metrics` URL, the dashboard
-   key and your publication identifier. They go to `localStorage`, not to the
-   repository.
+4. **Point the dashboard at it** — Settings takes the `substack-metrics` URL and
+   the dashboard key, which go to `localStorage`, not the repository. Leave the
+   URL blank to go back to the file.
 
 ---
 
@@ -74,8 +107,8 @@ There is no lint or build step here, by the same choice the rest of this
 repository makes. This is what replaces them.
 
 ```bash
-# 1. The arithmetic, the engine's runtime independence, and both Edge
-#    Functions end to end. 67 tests.
+# 1. The arithmetic, the engine's runtime independence, the history file, and
+#    both Edge Functions end to end. 101 tests.
 cd substack-os && npm test
 #    There is no install step and no dependency to fetch — package.json exists
 #    to name one canonical test command and mark the directory as ESM.
@@ -83,9 +116,18 @@ cd substack-os && npm test
 #    Node 22.22 and reports a module-resolution error, not a test failure.
 
 # 2. The dashboard renders, with no console errors, at desktop and phone width.
-npx http-server substack-os -p 8127   # open /index.html?demo=1
+npx http-server substack-os -p 8127   # open /index.html?pub=example-publication
+#    Drive ?demo=1 too: the two must show the same figures, or the file path and
+#    the in-memory path have diverged.
 
-# 3. The schema's invariants — run against the database after migrating.
+# 3. A round trip through the real CLI, which is the whole write path.
+node substack-os/ingest.js /tmp/t.json <<< '{"publication":"t","daily":[{"metric_date":"2026-03-01","subscribers":1200}]}'
+node substack-os/ingest.js /tmp/t.json <<< '{"publication":"t","daily":[{"metric_date":"2026-03-01","paid_subscribers":90}]}'
+#    The second must leave subscribers at 1200. If it nulls it, the upsert is broken.
+node substack-os/ingest.js /tmp/t.json <<< '{"publication":"t","daily":[{"metric_date":"2026-03-01","arr_cents":19.5}]}'
+#    Must exit 1 naming arr_cents — fractional money is refused, not rounded.
+
+# 4. Hosted route only — the schema's invariants, after migrating.
 #    All three must hold.
 ```
 ```sql
@@ -108,12 +150,13 @@ select conrelid::regclass, pg_get_constraintdef(oid) from pg_constraint
    and conrelid::regclass::text like 'substack%';
 ```
 
-**Still outstanding:** the two Edge Functions are covered by committed tests
-that drive the real handler against a stubbed database — every refusal and both
-happy paths — but they have still never run over HTTPS against a deployed
-project, because this repository has no Supabase credentials in it. Per the
-repository's own rule, that means they are not finished being verified. After
-`supabase functions deploy`, drive both live:
+**Still outstanding, and no longer blocking:** the two Edge Functions are
+covered by committed tests that drive the real handler against a stubbed
+database — every refusal and both happy paths, plus parity with the file store —
+but they have still never run over HTTPS against a deployed project. That used
+to mean the system was unverifiable end to end; it no longer does, because the
+default route has no HTTP in it. If you ever turn the hosted route on, drive
+both live first:
 
 ```bash
 # Must be 401 — an unconfigured or wrong key is never open access.

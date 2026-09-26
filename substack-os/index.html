@@ -8,11 +8,17 @@
   Plain HTML, CSS and one module script. No framework, no bundler, no CDN —
   it opens from a file:// URL or any static host and keeps working offline.
 
-  The publication key is NEVER in this file. It is entered once and kept in
-  localStorage, the same way the CRF order desk handles its operator key: a
-  secret committed to a repository is a secret that has to be rotated.
+  By default this reads data/<publication>.json — the history file ingest.js
+  writes — so there is no backend, no endpoint and no key at all. Serve this
+  directory and open ?pub=<publication>.
 
-  Open with ?demo=1 to render seeded sample data with no backend at all.
+  The hosted route still works: give it a substack-metrics URL in Settings and
+  it reads from there instead. In that mode the dashboard key is NEVER in this
+  file; it is entered once and kept in localStorage, the same way the CRF order
+  desk handles its operator key, because a secret committed to a repository is
+  a secret that has to be rotated.
+
+  Open with ?demo=1 to render seeded sample data with no history file at all.
 -->
 <style>
   :root {
@@ -284,19 +290,53 @@ function config() {
 }
 
 function askForConfig() {
-  const endpoint = prompt("substack-metrics function URL\n(https://<project>.supabase.co/functions/v1/substack-metrics)", config()?.endpoint ?? "");
-  if (!endpoint) return null;
-  const key = prompt("Dashboard key (the dashboard_key row in substack_config)");
-  if (!key) return null;
-  const publication = prompt("Publication identifier", config()?.publication ?? "");
+  const publication = prompt("Publication identifier\n(the name of its file in data/)", config()?.publication ?? "");
   if (!publication) return null;
 
-  const next = { endpoint: endpoint.trim(), key: key.trim(), publication: publication.trim() };
+  // Blank is the normal answer. The local file needs no URL and no secret, so
+  // asking for them first — as this did — made the zero-infrastructure path
+  // look like the advanced one.
+  const endpoint = prompt(
+    "Optional: substack-metrics URL, to read from a hosted database instead.\nLeave blank to read data/" + publication.trim() + ".json",
+    config()?.endpoint ?? "",
+  );
+
+  const next = { publication: publication.trim(), endpoint: (endpoint ?? "").trim() };
+  if (next.endpoint) {
+    const key = prompt("Dashboard key (the dashboard_key row in substack_config)");
+    if (!key) return null;
+    next.key = key.trim();
+  }
   try { localStorage.setItem(STORE, JSON.stringify(next)); } catch { /* private mode: this session only */ }
   return next;
 }
 
+/**
+ * The history file. Windowing and ordering happen in store.js, which is the
+ * same code the hosted route's SQL mirrors — so the two sources hand `render`
+ * byte-identical envelopes and the dashboard cannot tell them apart.
+ */
+async function readHistoryFile(cfg, days) {
+  const url = `data/${encodeURIComponent(cfg.publication)}.json`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (res.status === 404) {
+    throw new Error(`No history yet at ${url}. Ingest a snapshot first: node ingest.js ${url} < payload.json`);
+  }
+  if (!res.ok) throw new Error(`Could not read ${url} (${res.status})`);
+
+  let store;
+  try {
+    store = await res.json();
+  } catch {
+    throw new Error(`${url} is not valid JSON — restore it with: git checkout ${url}`);
+  }
+  const { read } = await import("./store.js");
+  return read(store, { days });
+}
+
 async function fetchMetrics(cfg, days = 90) {
+  if (!cfg.endpoint) return readHistoryFile(cfg, days);
+
   const res = await fetch(cfg.endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -341,16 +381,19 @@ async function load() {
     return;
   }
 
-  const cfg = config() ?? askForConfig();
+  // ?pub=the-brief reads data/the-brief.json with no prompt and nothing stored,
+  // which makes the whole dashboard a bookmarkable URL.
+  const pub = new URLSearchParams(location.search).get("pub");
+  const cfg = pub ? { publication: pub, endpoint: "" } : (config() ?? askForConfig());
   if (!cfg) {
-    banner("Not configured. Press Settings to point this at your substack-metrics function, or open ?demo=1 to see it with sample data.");
+    banner("Not configured. Press Settings and name your publication, or open ?demo=1 to see it with sample data.");
     return;
   }
 
   try {
     const data = await fetchMetrics(cfg);
     $("banner").hidden = true;
-    render(data.daily, data.posts, data.publication);
+    render(data.daily, data.posts, data.publication ?? cfg.publication);
   } catch (err) {
     banner(`Could not load: ${err.message}`, true);
   }
