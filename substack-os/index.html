@@ -8,11 +8,11 @@
   Plain HTML, CSS and one module script. No framework, no bundler, no CDN —
   it opens from a file:// URL or any static host and keeps working offline.
 
-  The publication key is NEVER in this file. It is entered once and kept in
-  localStorage, the same way the CRF order desk handles its operator key: a
-  secret committed to a repository is a secret that has to be rotated.
+  This reads data/<publication>.json — the history file ingest.js writes. There
+  is no backend, no endpoint and no key anywhere in this system. Serve this
+  directory and open ?pub=<publication>.
 
-  Open with ?demo=1 to render seeded sample data with no backend at all.
+  Open with ?demo=1 to render seeded sample data with no history file at all.
 -->
 <style>
   :root {
@@ -284,29 +284,35 @@ function config() {
 }
 
 function askForConfig() {
-  const endpoint = prompt("substack-metrics function URL\n(https://<project>.supabase.co/functions/v1/substack-metrics)", config()?.endpoint ?? "");
-  if (!endpoint) return null;
-  const key = prompt("Dashboard key (the dashboard_key row in substack_config)");
-  if (!key) return null;
-  const publication = prompt("Publication identifier", config()?.publication ?? "");
+  const publication = prompt("Publication identifier\n(the name of its file in data/)", config()?.publication ?? "");
   if (!publication) return null;
 
-  const next = { endpoint: endpoint.trim(), key: key.trim(), publication: publication.trim() };
+  const next = { publication: publication.trim() };
   try { localStorage.setItem(STORE, JSON.stringify(next)); } catch { /* private mode: this session only */ }
   return next;
 }
 
-async function fetchMetrics(cfg, days = 90) {
-  const res = await fetch(cfg.endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: cfg.key, publication: cfg.publication, days }),
-  });
-  if (!res.ok) {
-    const detail = await res.json().catch(() => ({}));
-    throw new Error(detail.error ?? `Request failed (${res.status})`);
+/**
+ * The history file. Windowing and ordering happen in store.js, so this function
+ * does no arithmetic of its own — the same rule that keeps every derived number
+ * in engine.js and out of the front ends.
+ */
+async function readHistory(cfg, days = 90) {
+  const url = `data/${encodeURIComponent(cfg.publication)}.json`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (res.status === 404) {
+    throw new Error(`No history yet at ${url}. Ingest a snapshot first: node ingest.js ${url} < payload.json`);
   }
-  return res.json();
+  if (!res.ok) throw new Error(`Could not read ${url} (${res.status})`);
+
+  let store;
+  try {
+    store = await res.json();
+  } catch {
+    throw new Error(`${url} is not valid JSON — restore it with: git checkout ${url}`);
+  }
+  const { read } = await import("./store.js");
+  return read(store, { days });
 }
 
 let current = { daily: [], posts: [] };
@@ -341,16 +347,19 @@ async function load() {
     return;
   }
 
-  const cfg = config() ?? askForConfig();
+  // ?pub=the-brief reads data/the-brief.json with no prompt and nothing stored,
+  // which makes the whole dashboard a bookmarkable URL.
+  const pub = new URLSearchParams(location.search).get("pub");
+  const cfg = pub ? { publication: pub } : (config() ?? askForConfig());
   if (!cfg) {
-    banner("Not configured. Press Settings to point this at your substack-metrics function, or open ?demo=1 to see it with sample data.");
+    banner("Not configured. Press Settings and name your publication, or open ?demo=1 to see it with sample data.");
     return;
   }
 
   try {
-    const data = await fetchMetrics(cfg);
+    const data = await readHistory(cfg);
     $("banner").hidden = true;
-    render(data.daily, data.posts, data.publication);
+    render(data.daily, data.posts, data.publication ?? cfg.publication);
   } catch (err) {
     banner(`Could not load: ${err.message}`, true);
   }
