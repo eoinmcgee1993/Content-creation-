@@ -14,10 +14,14 @@
 // has to be driven before anyone can trust the numbers.
 //
 // The trade is deliberate and has a real edge: a file is single-writer and
-// local. Two people ingesting at once, or a dashboard on a phone that has no
-// checkout, both want the hosted path — which still exists, unchanged, in
-// supabase/. This module and that route produce identical rows on purpose, so
-// moving between them is a config change rather than a rewrite.
+// local. Two people ingesting at once, or a dashboard on a phone with no
+// checkout, would need a server again. Neither is true here, and paying a
+// database's operational cost against the day one of them might be is how a
+// system ends up with infrastructure nobody can justify.
+//
+// If that day comes, the seam is this module: `read()` returns plain rows and
+// `merge()` takes a plain payload, so a server implementing the same two
+// functions changes nothing above it.
 
 import { shape } from "./payload.js";
 
@@ -72,11 +76,12 @@ export function merge(store, body, { now = new Date() } = {}) {
 }
 
 /**
- * Read a window out of a store, in the exact envelope substack-metrics returns.
+ * Read a window out of a store.
  *
- * Identical on purpose. The dashboard should not be able to tell which backend
- * it is pointed at, or the two would drift into telling different stories about
- * the same week — the same reason every derived number lives in engine.js.
+ * Windowing, ordering and the clamps live here rather than in the dashboard, so
+ * a second front end — a ChatGPT app, a Claude artifact — cannot quietly
+ * disagree about which days "the last 30" means. Same reason every derived
+ * number lives in engine.js.
  */
 export function read(store, { days, now = new Date() } = {}) {
   const requested = Number(days);
@@ -91,8 +96,8 @@ export function read(store, { days, now = new Date() } = {}) {
     .filter((r) => typeof r.metric_date === "string" && r.metric_date >= since)
     .sort((a, b) => a.metric_date.localeCompare(b.metric_date));
 
-  // published_at descending, nulls last, capped — matching the index the hosted
-  // read path uses and the order it returns.
+  // published_at descending, nulls last, capped. Undated posts sort last rather
+  // than first because a missing date means unknown, and unknown is not recent.
   const posts = Object.values(store.posts ?? {})
     .filter((r) => r.published_at == null || r.published_at >= `${since}T00:00:00Z`)
     .sort((a, b) => {

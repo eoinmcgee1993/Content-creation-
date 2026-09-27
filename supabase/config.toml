@@ -14,8 +14,3 @@ verify_jwt = false   # Public customer endpoint authenticates and validates in t
 [functions.apparel-notify]
 verify_jwt = false   # Approval-token-authenticated customer endpoint
 
-[functions.substack-ingest]
-verify_jwt = false   # Assistant/server ingest endpoint, authenticates on a shared secret in substack_config
-
-[functions.substack-metrics]
-verify_jwt = false   # Dashboard read endpoint, same shared-secret pattern as admin-orders

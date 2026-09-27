@@ -1,12 +1,11 @@
-// The file-backed store: upsert semantics, the read envelope, and parity with
-// the hosted route. Run: npm test
+// The file-backed store: upsert semantics, the read envelope, and every refusal.
+// Run: npm test
 
-import { test, before, beforeEach } from "node:test";
+import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { DEFAULT_DAYS, MAX_DAYS, POST_LIMIT, empty, merge, read, serialise } from "./store.js";
 import { MAX_DAILY } from "./payload.js";
-import { loadFunction, post, reset } from "./function-harness.js";
 
 const NOW = new Date("2026-03-15T00:00:00Z");
 const opts = { now: NOW };
@@ -153,59 +152,68 @@ test("a serialised store round-trips back through merge", () => {
   assert.equal(after.daily["2026-03-01"].paid_subscribers, 90);
 });
 
-/* ---------------------- parity with the hosted route --------------------- */
+/* --------------------------- every refusal, named ------------------------ */
 //
-// Two write paths mean two chances to disagree about what is acceptable, and the
-// eight defects this system already shipped were mostly validation defects. So
-// rather than trusting that both stay fixed, every case below is driven through
-// the real Edge Function handler AND through merge(), and the two must agree on
-// the verdict and on the wording.
+// There is one write path now, so these are direct expectations rather than a
+// comparison against a second implementation.
+//
+// The wording is asserted, not merely the failure. Every one of these was a real
+// defect, and in each case the value was accepted and quietly altered rather
+// than refused — a currency typo stored as usd, an over-long category dropped to
+// null, a day silently discarded. A message naming the field is the difference
+// between a five-minute fix and a week of not knowing which number lied.
 
 const CASES = [
-  ["minimal day", daily([{ metric_date: "2026-03-01" }])],
+  ["a minimal day", daily([{ metric_date: "2026-03-01" }]), null],
   ["a full snapshot", {
     publication: "the-brief",
     currency: "gbp",
     daily: [{ metric_date: "2026-03-01", subscribers: 1200, arr_cents: 8_640_000 }],
     posts: [{ post_id: "p1", title: "Hello", published_at: "2026-03-01T09:00:00Z", views: 900 }],
-  }],
-  ["no publication", { daily: [{ metric_date: "2026-03-01" }] }],
-  ["nothing to ingest", { publication: "the-brief", daily: [], posts: [] }],
-  ["fractional money", daily([{ metric_date: "2026-03-01", arr_cents: 1999.5 }])],
-  ["negative count", daily([{ metric_date: "2026-03-01", subscribers: -5 }])],
-  ["numeric string", daily([{ metric_date: "2026-03-01", subscribers: "1200" }])],
-  ["typo'd currency", { publication: "the-brief", currency: "dollars", daily: [{ metric_date: "2026-03-01" }] }],
-  ["bad source", { publication: "the-brief", source: "Not A Source", daily: [{ metric_date: "2026-03-01" }] }],
-  ["non-ISO date", daily([{ metric_date: "01/03/2026" }])],
-  ["impossible date", daily([{ metric_date: "2026-02-30" }])],
-  ["non-array daily", { publication: "the-brief", daily: { metric_date: "2026-03-01" }, posts: [{ post_id: "x" }] }],
-  ["duplicate date", daily([{ metric_date: "2026-03-01" }, { metric_date: "2026-03-01" }])],
-  ["duplicate post", posts([{ post_id: "x", views: 1 }, { post_id: "x", views: 2 }])],
-  ["post with no id", posts([{ title: "x" }])],
-  ["unparseable published_at", posts([{ post_id: "a", published_at: "soon" }])],
-  ["over-long category", posts([{ post_id: "x", category: "c".repeat(101) }])],
-  ["over-long title", posts([{ post_id: "x", title: "t".repeat(501) }])],
-  ["oversized batch", daily(Array.from({ length: MAX_DAILY + 1 }, () => ({ metric_date: "2026-03-01" })))],
+  }, null],
+  ["no publication", { daily: [{ metric_date: "2026-03-01" }] },
+    "publication is required"],
+  ["an empty payload", { publication: "the-brief", daily: [], posts: [] },
+    "nothing to ingest"],
+  ["fractional money", daily([{ metric_date: "2026-03-01", arr_cents: 1999.5 }]),
+    "daily[0].arr_cents must be a non-negative integer"],
+  ["a negative count", daily([{ metric_date: "2026-03-01", subscribers: -5 }]),
+    "daily[0].subscribers must be a non-negative integer"],
+  ["a numeric string", daily([{ metric_date: "2026-03-01", subscribers: "1200" }]),
+    "daily[0].subscribers must be a non-negative integer"],
+  ["a typo'd currency", { publication: "the-brief", currency: "dollars", daily: [{ metric_date: "2026-03-01" }] },
+    "currency must be a 3-letter ISO code"],
+  ["a bad source", { publication: "the-brief", source: "Not A Source", daily: [{ metric_date: "2026-03-01" }] },
+    "source must be 1-40 chars of a-z, 0-9, _ or -"],
+  ["a non-ISO date", daily([{ metric_date: "01/03/2026" }]),
+    "daily[0]: metric_date must be YYYY-MM-DD"],
+  ["a date that does not exist", daily([{ metric_date: "2026-02-30" }]),
+    "daily[0]: metric_date must be YYYY-MM-DD"],
+  ["a present-but-not-array daily", { publication: "the-brief", daily: { metric_date: "2026-03-01" }, posts: [{ post_id: "x" }] },
+    "daily must be an array"],
+  ["a duplicate date", daily([{ metric_date: "2026-03-01" }, { metric_date: "2026-03-01" }]),
+    "daily contains 2026-03-01 more than once"],
+  ["a duplicate post", posts([{ post_id: "x", views: 1 }, { post_id: "x", views: 2 }]),
+    "posts contains x more than once"],
+  ["a post with no id", posts([{ title: "x" }]),
+    "posts[0]: post_id is required"],
+  ["an unparseable published_at", posts([{ post_id: "a", published_at: "soon" }]),
+    "posts[0].published_at is not a valid timestamp"],
+  ["an over-long category", posts([{ post_id: "x", category: "c".repeat(101) }]),
+    "posts[0].category must be a string of at most 100 characters"],
+  ["an over-long title", posts([{ post_id: "x", title: "t".repeat(501) }]),
+    "posts[0].title must be a string of at most 500 characters"],
+  ["an oversized batch", daily(Array.from({ length: MAX_DAILY + 1 }, () => ({ metric_date: "2026-03-01" }))),
+    "daily exceeds 400 rows"],
 ];
 
-let ingest;
-before(async () => { ingest = await loadFunction("substack-ingest"); });
-beforeEach(() => reset());
-
-for (const [name, body] of CASES) {
-  test(`parity: ${name}`, async () => {
-    const hosted = await post(ingest, { key: "correct-horse", ...body });
-    const local = merge(empty("the-brief"), body, opts);
-
-    if (hosted.status === 200) {
-      assert.equal(local.error, undefined, `hosted accepted ${name}, file store refused it`);
-      return;
+for (const [name, body, expected] of CASES) {
+  test(expected === null ? `accepts ${name}` : `refuses ${name}`, () => {
+    const r = merge(empty("the-brief"), body, opts);
+    assert.equal(r.error, expected ?? undefined);
+    if (expected !== null) {
+      assert.equal(r.store, undefined, "a refusal must store nothing at all");
     }
-    assert.equal(hosted.status, 400, `unexpected status ${hosted.status} for ${name}`);
-    assert.equal(
-      local.error, hosted.body.error,
-      `the two write paths disagree about ${name}`,
-    );
   });
 }
 

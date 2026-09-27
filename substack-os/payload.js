@@ -1,15 +1,13 @@
 // Validates and shapes an ingest payload. No database, no host APIs, no I/O.
 //
-// This is the middle of supabase/functions/substack-ingest/index.ts — the part
-// between "is the caller authorised" and "write it somewhere" — lifted out so
-// the file-backed store enforces the same rules as the HTTP route rather than
-// growing its own second opinion.
+// Separate from store.js because validating a payload and merging it into a
+// history are different jobs, and only one of them needs to know what a valid
+// currency code looks like.
 //
 // Every refusal here was a defect once. The comments say which, because the
 // tempting "simplification" in each case is to accept the value and move on,
-// and that is precisely what produced a dashboard quoting numbers that were
-// not true. store.test.js pins these outcomes against the deployed handler's,
-// so the two cannot drift apart unnoticed.
+// and that is precisely what produced a dashboard quoting numbers that were not
+// true. store.test.js asserts the exact wording of each one.
 
 export const MAX_DAILY = 400;
 export const MAX_POSTS = 500;

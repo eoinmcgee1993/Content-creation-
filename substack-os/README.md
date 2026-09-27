@@ -36,15 +36,10 @@ upserts, so a refresh of one metric cannot null out what an earlier run
 captured. See `data/README.md` for the file shape and
 `../docs/substack-os/ARCHITECTURE.md` for why a file rather than Postgres.
 
-The hosted route (`../supabase/`) still works and is untouched, for the cases a
-file cannot serve: more than one writer, or a reader with no checkout. Put a
-`substack-metrics` URL in Settings and the dashboard reads from there instead —
-`store.js` and that function return identical envelopes on purpose.
-
 ## Test
 
 ```bash
-npm test      # 101 tests: arithmetic, portability, the file store, and both Edge Functions
+npm test      # 73 tests: arithmetic, portability, and the file store
 ```
 
 No install step and no dependencies. `package.json` exists to name one
@@ -59,20 +54,18 @@ reports a module-resolution error rather than a test failure.
 | `engine.js` | Every derived number. Zero dependencies, no database, no host APIs |
 | `engine.test.js` | The arithmetic: growth, churn, anomalies, attribution |
 | `engine.portability.test.js` | Fails if the engine gains a dependency or a runtime |
-| `payload.js` | Validates and shapes an ingest payload. Shared by both write paths |
-| `store.js` | The history file: upsert merge, and the read envelope |
+| `payload.js` | Validates and shapes an ingest payload. Every refusal lives here |
+| `store.js` | The history file: upsert merge, and the read window |
 | `ingest.js` | CLI. Merges a payload into a history file, atomically |
-| `store.test.js` | The store, plus parity tests against the hosted route |
-| `functions.test.js` | Integration tests for both Edge Functions |
-| `function-harness.js` | Loads the real function source under Node with a stubbed database |
+| `store.test.js` | The store, the read window, and every refusal by name |
 | `index.html` | Dashboard. Plain HTML/CSS/JS, no build step |
 | `sample-data.js` | Seeded fake publication, for `?demo=1` |
 | `data/` | The history itself, one JSON file per publication |
 
-The engine is deliberately independent of Supabase and of any runtime, so the
-same calculation can run in the dashboard, a Deno Edge Function, an n8n
-Function node or an MCP tool without being reimplemented. That is enforced by
-`engine.portability.test.js`, not merely documented.
+That is the whole system — there are no server pieces anywhere else in the
+repository.
 
-Server pieces live outside this directory: `supabase/migrations/005_substack_os.sql`
-and `supabase/functions/substack-{ingest,metrics}/`.
+The engine is deliberately independent of any runtime, so the same calculation
+can run in the dashboard, an n8n Function node, an MCP tool or a server if one
+is ever needed, without being reimplemented. That is enforced by
+`engine.portability.test.js`, not merely documented.

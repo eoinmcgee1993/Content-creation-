@@ -4,14 +4,13 @@ Publication analytics with a memory. Substack's own dashboard tells you what
 your subscriber count **is**; this tells you what **changed and what caused it**,
 because it keeps the daily history Substack does not let you query.
 
-Lives in `substack-os/` — engine, dashboard, and the history itself as one JSON
-file per publication in `substack-os/data/`. **There is no database.** The
-hosted Postgres route (`supabase/functions/substack-*`,
-`supabase/migrations/005_substack_os.sql`) still exists and is optional.
+Lives entirely in `substack-os/` — engine, dashboard, and the history itself as
+one JSON file per publication in `substack-os/data/`. **There is no database and
+no server.**
 
-Read `ARCHITECTURE.md` next — in particular *Two ways to store the history* for
-why a file, and *Why ingest is not a cron job*, which is the one thing about
-this system that surprises people.
+Read `ARCHITECTURE.md` next — in particular *Why a file and not a database*, and
+*Why ingest is not a cron job*, which is the one thing about this system that
+surprises people.
 
 ---
 
@@ -26,13 +25,9 @@ this system that surprises people.
 | Analytics engine | `substack-os/engine.js` | Every derived number, computed once. Zero dependencies, no database, runs anywhere |
 | Engine tests | `substack-os/engine.test.js` | The arithmetic, including regressions for every defect found in review |
 | Portability guard | `substack-os/engine.portability.test.js` | Fails if the engine gains a dependency or a host API |
-| Function tests | `substack-os/functions.test.js` | Drives both Edge Functions: every refusal and both happy paths |
-| Store tests | `substack-os/store.test.js` | The store, plus parity against the hosted route |
+| Store tests | `substack-os/store.test.js` | The store, the read window, and every refusal by name |
 | Sample data | `substack-os/sample-data.js` | Seeded fake publication, for `?demo=1` |
 | Dashboard | `substack-os/index.html` | Plain HTML/CSS/JS, no build step |
-| *Optional:* schema | `supabase/migrations/005_substack_os.sql` | The hosted route's tables and secrets |
-| *Optional:* ingest | `supabase/functions/substack-ingest/` | Assistant → Postgres, idempotent |
-| *Optional:* read | `supabase/functions/substack-metrics/` | Postgres → dashboard, service-role |
 
 ## See it now
 
@@ -49,7 +44,7 @@ to see that the file path and the in-memory path compute the same things.
 
 ## Wiring it to a real publication
 
-No project to provision and no secrets to set. Three steps:
+Nothing to provision and no secrets to set. Three steps:
 
 1. **Ingest a snapshot.** Have the assistant read the publication through MCP
    and emit the payload in `ARCHITECTURE.md` § *The ingest contract*, then:
@@ -70,35 +65,6 @@ No project to provision and no secrets to set. Three steps:
 Keep `substack-os/data/` out of any public deploy: it is real business data, and
 the repository being private is the only thing protecting it.
 
-### Optional: the hosted route
-
-Worth it only for more than one writer, or a reader with no checkout.
-
-1. **Apply the migration.** `supabase/migrations/005_substack_os.sql`.
-
-2. **Set two secrets.** They live in `substack_config`, never in a file and
-   never in an environment variable:
-
-   ```sql
-   insert into public.substack_config (key, value) values
-     ('ingest_key',    '<long random string>'),
-     ('dashboard_key', '<a different long random string>');
-   ```
-
-   Two separate keys on purpose: the dashboard key is typed into a browser and
-   will eventually leak to whoever borrows the laptop. It must not also be able
-   to write.
-
-3. **Deploy the functions.**
-   ```bash
-   supabase functions deploy substack-ingest
-   supabase functions deploy substack-metrics
-   ```
-
-4. **Point the dashboard at it** — Settings takes the `substack-metrics` URL and
-   the dashboard key, which go to `localStorage`, not the repository. Leave the
-   URL blank to go back to the file.
-
 ---
 
 ## Validation
@@ -107,8 +73,8 @@ There is no lint or build step here, by the same choice the rest of this
 repository makes. This is what replaces them.
 
 ```bash
-# 1. The arithmetic, the engine's runtime independence, the history file, and
-#    both Edge Functions end to end. 101 tests.
+# 1. The arithmetic, the engine's runtime independence, and the history file —
+#    including every refusal by name. 73 tests.
 cd substack-os && npm test
 #    There is no install step and no dependency to fetch — package.json exists
 #    to name one canonical test command and mark the directory as ESM.
@@ -126,52 +92,20 @@ node substack-os/ingest.js /tmp/t.json <<< '{"publication":"t","daily":[{"metric
 #    The second must leave subscribers at 1200. If it nulls it, the upsert is broken.
 node substack-os/ingest.js /tmp/t.json <<< '{"publication":"t","daily":[{"metric_date":"2026-03-01","arr_cents":19.5}]}'
 #    Must exit 1 naming arr_cents — fractional money is refused, not rounded.
-
-# 4. Hosted route only — the schema's invariants, after migrating.
-#    All three must hold.
-```
-```sql
--- anon and authenticated hold NO privilege on any substack_ table. Zero rows.
-select grantee, table_name, privilege_type
-  from information_schema.role_table_grants
- where table_schema='public' and grantee in ('anon','authenticated')
-   and table_name like 'substack%';
-
--- RLS on, zero policies, on all three tables.
-select c.relname, c.relrowsecurity,
-       (select count(*) from pg_policies p where p.tablename=c.relname) as policies
-  from pg_class c join pg_namespace n on n.oid=c.relnamespace
- where n.nspname='public' and c.relname like 'substack%' and c.relkind='r';
-
--- The primary keys the ingest function upserts against must exist, or every
--- ingest fails at runtime on an onConflict it cannot resolve.
-select conrelid::regclass, pg_get_constraintdef(oid) from pg_constraint
- where connamespace='public'::regnamespace and contype='p'
-   and conrelid::regclass::text like 'substack%';
 ```
 
-**Still outstanding, and no longer blocking:** the two Edge Functions are
-covered by committed tests that drive the real handler against a stubbed
-database — every refusal and both happy paths, plus parity with the file store —
-but they have still never run over HTTPS against a deployed project. That used
-to mean the system was unverifiable end to end; it no longer does, because the
-default route has no HTTP in it. If you ever turn the hosted route on, drive
-both live first:
+**What replaces the database invariants.** The hosted route had three SQL checks
+(`anon` holds no grant, RLS on with zero policies, the upsert's primary keys
+exist). There is no database to check now; the equivalent guarantees are:
 
-```bash
-# Must be 401 — an unconfigured or wrong key is never open access.
-curl -s -X POST "$INGEST_URL" -H 'content-type: application/json' \
-  -d '{"key":"wrong","publication":"p","daily":[]}'
-
-# Must be 400 — fractional money is refused, not rounded.
-curl -s -X POST "$INGEST_URL" -H 'content-type: application/json' \
-  -d "{\"key\":\"$INGEST_KEY\",\"publication\":\"p\",\"daily\":[{\"metric_date\":\"2026-03-01\",\"arr_cents\":1999.5}]}"
-
-# Must be 400 — a typo'd currency is refused, not silently stored as usd.
-curl -s -X POST "$INGEST_URL" -H 'content-type: application/json' \
-  -d "{\"key\":\"$INGEST_KEY\",\"publication\":\"p\",\"currency\":\"dollars\",\"daily\":[{\"metric_date\":\"2026-03-01\"}]}"
-
-# Must be 200, and running it twice must not duplicate the row.
-curl -s -X POST "$INGEST_URL" -H 'content-type: application/json' \
-  -d "{\"key\":\"$INGEST_KEY\",\"publication\":\"p\",\"daily\":[{\"metric_date\":\"2026-03-01\",\"subscribers\":1200}]}"
-```
+- **Nothing can read the history but a process that can read the file.** There is
+  no endpoint, no key and no role to misconfigure. What protects it is the
+  repository being private — so never publish `substack-os/data/` to a static
+  host, and never make this repository public without moving it out first.
+- **The upsert cannot go wrong on a missing key**, because the key *is* the
+  object key: `daily["2026-03-01"]` either exists or does not. There is no
+  `onConflict` target to resolve at runtime and so no way for an ingest to fail
+  on one.
+- **A refusal stores nothing.** `merge()` returns an error or a whole new store,
+  never a partial one, and `store.test.js` asserts it for all 17 refusals — a
+  half-applied snapshot would leave a history that looks complete and is not.

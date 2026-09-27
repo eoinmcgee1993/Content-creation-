@@ -4,10 +4,9 @@
 //   node ingest.js data/the-brief.json < payload.json
 //   node ingest.js data/the-brief.json payload.json
 //
-// This is what replaces POSTing to the substack-ingest Edge Function. The
-// payload is byte-for-byte the same JSON the endpoint took, minus "key" — there
-// is no secret because there is no network service to authenticate to; the
-// permission to write the file IS the permission to write the file.
+// There is no secret and no endpoint: permission to write the file is the whole
+// of the authorisation. That is the point of keeping the history in the
+// repository rather than behind a service.
 //
 // Re-running is normal and safe. Substack revises recent numbers, and an ingest
 // interrupted halfway has to be repeatable, so this upserts rather than appends.

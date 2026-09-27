@@ -8,15 +8,9 @@
   Plain HTML, CSS and one module script. No framework, no bundler, no CDN —
   it opens from a file:// URL or any static host and keeps working offline.
 
-  By default this reads data/<publication>.json — the history file ingest.js
-  writes — so there is no backend, no endpoint and no key at all. Serve this
+  This reads data/<publication>.json — the history file ingest.js writes. There
+  is no backend, no endpoint and no key anywhere in this system. Serve this
   directory and open ?pub=<publication>.
-
-  The hosted route still works: give it a substack-metrics URL in Settings and
-  it reads from there instead. In that mode the dashboard key is NEVER in this
-  file; it is entered once and kept in localStorage, the same way the CRF order
-  desk handles its operator key, because a secret committed to a repository is
-  a secret that has to be rotated.
 
   Open with ?demo=1 to render seeded sample data with no history file at all.
 -->
@@ -293,30 +287,17 @@ function askForConfig() {
   const publication = prompt("Publication identifier\n(the name of its file in data/)", config()?.publication ?? "");
   if (!publication) return null;
 
-  // Blank is the normal answer. The local file needs no URL and no secret, so
-  // asking for them first — as this did — made the zero-infrastructure path
-  // look like the advanced one.
-  const endpoint = prompt(
-    "Optional: substack-metrics URL, to read from a hosted database instead.\nLeave blank to read data/" + publication.trim() + ".json",
-    config()?.endpoint ?? "",
-  );
-
-  const next = { publication: publication.trim(), endpoint: (endpoint ?? "").trim() };
-  if (next.endpoint) {
-    const key = prompt("Dashboard key (the dashboard_key row in substack_config)");
-    if (!key) return null;
-    next.key = key.trim();
-  }
+  const next = { publication: publication.trim() };
   try { localStorage.setItem(STORE, JSON.stringify(next)); } catch { /* private mode: this session only */ }
   return next;
 }
 
 /**
- * The history file. Windowing and ordering happen in store.js, which is the
- * same code the hosted route's SQL mirrors — so the two sources hand `render`
- * byte-identical envelopes and the dashboard cannot tell them apart.
+ * The history file. Windowing and ordering happen in store.js, so this function
+ * does no arithmetic of its own — the same rule that keeps every derived number
+ * in engine.js and out of the front ends.
  */
-async function readHistoryFile(cfg, days) {
+async function readHistory(cfg, days = 90) {
   const url = `data/${encodeURIComponent(cfg.publication)}.json`;
   const res = await fetch(url, { cache: "no-store" });
   if (res.status === 404) {
@@ -332,21 +313,6 @@ async function readHistoryFile(cfg, days) {
   }
   const { read } = await import("./store.js");
   return read(store, { days });
-}
-
-async function fetchMetrics(cfg, days = 90) {
-  if (!cfg.endpoint) return readHistoryFile(cfg, days);
-
-  const res = await fetch(cfg.endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: cfg.key, publication: cfg.publication, days }),
-  });
-  if (!res.ok) {
-    const detail = await res.json().catch(() => ({}));
-    throw new Error(detail.error ?? `Request failed (${res.status})`);
-  }
-  return res.json();
 }
 
 let current = { daily: [], posts: [] };
@@ -384,14 +350,14 @@ async function load() {
   // ?pub=the-brief reads data/the-brief.json with no prompt and nothing stored,
   // which makes the whole dashboard a bookmarkable URL.
   const pub = new URLSearchParams(location.search).get("pub");
-  const cfg = pub ? { publication: pub, endpoint: "" } : (config() ?? askForConfig());
+  const cfg = pub ? { publication: pub } : (config() ?? askForConfig());
   if (!cfg) {
     banner("Not configured. Press Settings and name your publication, or open ?demo=1 to see it with sample data.");
     return;
   }
 
   try {
-    const data = await fetchMetrics(cfg);
+    const data = await readHistory(cfg);
     $("banner").hidden = true;
     render(data.daily, data.posts, data.publication ?? cfg.publication);
   } catch (err) {
