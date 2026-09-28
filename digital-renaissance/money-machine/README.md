@@ -49,6 +49,12 @@ map, and `build-glb.js` uses the same version. If WebGL, the CDN or the model
 is unavailable, the page falls back to flat CSS reels and everything else
 still works.
 
+**Embedding.** A sandboxed copy (the claude.ai preview, an iframe on another
+site) sets `window.MONEY_MACHINE_EMBED = { shareBase, glb }` before `app.js`
+loads. Download buttons are hidden and the vault copies to the clipboard.
+Share links start with `shareBase`, and `glb` can hold the model's bytes
+where a `.glb` file can't be served.
+
 ## How an idea is made
 
 An idea is a small set of **genes**: mode, niche, pain, format (or stolen

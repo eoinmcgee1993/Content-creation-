@@ -14,6 +14,18 @@ const TIER = { common: 0, rare: 1, epic: 2, jackpot: 3 };
 const SPACE = ideaSpace();
 const CUR = currency();
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+// Embedded copies (a sandboxed preview, an iframe on another site) set
+// window.MONEY_MACHINE_EMBED before this module runs: they can't start
+// downloads, their own URL isn't the one people should share, and they may
+// pass the model's bytes as `glb` where a .glb file can't be served.
+const EMBED = globalThis.MONEY_MACHINE_EMBED || null;
+const HOME_URL = () => EMBED?.shareBase || `${location.origin}${location.pathname}`;
+// Sandboxed frames can refuse history updates; the idea still shows.
+const setHash = (hash) => {
+  try {
+    history.replaceState(null, "", hash || location.pathname);
+  } catch {}
+};
 
 // localStorage can be missing or throw (private mode, blocked storage); the
 // machine still works, it just forgets.
@@ -166,7 +178,7 @@ async function initStage() {
     if (!webgl()) throw new Error("WebGL is not available");
     const { createStage } = await import("./stage3d.js");
     stage = await createStage(el, {
-      glbUrl: new URL("./money-machine.glb", import.meta.url).href,
+      glb: EMBED?.glb || new URL("./money-machine.glb", import.meta.url).href,
       reduceMotion: REDUCED,
       onPull: () => spinNow(),
     });
@@ -320,7 +332,7 @@ function setBusy(on) {
 
 // ------------------------------------------------------------ the loop
 
-const shareUrl = (code = genes && describe(genes).code) => `${location.origin}${location.pathname}#${code}`;
+const shareUrl = (code = genes && describe(genes).code) => `${HOME_URL()}#${code}`;
 
 function show(g, { scroll = true, slam = true } = {}) {
   genes = g;
@@ -329,7 +341,7 @@ function show(g, { scroll = true, slam = true } = {}) {
   renderTelemetry(d);
   renderLoop();
   if (!$("#blueprint").hidden) renderBlueprint();
-  history.replaceState(null, "", `#${d.code}`);
+  setHash(`#${d.code}`);
   const card = $("#result");
   card.classList.remove("slam", "glitch");
   void card.offsetWidth;
@@ -550,8 +562,15 @@ function exportVault() {
     cur: CUR,
     date: new Date().toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }),
     linkFor: (code) => shareUrl(code),
-    footer: [`Spin your own: ${location.origin}${location.pathname}`, `The systems behind these ideas: ${GUMROAD}`],
+    footer: [`Spin your own: ${HOME_URL()}`, `The systems behind these ideas: ${GUMROAD}`],
   });
+  if (EMBED) {
+    navigator.clipboard.writeText(text).then(
+      () => { toast("VAULT COPIED. PASTE IT SOMEWHERE SAFE."); cashed(); },
+      () => toast("YOUR BROWSER BLOCKED THE CLIPBOARD HERE."),
+    );
+    return;
+  }
   download("my-money-machine-vault.txt", text, "text/plain");
   toast("VAULT EXPORTED.");
   cashed();
@@ -562,7 +581,7 @@ async function share() {
   const d = describe(genes, CUR);
   const url = shareUrl(d.code);
   try {
-    if (navigator.share && matchMedia("(pointer: coarse)").matches) {
+    if (!EMBED && navigator.share && matchMedia("(pointer: coarse)").matches) {
       await navigator.share({ title: `${d.name} // Money Machine`, text: d.pitch, url });
       return;
     }
@@ -595,6 +614,10 @@ function openCode(code, { scroll = true } = {}) {
 // ------------------------------------------------------------------ wiring
 
 function wire() {
+  if (EMBED) {
+    $$("[data-md=download]").forEach((b) => { b.hidden = true; });
+    $("#vault-export").textContent = "COPY MY VAULT";
+  }
   $("#spin").addEventListener("click", spinNow);
   $$(".ops button").forEach((b) => b.addEventListener("click", () => applyOp(b.dataset.op)));
   $("#make-real").addEventListener("click", openBlueprint);
@@ -647,7 +670,7 @@ async function main() {
   wire();
   await initStage();
   const code = decodeURIComponent(location.hash.slice(1));
-  if (code && !openCode(code, { scroll: false })) history.replaceState(null, "", location.pathname);
+  if (code && !openCode(code, { scroll: false })) setHash("");
 }
 
 main();

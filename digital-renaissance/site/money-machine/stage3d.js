@@ -92,7 +92,9 @@ function signTexture(renderer, lines, { width = 1024, height = 256, color = AMBE
   return tex;
 }
 
-export async function createStage(container, { glbUrl, reduceMotion = false, onPull = () => {} }) {
+// `glb` is the model's URL, or its bytes (or a promise of them) for embeds
+// that can't serve a .glb file.
+export async function createStage(container, { glb, reduceMotion = false, onPull = () => {} }) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -145,7 +147,9 @@ export async function createStage(container, { glbUrl, reduceMotion = false, onP
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
-  const gltf = await new GLTFLoader().loadAsync(glbUrl);
+  const source = await glb;
+  const loader = new GLTFLoader();
+  const gltf = typeof source === "string" ? await loader.loadAsync(source) : await loader.parseAsync(source, "");
   const machine = gltf.scene;
   scene.add(machine);
   const part = (name) => machine.getObjectByName(name);
