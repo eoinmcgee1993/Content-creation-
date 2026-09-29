@@ -1,6 +1,11 @@
 // Page controller: wires the engine (what the idea is) to the machine (how
 // it's revealed) and to the vault, share links and blueprint export.
 // Everything is local to the browser; there is no server.
+//
+// The reveal is hybrid: the 3D machine is live while you play with it, and
+// SPIN hands over to a pre-rendered video of the same machine (reveal.mp4)
+// for the high-impact spin, with the idea printed over the light flare. If
+// the video can't play, or motion is reduced, the live reels do the spin.
 
 import {
   MODES, blueprint, cheaper, decode, degenerate, describe, ideaSpace, markdown, mutate, reelPool, spin, vaultText,
@@ -13,6 +18,7 @@ const GUMROAD = "https://digitalrena1ssance.gumroad.com";
 const TIER = { common: 0, rare: 1, epic: 2, jackpot: 3 };
 const SPACE = ideaSpace();
 const CUR = currency();
+const IDLE = ["SYSTEMS", "CREATOR", "PROBLEM"];
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 // Embedded copies (a sandboxed preview, an iframe on another site) set
 // window.MONEY_MACHINE_EMBED before this module runs: they can't start
@@ -51,9 +57,11 @@ let lineage = [];
 let steps = new Set();
 let busy = false;
 let stage = null;
+let timing = null; // reveal-timing.js: when the video's reels stop and the flare hits
 let soundOn = store.get("mm.sound", true) !== false;
 let vault = Array.isArray(store.get("mm.vault")) ? store.get("mm.vault") : [];
 const stats = { spins: 0, jackpots: 0, day: "", streak: 0, ...store.get("mm.stats", {}) };
+const feed = [];
 
 // Prices follow the visitor: € across the eurozone, £ in the UK, $ elsewhere.
 function currency() {
@@ -96,6 +104,7 @@ const sfx = (() => {
       const notes = [[], [523, 659], [523, 659, 784, 1047], [523, 659, 784, 1047, 1319, 1568, 2093]][level];
       notes.forEach((f, i) => tone(f, 0.18, { type: "triangle", vol: 0.05, at: i * 0.075 }));
     },
+    flare: () => { tone(80, 0.5, { type: "sine", vol: 0.12, slide: 0.5 }); tone(2400, 0.4, { type: "triangle", vol: 0.02, slide: 0.4 }); },
     blip: () => tone(880, 0.05, { vol: 0.02 }),
     buzz: () => tone(68, 0.32, { type: "sawtooth", vol: 0.05, slide: 0.8 }),
     coin: () => { tone(1320, 0.06, { vol: 0.03 }); tone(1760, 0.12, { vol: 0.03, at: 0.05 }); },
@@ -160,6 +169,9 @@ function flatStage(el) {
         const ms = REDUCED ? 0 : (quick ? 420 : 1000) + i * (quick ? 140 : 480);
         strip.style.transition = `transform ${ms}ms cubic-bezier(.12,.7,.2,1.02)`;
         strip.style.transform = `translateY(${-(n + 1) * h}px)`;
+        // Blurred while it's moving fast, sharp for the landing.
+        if (ms) strip.classList.add("blur");
+        setTimeout(() => strip.classList.remove("blur"), ms * 0.7);
         setTimeout(() => {
           onReelStop(i);
           resolve();
@@ -169,6 +181,7 @@ function flatStage(el) {
     celebrate() {},
     zoomThrough: async () => {},
     home: async () => {},
+    hold() {},
   };
 }
 
@@ -191,7 +204,24 @@ async function initStage() {
     el.classList.add("is-2d");
   }
   const pools = reelPool(mode);
-  stage.paintIdle([["AI", ...pools[0]], ["CREATOR", ...pools[1]], ["PROBLEM", ...pools[2]]]);
+  stage.paintIdle(IDLE.map((w, i) => [w, ...pools[i]]));
+}
+
+// The reveal video loads once the machine is up, so it never competes with
+// the model and three.js for the first paint.
+async function prepareVideo() {
+  if (REDUCED) return;
+  try {
+    timing = (await import("./reveal-timing.js")).default;
+  } catch {
+    return; // no timing, no video: the live reels do every spin
+  }
+  const video = $("#reveal-video");
+  // VP9 where the browser has it (some Chromium builds lack H.264), H.264 for Safari.
+  const file = video.canPlayType('video/webm; codecs="vp9"') ? "reveal.webm" : "reveal.mp4";
+  video.src = new URL(`./${file}`, import.meta.url).href;
+  video.preload = "auto";
+  video.load();
 }
 
 // ------------------------------------------------------------ rendering
@@ -219,6 +249,7 @@ function setMode(id) {
   sfx.blip();
   renderModes();
   renderTelemetry();
+  log(`mode: ${MODES.find((m) => m.id === id).label}`);
 }
 
 function renderLoop() {
@@ -230,12 +261,9 @@ function renderLoop() {
   });
 }
 
-const compact = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n));
-
 function renderTelemetry(d = genes && describe(genes, CUR)) {
   const rows = [
     ["IDEAS LOADED", SPACE.base.toLocaleString("en-US")],
-    ["MUTATIONS", compact(SPACE.variants)],
     ["MARKET SIGNAL", d ? d.signal : "ACTIVE"],
     ["DEGEN MODE", d?.degen ? `ON · LVL ${d.degen}` : mode === "degen" ? "ON" : "OFF"],
     ["CAPITAL REQUIRED", d ? d.capital : `${CUR}0`],
@@ -244,14 +272,19 @@ function renderTelemetry(d = genes && describe(genes, CUR)) {
   $("#telemetry").replaceChildren(
     el("span", { className: "hi", textContent: "MONEY MACHINE v1.0" }),
     `\n${rows.map(line).join("\n")}\n`,
-    `SPINS ${stats.spins} · STREAK ${stats.streak}D · JACKPOTS ${stats.jackpots} · VAULT ${vault.length}`,
+    el("span", { className: "ok", textContent: `SPINS ${stats.spins} · STREAK ${stats.streak}D · JACKPOTS ${stats.jackpots} · VAULT ${vault.length}` }),
   );
 }
 
+// A tiny terminal feed under the telemetry: the last few things the machine did.
+function log(text) {
+  feed.push(text.toLowerCase());
+  feed.splice(0, feed.length - 3);
+  $("#feed").replaceChildren(...feed.map((t) => el("li", { textContent: t })));
+}
+
 function setReadout(i, reel) {
-  const cells = $$("#readout > div:not(.x)");
-  cells[i].querySelector(".val").textContent = reel.value;
-  cells[i].querySelector(".lab").textContent = reel.label;
+  $$("#readout .val")[i].textContent = reel.value;
 }
 
 function renderResult(d) {
@@ -261,6 +294,7 @@ function renderResult(d) {
   $("#rarity").dataset.tier = d.rarity.id;
   $("#total-row").dataset.tier = d.rarity.id;
   $("#meta").textContent = `${d.mode.emoji} ${d.mode.label} · GEN ${d.gen}`;
+  $("#kicker").textContent = d.kicker;
   $("#idea-name").textContent = d.name;
   $("#pitch").textContent = d.pitch;
   const stolen = $("#stolen");
@@ -287,6 +321,7 @@ function renderResult(d) {
 function renderBlueprint() {
   const d = describe(genes, CUR);
   $("#bp-name").textContent = d.name;
+  $("#bp-kicker").textContent = d.kicker;
   const sections = blueprint(genes, CUR).map((s) => {
     const body = el("div", { className: "bp-body" });
     for (const it of s.items) {
@@ -326,7 +361,7 @@ function setBusy(on) {
   busy = on;
   const b = $("#spin");
   b.disabled = on;
-  b.textContent = on ? "SPINNING…" : "SPIN THE MACHINE";
+  b.textContent = on ? "[ SPINNING… ]" : "[ SPIN THE MACHINE ]";
   $$(".ops button").forEach((x) => { x.disabled = on; });
 }
 
@@ -340,7 +375,7 @@ function show(g, { scroll = true, slam = true } = {}) {
   renderResult(d);
   renderTelemetry(d);
   renderLoop();
-  if (!$("#blueprint").hidden) renderBlueprint();
+  if ($("#blueprint").open) renderBlueprint();
   setHash(`#${d.code}`);
   const card = $("#result");
   card.classList.remove("slam", "glitch");
@@ -380,6 +415,7 @@ function countSpin() {
   store.set("mm.stats", stats);
 }
 
+// Resolves after `ms`, or sooner on a tap or a key.
 function waitOrSkip(ms, node) {
   return new Promise((resolve) => {
     const done = () => {
@@ -394,10 +430,106 @@ function waitOrSkip(ms, node) {
   });
 }
 
-// The reveal copies the choreography of a casino logo-reveal: stop, flash,
-// a horizontal light streak while the camera punches through the payline,
-// then the name alone on black with one line underneath.
-async function reveal(d) {
+// The words over the flare: positioning line, name, the one-liner and rarity.
+function revealText(d) {
+  $("#rv-kicker").textContent = d.kicker;
+  $("#rv-name").textContent = d.name;
+  $("#rv-line").textContent = d.prop;
+  $("#rv-rarity").textContent = d.rarity.label;
+  $("#rv-rarity").dataset.tier = d.rarity.id;
+}
+
+async function closeReveal() {
+  const ov = $("#reveal");
+  ov.classList.add("out");
+  await wait(360);
+  ov.hidden = true;
+  ov.className = "reveal";
+}
+
+// The video path. Returns false, having changed nothing, if the video can't
+// start quickly; the live reels take over.
+async function playVideo(g, d) {
+  const video = $("#reveal-video");
+  if (!timing || REDUCED || !video.src || video.error) return false;
+  try {
+    video.currentTime = 0;
+  } catch {}
+  const started = await Promise.race([video.play().then(() => true, () => false), wait(1500).then(() => false)]);
+  if (!started) {
+    video.pause();
+    return false;
+  }
+  const level = TIER[d.rarity.id];
+  const pools = reelPool(g.m);
+  // Square the machine up to the video's first frame, then cut to the video.
+  stage.hold(true);
+  $("#stage").classList.add("cinema");
+  document.body.classList.add("cinema");
+  // Behind the video, land the real reels on the idea for when it hands back.
+  stage.paintIdle(d.reels.map((r, i) => [r.value, ...pools[i]]));
+  sfx.lever();
+  haptic(12);
+  const tick = ticker();
+  const ov = $("#reveal");
+  revealText(d);
+  ov.hidden = false;
+  ov.className = "reveal play";
+  let stopped = 0;
+  let flared = false;
+  const flare = () => {
+    flared = true;
+    tick.stop();
+    while (stopped < 3) setReadout(stopped, d.reels[stopped++]);
+    ov.classList.add("show");
+    sfx.flare();
+    if (level) sfx.win(level);
+    if (level === 3) haptic([30, 40, 30, 40, 90]);
+  };
+  // A tap before the flare skips straight to it.
+  const skip = () => {
+    if (flared) return;
+    try {
+      video.currentTime = timing.flare;
+    } catch {}
+  };
+  ov.addEventListener("click", skip);
+  addEventListener("keydown", skip);
+  await new Promise((resolve) => {
+    const frame = () => {
+      const t = video.currentTime;
+      while (stopped < 3 && t >= timing.stops[stopped]) {
+        setReadout(stopped, d.reels[stopped]);
+        stopped += 1;
+        sfx.clunk();
+        haptic(8);
+        if (stopped === 3) tick.stop();
+      }
+      if (!flared && t >= timing.flare) flare();
+      // The video pauses on its black last frame and the words stay up.
+      if (video.ended || video.paused || t >= timing.duration - 0.05) return resolve();
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  });
+  ov.removeEventListener("click", skip);
+  removeEventListener("keydown", skip);
+  if (!flared) flare();
+  await waitOrSkip(level === 3 ? 2400 : 1600, ov);
+  // Back to the machine, now showing the idea's words.
+  stage.hold(false);
+  $("#stage").classList.remove("cinema");
+  document.body.classList.remove("cinema");
+  await closeReveal();
+  video.pause();
+  stage.celebrate(level, d.total);
+  return true;
+}
+
+// The live path: real reels, then a flash and streak drawn over the machine
+// while the camera punches through the payline.
+async function playLive(g, d) {
+  await runReels(g);
   const level = TIER[d.rarity.id];
   stage.celebrate(level, d.total);
   if (level) sfx.win(level);
@@ -406,19 +538,15 @@ async function reveal(d) {
   // Let a big win land on the machine (coins, bulbs) before the overlay.
   if (level >= 2) await wait(level === 3 ? 1100 : 650);
   const ov = $("#reveal");
-  $("#rv-rarity").textContent = d.rarity.label;
-  $("#rv-rarity").dataset.tier = d.rarity.id;
-  $("#rv-name").textContent = d.name;
-  $("#rv-line").textContent = `${d.customer} · ${d.offer}`;
+  revealText(d);
   ov.hidden = false;
-  ov.className = "reveal play";
+  ov.className = "reveal play live";
+  void ov.offsetWidth;
+  ov.classList.add("show");
   stage.zoomThrough();
   await waitOrSkip(level === 3 ? 3400 : 2600, ov);
-  ov.classList.add("out");
   await stage.home(0);
-  await wait(360);
-  ov.hidden = true;
-  ov.className = "reveal";
+  await closeReveal();
 }
 
 async function spinNow() {
@@ -430,17 +558,19 @@ async function spinNow() {
     if (cabinet.top < 0 || cabinet.bottom > innerHeight) $(".cabinet").scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "center" });
     const seed = crypto.getRandomValues(new Uint32Array(1))[0];
     const g = spin(mode, seed);
+    const d = describe(g, CUR);
     countSpin();
     steps = new Set(["spin"]);
     renderLoop();
-    const d = await runReels(g);
+    log(`seed 0x${seed.toString(16).padStart(8, "0")} · scanning ${SPACE.base.toLocaleString("en-US")} ideas`);
+    if (!(await playVideo(g, d))) await playLive(g, d);
     lineage = [];
     steps.add("discover");
     if (d.rarity.id === "jackpot") {
       stats.jackpots += 1;
       store.set("mm.stats", stats);
     }
-    await reveal(d);
+    log(`locked: ${d.name} · ${d.total}/100 ${d.rarity.label}`);
     show(g);
   } finally {
     setBusy(false);
@@ -463,6 +593,7 @@ async function applyOp(op) {
     if (after.reels.some((x, i) => x.value !== before.reels[i].value)) await runReels(r.genes, { quick: true });
     ({ mutate: sfx.blip, cheaper: sfx.coin, degenerate: sfx.buzz })[op]();
     lineage.push(r.note);
+    log(r.note);
     steps.add("mutate");
     const up = TIER[after.rarity.id] - TIER[before.rarity.id];
     if (up > 0) {
@@ -483,16 +614,18 @@ async function applyOp(op) {
   }
 }
 
+// ⚡ BUILD THIS opens as a glass terminal window over the page.
 function openBlueprint() {
   if (!genes) return;
   steps.add("build");
   renderLoop();
   renderBlueprint();
   const bp = $("#blueprint");
-  bp.hidden = false;
+  if (!bp.open) bp.showModal();
+  $(".bp-scroll").scrollTop = 0;
   sfx.coin();
-  bp.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "start" });
   $("#bp-title").focus({ preventScroll: true });
+  log(`build: blueprint opened for ${describe(genes).name}`);
 }
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -528,6 +661,7 @@ async function exportMarkdown(how) {
     }
   }
   sfx.coin();
+  log("cash: blueprint exported");
   cashed();
 }
 
@@ -547,6 +681,7 @@ function vaultIt() {
   sfx.coin();
   haptic(10);
   toast(`★ VAULTED · ${vault.length} IN THE VAULT`);
+  log(`vault: ${d.name}`);
 }
 
 function removeFromVault(code) {
@@ -608,6 +743,7 @@ function openCode(code, { scroll = true } = {}) {
   const pools = reelPool(g.m);
   stage.paintIdle(d.reels.map((r, i) => [r.value, ...pools[i]]));
   show(g, { scroll });
+  log(`opened: ${d.name}`);
   return true;
 }
 
@@ -622,6 +758,12 @@ function wire() {
   $$(".ops button").forEach((b) => b.addEventListener("click", () => applyOp(b.dataset.op)));
   $("#make-real").addEventListener("click", openBlueprint);
   $$("[data-md]").forEach((b) => b.addEventListener("click", () => exportMarkdown(b.dataset.md)));
+  const bp = $("#blueprint");
+  $("[data-close]").addEventListener("click", () => bp.close());
+  // A click on the dimmed page around the window closes it too.
+  bp.addEventListener("click", (e) => {
+    if (e.target === bp) bp.close();
+  });
   $("#vault-it").addEventListener("click", vaultIt);
   $("#vault-export").addEventListener("click", exportVault);
   $("#share").addEventListener("click", share);
@@ -640,7 +782,8 @@ function wire() {
 
   addEventListener("keydown", (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.("input, textarea, select, [contenteditable]")) return;
-    if (!$("#reveal").hidden) return;
+    // The dialog handles its own keys (Escape closes it); the reveal takes a tap.
+    if (bp.open || !$("#reveal").hidden) return;
     const k = e.key.toLowerCase();
     if (k === " " || k === "enter") {
       if (e.target === document.body) {
@@ -668,9 +811,12 @@ async function main() {
   renderVault();
   renderLoop();
   wire();
+  log(`boot: ${SPACE.base.toLocaleString("en-US")} ideas across ${MODES.length} modes`);
   await initStage();
   const code = decodeURIComponent(location.hash.slice(1));
   if (code && !openCode(code, { scroll: false })) setHash("");
+  if ("requestIdleCallback" in window) requestIdleCallback(() => prepareVideo(), { timeout: 2500 });
+  else setTimeout(prepareVideo, 1200);
 }
 
 main();

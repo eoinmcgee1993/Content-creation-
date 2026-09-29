@@ -85,9 +85,10 @@ no root `pytest.ini`/`conftest.py`):
 - `substack-os/` — Substack analytics engine: `npm test` (from inside the directory).
   No install step and no dependencies; `package.json` exists only to name the
   command and mark the directory as ESM.
-- `digital-renaissance/money-machine/` — tests and 3D-model build for the Money
-  Machine page, which lives in `digital-renaissance/site/money-machine/`:
-  `npm test` (from inside the directory; tests need no install).
+- `digital-renaissance/money-machine/` — tests, 3D-model build and reveal-video
+  render for the Money Machine page, which lives in
+  `digital-renaissance/site/money-machine/`: `npm test` (from inside the
+  directory; tests need no install).
 
 The first three also run in CI (`.github/workflows/{landing,offload,audits}.yml`,
 path-filtered to their own directory) — `kdp-compiler/`, `substack-os/` and the

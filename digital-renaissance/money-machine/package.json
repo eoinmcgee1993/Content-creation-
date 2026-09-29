@@ -6,9 +6,12 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "build:glb": "node build-glb.js"
+    "build:glb": "node build-glb.js",
+    "render:video": "node render-reveal.js"
   },
   "devDependencies": {
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "playwright-core": "^1.56.1",
     "three": "0.186.1"
   }
 }

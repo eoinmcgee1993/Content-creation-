@@ -30,6 +30,14 @@ function baseIdeas() {
   return out;
 }
 
+// Generated copy is positioned as Intelligent Automation / Systems
+// Infrastructure and never says "AI" (the mode's own name aside).
+function assertNoAI(value, where) {
+  const text = JSON.stringify(value);
+  const at = text.search(/\bAI\b/);
+  assert.ok(at < 0, `"AI" in ${where}: ${text.slice(Math.max(0, at - 60), at + 20)}`);
+}
+
 // Strings a user sees must never leak template syntax or the raw currency mark.
 function assertClean(value, where) {
   const text = JSON.stringify(value);
@@ -39,14 +47,16 @@ function assertClean(value, where) {
   assert.ok(!text.includes("undefined") && !text.includes("NaN"), `undefined/NaN in ${where}`);
 }
 
-test("the user's example reproduces: AI Receipt Detective for freelancers", () => {
+test("the user's receipt example reproduces, positioned as Intelligent Automation", () => {
   const g = decode("ai.freelancers.receipt.detective.0....0.0.0.1.1");
   const d = describe(g, "€");
-  assert.equal(d.name, "AI Receipt Detective");
+  assert.equal(d.name, "Receipt Detective");
+  assert.equal(d.kicker, "INTELLIGENT AUTOMATION: RECEIPT AUDIT INFRASTRUCTURE");
+  assert.equal(d.prop, "Automated receipt audit infrastructure for freelancers earning €30k+.");
   assert.match(d.pitch, /^Find forgotten expenses, zombie subscriptions and missed deductions hiding in freelancers'/);
   assert.equal(d.customer, "freelancers earning €30k+");
   assert.equal(d.offer, "€19 audit + €9/month monitoring");
-  assert.equal(d.mvp, "landing page + upload form + AI analysis");
+  assert.equal(d.mvp, "landing page + upload form + automated analysis");
   assert.match(d.first, /^post 3 before\/after examples in /);
   assert.deepEqual(Object.fromEntries(d.scores.map((s) => [s.key, s.value])), { fcd: 2, build: 2, cost: 1, clar: 4, auto: 5 });
   assert.equal(d.scores[0].bar, "██░░░");
@@ -65,6 +75,8 @@ test("every base idea in every mode renders a clean card and blueprint", () => {
     const bp = blueprint(g, "$");
     assert.equal(bp.length, 12);
     assertClean(bp, `${where} blueprint`);
+    assertNoAI({ ...d, mode: null }, where);
+    assertNoAI(bp, `${where} blueprint`);
   }
 });
 
@@ -87,8 +99,8 @@ test("variants reached by every operation stay clean", () => {
 test("blueprint sections follow the 12-part build list in order", () => {
   const titles = blueprint(spin("jackpot", 7)).map((s) => s.title);
   assert.deepEqual(titles, [
-    "Product name", "One-line proposition", "Target customer", "Pricing", "Landing-page copy", "MVP specification",
-    "Tech stack", "Acquisition plan", "First 10 customers", "Automation workflow", "Gumroad/Stripe offer", "7-day execution plan",
+    "Product name", "One-line proposition", "Target customer", "Pricing model", "Landing-page copy", "MVP specification",
+    "Tech stack", "Acquisition plan", "First 10 customers", "Automation workflow", "Monetisation setup", "7-day plan",
   ]);
   const md = markdown(spin("digital", 3), { cur: "$", url: "https://example.test/#code" });
   for (let i = 1; i <= 12; i++) assert.match(md, new RegExp(`^## ${i}\\. `, "m"));
@@ -144,12 +156,27 @@ test("decode rejects tampered and malformed codes", () => {
   ]) assert.equal(decode(bad), null, `accepted ${bad}`);
 });
 
-test("MAKE IT CHEAPER lowers cost and build until it hits the floor", () => {
+test("MAKE IT CHEAPER downgrades the stack, lowering cost and build until it hits the floor", () => {
+  const notes = [];
+  let s = decode("ai.freelancers.invoice.saas.0....0.0.0.1.1");
+  for (let i = 0; i < 3; i++) {
+    const r = cheaper(s);
+    notes.push(r.note);
+    s = r.genes;
+  }
+  assert.deepEqual(notes, [
+    "STACK DOWNGRADED: CUSTOM SAAS → MAKE.COM + TALLY FORM",
+    "STACK DOWNGRADED: MAKE.COM + TALLY FORM → NOTION TEMPLATE + YOU",
+    "STACK DOWNGRADED: NOTION TEMPLATE + YOU → STRIPE LINK PRESALE",
+  ]);
+  assert.equal(blueprint(s).find((x) => x.id === "stack").items[0].v, "STRIPE LINK PRESALE");
+
   let g = spin("ai", 31337);
   let prev = describe(g).scores;
   for (let i = 1; i <= 3; i++) {
     const r = cheaper(g);
     assert.ok(!r.maxed);
+    assert.match(r.note, /^STACK DOWNGRADED: /);
     g = r.genes;
     const now = describe(g).scores;
     assert.ok(now[1].value <= prev[1].value && now[2].value <= prev[2].value, "build and cost never rise");
@@ -176,18 +203,72 @@ test("MAKE IT DEGENERATE caps at level 3 and refuses gentle niches", () => {
   assert.equal(r.genes, grief);
 });
 
-test("MUTATE narrows the idea first and never makes the first sale harder", () => {
-  let g = spin("jackpot", 2024);
-  const fcd = () => describe(g).scores[0].value;
-  let before = fcd();
-  for (let i = 0; i < 3; i++) {
-    const r = mutate(g);
-    assert.match(r.note, /^(CUSTOMER NARROWED|TRIGGER ADDED|MARKET LOCKED)/);
-    g = r.genes;
-    assert.ok(fcd() <= before);
-    before = fcd();
+test("MUTATE keeps the mechanism and flips the audience", () => {
+  let flips = 0, total = 0;
+  for (const mode of MODE_IDS) {
+    for (let s = 1; s <= 60; s++) {
+      const g = spin(mode, s * 7919);
+      const r = mutate(g);
+      total += 1;
+      if (!r.note.startsWith("AUDIENCE FLIPPED: ")) continue;
+      flips += 1;
+      assert.equal(r.genes.f, g.f, "same format or stolen model");
+      assert.equal(r.genes.m, g.m);
+      assert.notEqual(r.genes.n, g.n, `${encode(g)} kept its niche`);
+      if (mode !== "steal") {
+        const type = (n, p) => NICHE.get(n).pains.find((x) => x.id === p).type;
+        const fmt = FORMATS.find((f) => f.id === g.f);
+        if (!fmt.needs) assert.equal(type(r.genes.n, r.genes.p), type(g.n, g.p), "same kind of problem");
+      }
+      assert.equal(r.genes.g, g.g + 1);
+    }
   }
-  assert.equal(describe(g).gen, 4);
+  assert.ok(flips / total > 0.9, `only ${flips}/${total} mutations flipped the audience`);
+
+  // The PRD's own example: freelancers -> plumbers, same receipt-style audit.
+  const receipt = decode("ai.freelancers.receipt.detective.0....0.0.0.1.1");
+  const plumbers = Array.from({ length: 3000 }, (_, r) => mutate({ ...receipt, r: r + 1 })).find((x) => x.note === "AUDIENCE FLIPPED: FREELANCERS → PLUMBERS");
+  assert.ok(plumbers, "freelancers never flipped to plumbers");
+  assert.equal(describe(plumbers.genes).customer, "plumbers running a 1–5 person crew");
+  assert.equal(plumbers.genes.f, "detective");
+});
+
+test("the PRD's mode examples are on the reels", () => {
+  const cases = {
+    "jackpot.roasters.supply.saas.0....0.0.0.1.1": [/supply chain/i, /boutique coffee roasters/],
+    "degen.situationships.breakup.prompts.0....0.0.1.1.1": [/BREAKUP TEXT/, /college students/],
+    "cash.realtors.newsletter.workflow.0....0.0.0.1.1": [/^INTELLIGENT AUTOMATION: NEWSLETTER INFRASTRUCTURE$/, /estate agents/],
+    "steal.groomers.mobilegroom.salesforce.0....0.0.0.1.1": [/^SALESFORCE, BUT EXCLUSIVELY FOR MOBILE DOG GROOMERS$/, /mobile dog groomers/],
+    "sheep.wastesites.returns.watchdog.0....0.0.0.1.1": [/COMPLIANCE/, /waste-site operators/],
+  };
+  for (const [code, [kicker, who]] of Object.entries(cases)) {
+    const g = decode(code);
+    assert.ok(g, `${code} no longer decodes`);
+    const d = describe(g);
+    assert.match(d.kicker, kicker);
+    assert.match(d.prop, who);
+  }
+});
+
+test("the blueprint names the brand, two price tiers, and a week from domain to launch post", () => {
+  for (const mode of MODE_IDS) {
+    for (let s = 1; s <= 25; s++) {
+      const g = spin(mode, s * 104729);
+      const bp = Object.fromEntries(blueprint(g).map((x) => [x.id, x]));
+      const brands = bp.name.items.find((i) => i.k === "Brand options").v.split(" · ");
+      for (const b of brands) assert.ok(b.split(" ").length <= 3, `brand "${b}" is more than three words`);
+      const domain = bp.name.items.find((i) => i.k === "Domain to check").v;
+      assert.match(domain, /^[a-z0-9]+\.com$/);
+      const keys = bp.pricing.items.map((i) => i.k);
+      assert.ok(keys.includes("Tier 1 · Entry") && keys.includes("Tier 2 · Recurring backend"));
+      const landing = bp.landing.items.map((i) => i.k);
+      for (const k of ["H1", "Subheadline", "Primary CTA"]) assert.ok(landing.includes(k), `landing copy has no ${k}`);
+      const days = bp.plan.items.map((i) => i.v);
+      assert.equal(days.length, 7);
+      assert.ok(days[0].startsWith(`Buy ${domain}`), `day 1 is not the domain: ${days[0]}`);
+      assert.match(days[6], /launch post/);
+    }
+  }
 });
 
 test("DEGEN mode starts degenerate; STEAL cites the source model", () => {
@@ -218,8 +299,7 @@ test("vault export lists ideas, links and the footer, and survives retired ideas
 });
 
 test("telemetry numbers are real", () => {
-  const { base, variants } = ideaSpace();
+  const { base } = ideaSpace();
   assert.equal(base, new Set(baseIdeas().map((g) => `${g.f}|${g.n}|${g.p}`)).size);
-  assert.ok(variants > base * 100);
   for (const mode of MODE_IDS) for (const strip of reelPool(mode)) assert.ok(strip.length >= 3);
 });

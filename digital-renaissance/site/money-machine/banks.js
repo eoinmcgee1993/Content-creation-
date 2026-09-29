@@ -18,10 +18,10 @@ export const MODES = [
   { id: "jackpot", emoji: "🎰", label: "JACKPOT", blurb: "Random high-upside idea." },
   { id: "degen", emoji: "💀", label: "DEGEN", blurb: "Ideas that are strange, aggressive or borderline ridiculous." },
   { id: "cash", emoji: "💰", label: "CASH NOW", blurb: "Ideas designed around getting the first customer quickly." },
-  { id: "ai", emoji: "🤖", label: "AI MODE", blurb: "AI agents, automation, SaaS, APIs, workflows." },
+  { id: "ai", emoji: "🤖", label: "AI MODE", blurb: "Workflow automation, API bridging and intelligent systems infrastructure." },
   { id: "digital", emoji: "📦", label: "DIGITAL PRODUCTS", blurb: "Templates, PDFs, courses, prompts, tools." },
   { id: "steal", emoji: "🕵️", label: "STEAL LIKE AN ENGINEER", blurb: "Take an existing business model and mutate it into a new niche." },
-  { id: "sheep", emoji: "☠️", label: "BLACK SHEEP", blurb: "Uncomfortable niches nobody wants to talk about." },
+  { id: "sheep", emoji: "☠️", label: "BLACK SHEEP", blurb: "Unglamorous, uncomfortable, quietly profitable niches nobody wants to talk about." },
 ];
 
 // pick: how a spin chooses between candidates.
@@ -63,20 +63,29 @@ export const GEOS = ["in Ireland", "in the UK", "in Texas", "in Dubai", "in Berl
 // service (you do it) · product (download) · software (they use it)
 // minWallet / noGentle keep a format away from customers it doesn't suit
 // (nobody sells an API to a grieving family).
+//
+// Customer-facing copy never says "AI": ideas are positioned as
+// Intelligent Automation / Systems Infrastructure. Per format:
+//   sys   the positioning line ({N} is the pain's noun, upper-cased later)
+//   x     the mechanism in "X for Y" ({nn} is the noun in lower case);
+//         prop replaces the whole line when the mechanism is its supply
+//   tier  the stack MAKE IT CHEAPER downgrades from
+//   t1/t2 the two-tier price: a low-barrier entry and a recurring backend
 export const FORMATS = [
   {
-    id: "detective", reel: "AI DETECTIVE", kind: "service", fits: ["leak", "risk"],
-    names: ["AI {N} Detective", "{N} Bounty Hunter", "{N} Autopsy"],
+    id: "detective", reel: "DETECTIVE", kind: "service", fits: ["leak", "risk"],
+    names: ["{N} Detective", "{N} Bounty Hunter", "{N} Autopsy"],
     pitch: "Find {find} hiding in {poss} {data}.",
     pay: (b) => ({ one: b.one, rec: b.rec }), offer: "{one} audit + {rec}/month monitoring",
-    mvp: ["landing page", "upload form", "AI analysis"], nocode: ["Carrd page", "Tally upload form", "you + Claude in a chat window"],
+    mvp: ["landing page", "upload form", "automated analysis"], nocode: ["Carrd page", "Tally upload form", "you + Claude in a chat window"],
     first: "post 3 before/after examples in {hang}", free: "free audit",
     build: 2, cost: 1, auto: 5, clar: 4, fcd: 0,
-    why: { build: "An upload form, one well-tested prompt and a report template.", auto: "The AI reads the files; you only check the edge cases.", clar: "The audit proves the money exists, and monitoring keeps finding it." },
+    why: { build: "An upload form, one well-tested prompt and a report template.", auto: "The model reads the files; you only check the edge cases.", clar: "The audit proves the money exists, and monitoring keeps finding it." },
     bullets: ["Upload {data} in two minutes", "Every case of {find} flagged, with what it costs", "A plain-English fix list, ranked by money"],
     cta: "Run my {one} audit",
+    sys: "INTELLIGENT AUTOMATION: {N} AUDIT INFRASTRUCTURE", x: "automated {nn} audit infrastructure", tier: "CLAUDE API PIPELINE", t1: "{one} one-off audit", t2: "{rec}/month monitoring",
     deliver: ["A written audit of {poss} {data}", "Every case of {find}, with what it costs", "A fix list ranked by money", "Monthly re-scan on the monitoring plan"],
-    stack: [["Page", "Netlify or Carrd"], ["Intake", "Tally form with file upload"], ["Payments", "Stripe Payment Links"], ["AI", "Claude API with one tested audit prompt"], ["Glue", "Make or n8n"], ["Data", "Google Sheets"], ["Email", "Resend or Gmail"]],
+    stack: [["Page", "Netlify or Carrd"], ["Intake", "Tally form with file upload"], ["Payments", "Stripe Payment Links"], ["Intelligence", "Claude API with one tested audit prompt"], ["Glue", "Make or n8n"], ["Data", "Google Sheets"], ["Email", "Resend or Gmail"]],
     flow: ["Customer pays for the audit (Stripe Payment Link)", "Tally form collects {data}", "Make sends the files to the Claude API with your audit prompt", "Findings land in a Google Sheet, one row per issue", "A Google Docs template turns the sheet into the report", "You skim it, then Resend emails it", "Day 30: automatic re-scan offer for monitoring"],
   },
   {
@@ -84,14 +93,15 @@ export const FORMATS = [
     names: ["{N} Watchdog", "{N} Radar", "{N} Tripwire"],
     pitch: "Watches {poss} {data} around the clock and texts them the moment there's a sign of {find}.",
     pay: (b) => ({ rec: b.rec * 2 }), offer: "free first scan, then {rec}/month",
-    mvp: ["landing page", "connect form", "daily AI check", "alert email"], nocode: ["Carrd page", "Tally upload form", "a weekly check you run in Claude", "a Gmail template"],
+    mvp: ["landing page", "connect form", "daily automated check", "alert email"], nocode: ["Carrd page", "Tally upload form", "a weekly check you run in Claude", "a Gmail template"],
     first: "run 5 free scans for {label} in {hang} and send each one their report", free: "free scan",
     build: 3, cost: 2, auto: 5, clar: 4, fcd: 0,
     why: { build: "A daily job, a data connection and an alert. The connection is the hard part.", auto: "Once connected it runs every day without you.", clar: "A monthly fee for peace of mind is an easy yes." },
     bullets: ["Connect once, then forget about it", "Alerts the day something goes wrong, not a year later", "A monthly report of everything it caught"],
     cta: "Start my free scan",
+    sys: "INTELLIGENT AUTOMATION: {N} MONITORING INFRASTRUCTURE", x: "always-on {nn} monitoring", tier: "CUSTOM MONITORING SAAS", t1: "Free first scan", t2: "{rec}/month monitoring",
     deliver: ["Daily monitoring of {data}", "Instant alerts by email or text", "A monthly report of what it caught"],
-    stack: [["Front end", "Static page on Netlify"], ["Backend", "Supabase (auth, Postgres, Edge Functions)"], ["Schedule", "Supabase cron or n8n"], ["AI", "Claude API"], ["Payments", "Stripe Billing"], ["Alerts", "Resend email + Twilio SMS"]],
+    stack: [["Front end", "Static page on Netlify"], ["Backend", "Supabase (auth, Postgres, Edge Functions)"], ["Schedule", "Supabase cron or n8n"], ["Intelligence", "Claude API"], ["Payments", "Stripe Billing"], ["Alerts", "Resend email + Twilio SMS"]],
     flow: ["Customer subscribes (Stripe Checkout)", "They connect or upload {data}", "A daily scheduled job pulls anything new", "Claude checks it against your rules for {find}", "Anything flagged becomes an email or SMS with the fix", "Everything is logged for the monthly report"],
   },
   {
@@ -99,20 +109,21 @@ export const FORMATS = [
     names: ["{N} Ghostwriter", "The {N} Ghost Desk", "{N} Ghost Studio"],
     pitch: "For {label}: we {task} in their voice, and they just hit approve.",
     pay: (b) => ({ rec: b.one * 5 }), offer: "{rec}/month, done for you",
-    mvp: ["sample page", "voice intake form", "AI draft + your edit"],
+    mvp: ["sample page", "voice intake form", "Claude draft + your edit"],
     first: "write 3 free samples for {label} you find in {hang}, then pitch the monthly plan", free: "free sample batch",
     build: 1, cost: 1, auto: 3, clar: 5, fcd: -1,
-    why: { build: "A Google Doc of samples and an intake form. That's the product.", auto: "AI drafts and you edit. Your taste is the moat.", clar: "A monthly retainer with fixed deliverables. Zero confusion." },
-    bullets: ["Written in their voice, not \"AI voice\"", "Delivered on a fixed schedule", "Edits until it sounds exactly like them"],
+    why: { build: "A Google Doc of samples and an intake form. That's the product.", auto: "Claude drafts and you edit. Your taste is the moat.", clar: "A monthly retainer with fixed deliverables. Zero confusion." },
+    bullets: ["Written in their voice, not a robot's", "Delivered on a fixed schedule", "Edits until it sounds exactly like them"],
     cta: "Get 3 free samples",
+    sys: "SYSTEMS INFRASTRUCTURE: {N} PRODUCTION DESK", x: "a done-for-you {nn} production desk", tier: "DONE-FOR-YOU STUDIO", t1: "3 free samples", t2: "{rec}/month, done for you",
     deliver: ["We {task}, every week", "A voice guide built from their best past work", "One revision round per piece"],
-    stack: [["Page", "Carrd or Notion"], ["Intake", "Tally"], ["Payments", "Stripe subscription link"], ["AI", "Claude with a saved voice guide"], ["Workspace", "Google Docs"], ["Scheduling", "Buffer or native schedulers"]],
+    stack: [["Page", "Carrd or Notion"], ["Intake", "Tally"], ["Payments", "Stripe subscription link"], ["Intelligence", "Claude with a saved voice guide"], ["Workspace", "Google Docs"], ["Scheduling", "Buffer or native schedulers"]],
     flow: ["Stripe subscription starts the month", "Tally intake captures tone, examples and topics", "Claude drafts from the voice guide and {data}", "You edit in Google Docs (10 minutes a piece)", "Client approves in the doc", "Published or handed over on schedule"],
   },
   {
-    id: "agent", reel: "AI AGENT", kind: "software", fits: ["time", "growth", "leak"],
-    names: ["{N} Autopilot", "AI {N} Agent", "{N} Butler"],
-    pitch: "An AI agent for {label} that can {task}, so they {result}.",
+    id: "agent", reel: "AGENT", kind: "software", fits: ["time", "growth", "leak"],
+    names: ["{N} Autopilot", "{N} Agent", "{N} Butler"],
+    pitch: "An automation agent for {label} that can {task}, so they {result}.",
     pay: (b) => ({ rec: b.rec * 3 }), offer: "{rec}/month, setup included",
     mvp: ["landing page", "one working agent flow", "Stripe checkout"], nocode: ["Carrd page", "a Make scenario with one prompt", "Stripe Payment Link"],
     first: "record a 60-second demo of the agent doing the job and post it in {hang}", free: "free 14-day pilot",
@@ -120,7 +131,8 @@ export const FORMATS = [
     why: { build: "One narrow agent with tools and guardrails. Keep it to one job.", auto: "The agent does the job end to end; you read the logs.", clar: "Monthly pricing works, but buyers need to see it working first." },
     bullets: ["Does the job while they sleep", "Asks before doing anything risky", "A weekly log of everything it did"],
     cta: "Start the free pilot",
-    deliver: ["A configured AI agent that handles it: {task}", "Human approval for anything risky", "A weekly activity log"],
+    sys: "INTELLIGENT AUTOMATION: {N} AGENT INFRASTRUCTURE", x: "an autonomous {nn} agent", tier: "CUSTOM AGENT STACK", t1: "Free 14-day pilot", t2: "{rec}/month, setup included",
+    deliver: ["A configured automation agent that handles it: {task}", "Human approval for anything risky", "A weekly activity log"],
     stack: [["Front end", "Static page on Netlify"], ["Agent", "Claude API with tool use"], ["Orchestration", "n8n (self-hosted or cloud)"], ["Data", "Supabase Postgres"], ["Payments", "Stripe Checkout"], ["Email", "Resend"]],
     flow: ["Trigger: new {data} arrives (email, form or webhook)", "n8n hands it to a Claude agent with the right tools", "The agent drafts the action; risky ones wait for approval", "Approved actions run (email, update, booking)", "Everything is logged to a sheet", "A weekly summary goes to the customer"],
   },
@@ -129,14 +141,15 @@ export const FORMATS = [
     names: ["{N} Concierge", "The {N} Fixers", "Done-For-You {N}"],
     pitch: "Done-for-you for {label}: we {task}, so they {result}.",
     pay: (b) => ({ one: b.one * 2, rec: b.one * 4 }), offer: "{one} first job, then {rec}/month",
-    mvp: ["one-page site", "booking form", "you + AI doing the work"],
+    mvp: ["one-page site", "booking form", "you + Claude doing the work"],
     first: "offer the first 3 {label} in {hang} a free first job in exchange for a testimonial", free: "free first job",
     build: 1, cost: 1, auto: 2, clar: 5, fcd: -1,
-    why: { build: "A form and your time. Nothing to build.", auto: "It's you doing the work, sped up by AI. Systemise it later.", clar: "They pay you to make the problem disappear. The clearest sale there is." },
+    why: { build: "A form and your time. Nothing to build.", auto: "It's you doing the work, sped up by automation. Systemise it later.", clar: "They pay you to make the problem disappear. The clearest sale there is." },
     bullets: ["They hand it over, you handle it", "Turned around in 48 hours", "One flat price, no surprises"],
     cta: "Book my first job",
+    sys: "SYSTEMS INFRASTRUCTURE: DONE-FOR-YOU {N} OPERATIONS", x: "done-for-you {nn} operations", tier: "DONE-FOR-YOU SERVICE", t1: "{one} first job", t2: "{rec}/month for every job after that",
     deliver: ["We handle it for them: {task}", "Delivered within 48 hours", "A short summary of what was done"],
-    stack: [["Page", "Carrd"], ["Booking", "Tally or Cal.com"], ["Payments", "Stripe Payment Links"], ["AI", "Claude as your assistant"], ["Ops", "Google Sheets job log"]],
+    stack: [["Page", "Carrd"], ["Booking", "Tally or Cal.com"], ["Payments", "Stripe Payment Links"], ["Intelligence", "Claude as your assistant"], ["Ops", "Google Sheets job log"]],
     flow: ["Customer books and pays (Stripe Payment Link)", "Tally form collects {data}", "You do the job with Claude as your assistant", "The deliverable goes out from a template", "A follow-up email offers the monthly plan", "Every job is logged: this becomes your SOP"],
   },
   {
@@ -150,8 +163,9 @@ export const FORMATS = [
     why: { build: "A weekend making templates you would use yourself.", auto: "Gumroad sells and delivers it while you sleep.", clar: "One price, instant download, obvious value." },
     bullets: ["{n} ready-to-use templates", "Works in Google Docs, Sheets and Notion", "Fill in the blanks, done in minutes"],
     cta: "Get the kit ({one})",
+    sys: "DIGITAL ASSET: {N} TEMPLATE SYSTEM", x: "a plug-and-play {nn} template system", tier: "GUMROAD TEMPLATE KIT", t1: "{one} kit, one-off", t2: "{club}/month: new templates every month",
     deliver: ["{n} templates to {task}", "A quick-start guide", "Free updates"],
-    stack: [["Storefront", "Gumroad"], ["Templates", "Google Docs, Sheets or Notion"], ["Design", "Canva"], ["AI", "Claude for first drafts"], ["Email", "Gumroad workflows"]],
+    stack: [["Storefront", "Gumroad"], ["Templates", "Google Docs, Sheets or Notion"], ["Design", "Canva"], ["Intelligence", "Claude for first drafts"], ["Email", "Gumroad workflows"]],
     flow: ["Buyer pays on Gumroad", "Gumroad delivers the files instantly", "Gumroad workflow emails tips on day 1, 3 and 7", "Day 7: an upsell to the done-for-you version", "Ratings collected on Gumroad"],
   },
   {
@@ -165,8 +179,9 @@ export const FORMATS = [
     why: { build: "Write what you know and format it once.", auto: "It sells and delivers itself on Gumroad.", clar: "Info products sell on the promise, so the title has to do the work." },
     bullets: ["The exact steps, in order", "Real examples, not theory", "Read it tonight, use it tomorrow"],
     cta: "Get the playbook ({one})",
+    sys: "DIGITAL ASSET: {N} OPERATING MANUAL", x: "the {nn} operating manual", tier: "DESIGNED PDF PLAYBOOK", t1: "{one} playbook", t2: "{club}/month: new chapters, templates and a monthly Q&A",
     deliver: ["A 30-page PDF playbook", "A worked example for {label}", "Checklists to copy"],
-    stack: [["Storefront", "Gumroad"], ["Writing", "Google Docs"], ["Layout", "Canva or Typst"], ["AI", "Claude as editor"], ["Email", "Gumroad workflows"]],
+    stack: [["Storefront", "Gumroad"], ["Writing", "Google Docs"], ["Layout", "Canva or Typst"], ["Intelligence", "Claude as editor"], ["Email", "Gumroad workflows"]],
     flow: ["Buyer pays on Gumroad", "The PDF is delivered instantly", "Day 2 email: \"did you try step 1?\"", "Day 5 email: upsell to the kit or course", "Reader questions feed the next edition"],
   },
   {
@@ -180,6 +195,7 @@ export const FORMATS = [
     why: { build: "Five Looms and a group chat. Record after the presale.", auto: "Evergreen after the first cohort.", clar: "Courses sell on outcomes. Prove one first." },
     bullets: ["14 days, one outcome", "Short lessons you can do on a phone", "A live Q&A every week"],
     cta: "Claim a founding seat ({one})",
+    sys: "KNOWLEDGE INFRASTRUCTURE: {N} TRAINING SYSTEM", x: "a 14-day {nn} training sprint", tier: "COHORT COURSE", t1: "{one} founding seat", t2: "{club}/month alumni membership: new lessons and live calls",
     deliver: ["5 video lessons", "Templates for every lesson", "2 live Q&A calls", "A private group"],
     stack: [["Sales", "Gumroad or Stripe"], ["Lessons", "Loom"], ["Community", "Discord or Circle"], ["Email", "Kit (ConvertKit)"], ["Calls", "Zoom"]],
     flow: ["Presale on Gumroad or Stripe", "Buyers are added to the group automatically", "Lessons drip daily by email", "A weekly live call, recorded", "Day 14: testimonial form and an upsell to the next level"],
@@ -187,7 +203,7 @@ export const FORMATS = [
   {
     id: "prompts", reel: "PROMPT PACK", kind: "product", fits: ["content", "time", "skill"],
     names: ["The {N} Prompt Vault", "{N} Prompt Pack", "The {N} Prompt Bible"],
-    pitch: "{n} tested AI prompts that help {label} {task}.",
+    pitch: "{n} tested prompts that help {label} {task}.",
     pay: (b) => ({ one: b.kit * 0.8 }), offer: "{one}, one-off",
     mvp: ["Gumroad page", "{n} tested prompts", "example outputs"],
     first: "post 3 prompts free in {hang} with the outputs, and sell the rest", free: "free prompt sample",
@@ -195,6 +211,7 @@ export const FORMATS = [
     why: { build: "An afternoon of testing prompts on real examples.", auto: "A digital download with zero delivery work.", clar: "Cheap and impulsive, but prompts are a crowded shelf." },
     bullets: ["{n} prompts tested on real examples", "Works in ChatGPT, Claude and Gemini", "Copy, paste, fill in the brackets"],
     cta: "Get the prompts ({one})",
+    sys: "DIGITAL ASSET: {N} PROMPT LIBRARY", x: "a tested {nn} prompt library", tier: "PROMPT LIBRARY", t1: "{one} prompt pack, one-off", t2: "{club}/month: new tested prompts every month",
     deliver: ["{n} prompts to {task}", "Example outputs", "A guide to adapting them"],
     stack: [["Storefront", "Gumroad"], ["Format", "Notion page or PDF"], ["Testing", "Claude and ChatGPT"], ["Email", "Gumroad workflows"]],
     flow: ["Gumroad sale", "Notion page or PDF delivered instantly", "Day 3: a bonus prompt by email", "Day 7: upsell to the kit or done-for-you version"],
@@ -210,6 +227,7 @@ export const FORMATS = [
     why: { build: "One page of JavaScript and a report template.", auto: "Traffic in, reports out, no humans.", clar: "Free tools get traffic. Turning it into money is the hard part." },
     bullets: ["Takes 60 seconds", "Shows the number in ¤", "A personalised fix list in the full report"],
     cta: "Calculate mine (free)",
+    sys: "INTELLIGENT AUTOMATION: {N} DIAGNOSTIC ENGINE", x: "a 60-second {nn} diagnostic", tier: "CUSTOM CALCULATOR", t1: "Free calculator, then a {one} full report", t2: "{club}/month: re-scored every month, with alerts",
     deliver: ["A personalised full report", "Benchmarks against similar {label}", "A ranked fix list"],
     stack: [["Calculator", "Static page on Netlify"], ["Email gate", "Kit (ConvertKit) form"], ["Payments", "Stripe Payment Link"], ["Report", "Make + Claude API + Google Docs template"]],
     flow: ["Visitor runs the calculator (static page)", "Email gate for the detailed breakdown", "Stripe Payment Link for the full report", "Make and the Claude API write the personalised report", "Everyone who scored badly gets a short email sequence"],
@@ -219,12 +237,13 @@ export const FORMATS = [
     names: ["{N} X-Ray", "{N} Health Check", "The {N} Audit"],
     pitch: "A done-for-you audit that scores {poss} {data} against 25 checks and shows exactly how to {result}.",
     pay: (b) => ({ one: b.one * 2 }), offer: "{one} audit, credited against the fix",
-    mvp: ["landing page", "intake form", "AI-scored report"], nocode: ["Carrd page", "Tally form", "you + a 25-point checklist"],
+    mvp: ["landing page", "intake form", "auto-scored report"], nocode: ["Carrd page", "Tally form", "you + a 25-point checklist"],
     first: "audit 5 {label} from {hang} for free (with permission) and post the anonymised fixes", free: "free mini-audit",
     build: 2, cost: 1, auto: 4, clar: 4, fcd: -1,
-    why: { build: "A 25-point checklist, an intake form and a scoring prompt.", auto: "AI scores against the checklist; you add the human read.", clar: "A fixed-price audit is easy to buy and leads straight to the fix." },
+    why: { build: "A 25-point checklist, an intake form and a scoring prompt.", auto: "The model scores against the checklist; you add the human read.", clar: "A fixed-price audit is easy to buy and leads straight to the fix." },
     bullets: ["A 25-point check of {data}", "Every issue priced in ¤", "A fix list you can do yourself, or we do it"],
     cta: "Book my audit ({one})",
+    sys: "SYSTEMS INFRASTRUCTURE: {N} AUDIT PROTOCOL", x: "a 25-point {nn} audit protocol", tier: "SCORED AUDIT PIPELINE", t1: "{one} audit, credited against the fix", t2: "{care}/month: a monthly re-check and the fixes",
     deliver: ["A 25-point audit report", "Issues ranked by the money at stake", "A 30-minute walkthrough call"],
     stack: [["Page", "Carrd"], ["Intake", "Tally"], ["Payments", "Stripe Payment Links"], ["Scoring", "Claude API + your 25-point checklist"], ["Report", "Google Docs template + Loom"]],
     flow: ["Stripe Payment Link", "Tally intake plus {data}", "Claude scores it against your 25-point checklist", "You review it and add 3 human insights", "Report and Loom walkthrough sent", "Upsell: \"want us to fix it?\""],
@@ -237,9 +256,10 @@ export const FORMATS = [
     mvp: ["one-page site", "Airtable of 50 entries", "submission form"],
     first: "list 50 {supply} yourself and post the free top 10 in {hang}", free: "free top-10 list",
     build: 2, cost: 1, auto: 3, clar: 3, fcd: 0,
-    why: { build: "A spreadsheet with a nice front end.", auto: "It needs a monthly refresh; AI can do the first pass.", clar: "Two ways to charge (access or listings). Pick one." },
+    why: { build: "A spreadsheet with a nice front end.", auto: "It needs a monthly refresh; automation can do the first pass.", clar: "Two ways to charge (access or listings). Pick one." },
     bullets: ["Every entry checked by a human", "Updated monthly", "Filtered by what {label} actually care about"],
     cta: "Get lifetime access ({one})",
+    sys: "DATA INFRASTRUCTURE: {N} INDEX", prop: "A curated, always-current index of {supply}, for {who}.", x: "a curated {nn} index", tier: "SOFTR DIRECTORY", t1: "{one} lifetime access", t2: "Suppliers pay {rec}/month to be featured",
     deliver: ["Access to the full directory", "Monthly updates", "New-entry alerts"],
     stack: [["Data", "Airtable or Google Sheets"], ["Front end", "Softr or a static page"], ["Payments", "Gumroad or Stripe"], ["Refresh", "Claude-assisted monthly re-check"]],
     flow: ["Entries live in Airtable", "Softr or a static page renders them", "Gumroad or Stripe unlocks the full list", "Monthly: Claude-assisted re-check of every entry", "Suppliers pay to be featured"],
@@ -255,6 +275,7 @@ export const FORMATS = [
     why: { build: "Two-sided products are hard. Start with forms and your inbox.", auto: "Matching can be automated once you know what a good match looks like.", clar: "Take rates are clear. Collecting them without being bypassed is not." },
     bullets: ["Only pay when it works", "Every match vetted by a human", "Matched within 48 hours"],
     cta: "Get matched",
+    sys: "SYSTEMS INFRASTRUCTURE: {N} MATCHING ENGINE", prop: "A pay-on-success marketplace of {supply}, for {who}.", x: "a pay-on-success {nn} marketplace", tier: "CUSTOM MARKETPLACE", t1: "Free to join, for both sides", t2: "{take}% of every completed match, plus {feature}/month for featured placement",
     deliver: ["A vetted match", "Introductions handled", "Payment protection"],
     stack: [["Forms", "Tally (one per side)"], ["Data", "Airtable"], ["Matching", "Claude ranks candidates, you approve"], ["Payments", "Stripe Connect"], ["Email", "Resend"]],
     flow: ["Two Tally forms (demand and supply) feed one Airtable base", "Claude ranks candidate matches", "You approve and send the intros", "Stripe Connect takes the fee on completion", "Both sides rate the match"],
@@ -267,9 +288,10 @@ export const FORMATS = [
     mvp: ["beehiiv or Substack page", "issue #1", "referral link"],
     first: "publish issue #1 in {hang} and ask for the first 100 signups", free: "free issue",
     build: 1, cost: 1, auto: 3, clar: 2, fcd: 0,
-    why: { build: "Issue #1 is the MVP.", auto: "AI gathers and drafts; you add the take.", clar: "Audience first, money later. Sponsors show up around 1,000 readers." },
+    why: { build: "Issue #1 is the MVP.", auto: "Automation gathers and drafts; you add the take.", clar: "Audience first, money later. Sponsors show up around 1,000 readers." },
     bullets: ["5 minutes a week", "Only what moves the needle for {label}", "Free, with a paid deep-dive tier"],
     cta: "Get the next issue",
+    sys: "MEDIA INFRASTRUCTURE: {N} BRIEFING", x: "a 5-minute weekly {nn} briefing", tier: "BEEHIIV NEWSLETTER", t1: "Free weekly issue", t2: "{rec}/month paid tier, plus sponsors",
     deliver: ["A weekly briefing", "Paid tier: deep dives and templates", "Full archive access"],
     stack: [["Platform", "beehiiv or Substack"], ["Sources", "RSS, Google Alerts, Reddit"], ["Pipeline", "n8n + Claude summaries"], ["Growth", "beehiiv referral programme"]],
     flow: ["RSS, alerts and Reddit feeds flow into n8n", "Claude summarises and ranks the week's items", "You write the take (20 minutes)", "beehiiv schedules the send", "The referral programme rewards shares"],
@@ -277,7 +299,7 @@ export const FORMATS = [
   {
     id: "chatbot", reel: "CHATBOT", kind: "software", fits: ["time", "skill"],
     names: ["{N} Bot", "Ask {N}", "The {N} Oracle"],
-    pitch: "An always-on AI assistant, trained on their own documents, that helps {label} {task}.",
+    pitch: "An always-on assistant, trained on their own documents, that helps {label} {task}.",
     pay: (b) => ({ setup: b.setup, rec: b.rec * 2 }), offer: "{setup} setup + {rec}/month",
     mvp: ["chat widget", "knowledge base from their docs", "handoff to email"], nocode: ["a shared Claude project", "their docs as a knowledge base", "handoff to email"],
     first: "build a free demo bot on public info for one of the {label} in {hang}, then show it to 10 more", free: "free demo bot",
@@ -285,8 +307,9 @@ export const FORMATS = [
     why: { build: "A widget, a knowledge base and a fallback. Retrieval quality is the real work.", auto: "Answers around the clock; humans only get the hard ones.", clar: "Setup fee plus monthly care is a model buyers already know." },
     bullets: ["Answers 24/7 in their voice", "Trained only on their own documents", "Hands tricky questions to a human"],
     cta: "Get my free demo bot",
-    deliver: ["A custom AI assistant", "Embedded on their site or WhatsApp", "Monthly retraining and a report"],
-    stack: [["Widget", "Static embed script"], ["Knowledge", "Supabase pgvector or a Claude project"], ["AI", "Claude API"], ["Channels", "Website + WhatsApp via Twilio"], ["Payments", "Stripe"]],
+    sys: "INTELLIGENT AUTOMATION: {N} ASSISTANT INFRASTRUCTURE", x: "a 24/7 {nn} assistant, trained on their own documents,", tier: "CUSTOM CHATBOT", t1: "{setup} setup", t2: "{rec}/month care and retraining",
+    deliver: ["A custom assistant trained on their documents", "Embedded on their site or WhatsApp", "Monthly retraining and a report"],
+    stack: [["Widget", "Static embed script"], ["Knowledge", "Supabase pgvector or a Claude project"], ["Intelligence", "Claude API"], ["Channels", "Website + WhatsApp via Twilio"], ["Payments", "Stripe"]],
     flow: ["Collect their docs, FAQs and past messages", "Load them into a knowledge base", "Chat widget on their site, or WhatsApp via Twilio", "Anything it can't answer is emailed to a human", "Monthly: review transcripts and add answers"],
   },
   {
@@ -300,8 +323,9 @@ export const FORMATS = [
     why: { build: "Auth, metering, a strict JSON schema and docs. Small surface, high polish.", auto: "Pure software; it runs while you sleep.", clar: "Usage pricing is fair but harder to forecast for buyers." },
     bullets: ["One endpoint: JSON in, JSON out", "Built for software that serves {label}", "Pay only for what you use"],
     cta: "Get an API key",
+    sys: "SYSTEMS INFRASTRUCTURE: {N} API", x: "a {nn} analysis API", tier: "CUSTOM API", t1: "First 1,000 calls free", t2: "{usage}/month for 10,000 calls",
     deliver: ["API access", "Docs and examples", "A usage dashboard"],
-    stack: [["Edge", "Supabase Edge Function or Cloudflare Worker"], ["Auth", "API keys in Postgres"], ["AI", "Claude API with a strict JSON schema"], ["Billing", "Stripe metered billing"], ["Docs", "A single static page"]],
+    stack: [["Edge", "Supabase Edge Function or Cloudflare Worker"], ["Auth", "API keys in Postgres"], ["Intelligence", "Claude API with a strict JSON schema"], ["Billing", "Stripe metered billing"], ["Docs", "A single static page"]],
     flow: ["A request hits the edge function", "The key is checked and usage metered", "Claude analyses {data} against a strict JSON schema", "The response is cached", "Stripe bills metered usage monthly"],
   },
   {
@@ -315,8 +339,9 @@ export const FORMATS = [
     why: { build: "Auth, one core screen and billing. Two weeks if you keep it to one job.", auto: "It's software. It runs without you.", clar: "A monthly subscription for a weekly pain is the cleanest model there is." },
     bullets: ["Does one job, properly", "Set up in five minutes", "Cancel any time"],
     cta: "Start the free trial",
+    sys: "SYSTEMS INFRASTRUCTURE: {N} SOFTWARE", x: "single-purpose {nn} software", tier: "CUSTOM SAAS", t1: "14-day free trial", t2: "{rec}/month",
     deliver: ["Access to the tool", "An onboarding call", "Priority support"],
-    stack: [["Front end", "Static HTML/JS on Netlify"], ["Backend", "Supabase (auth, Postgres, Edge Functions)"], ["AI", "Claude API"], ["Payments", "Stripe Billing"], ["Email", "Resend"]],
+    stack: [["Front end", "Static HTML/JS on Netlify"], ["Backend", "Supabase (auth, Postgres, Edge Functions)"], ["Intelligence", "Claude API"], ["Payments", "Stripe Billing"], ["Email", "Resend"]],
     flow: ["Sign-up starts a Stripe trial", "An onboarding email sequence walks them through setup", "The core feature does the job, with the Claude API doing the heavy lifting", "A weekly usage digest by email", "A churn alert fires when usage drops"],
   },
   {
@@ -330,8 +355,9 @@ export const FORMATS = [
     why: { build: "One content script and one API call. The store review is the slow part.", auto: "Installs itself and runs where they already work.", clar: "Freemium works, but the paywall has to sit on the right feature." },
     bullets: ["Works inside the tools they already use", "One click, no copy-paste", "Free to start"],
     cta: "Add to Chrome (free)",
+    sys: "INTELLIGENT AUTOMATION: {N} BROWSER LAYER", x: "one-click {nn} automation inside the browser", tier: "CHROME EXTENSION", t1: "Free version", t2: "{rec}/month for the power features",
     deliver: ["The extension", "Power features unlocked", "Updates as platforms change"],
-    stack: [["Extension", "Chrome Manifest V3"], ["API", "Supabase Edge Function"], ["AI", "Claude API"], ["Licensing", "Gumroad or Lemon Squeezy keys"]],
+    stack: [["Extension", "Chrome Manifest V3"], ["API", "Supabase Edge Function"], ["Intelligence", "Claude API"], ["Licensing", "Gumroad or Lemon Squeezy keys"]],
     flow: ["The extension reads the page they're on", "One click sends it to your API, where Claude does the work", "The result is injected back into the page", "A license check unlocks the power features", "Usage counts decide where the paywall sits"],
   },
   {
@@ -345,8 +371,9 @@ export const FORMATS = [
     why: { build: "Build it once in n8n, then clone it for every client.", auto: "Once installed it runs itself; the care plan covers maintenance.", clar: "Setup fee plus care plan. Buyers understand it instantly." },
     bullets: ["Installed in one day", "Runs on tools they already use", "Maintained every month"],
     cta: "Book my install",
+    sys: "INTELLIGENT AUTOMATION: {N} INFRASTRUCTURE", x: "installed {nn} automation infrastructure", tier: "CUSTOM N8N INSTALL", t1: "{setup} install", t2: "{rec}/month care plan",
     deliver: ["A custom automation to {task}", "A Loom walkthrough", "Monthly monitoring and fixes"],
-    stack: [["Automation", "n8n or Make"], ["AI", "Claude API step for judgement calls"], ["Data", "Their existing tools + Google Sheets"], ["Payments", "Stripe invoice + subscription"], ["Handover", "Loom"]],
+    stack: [["Automation", "n8n or Make"], ["Intelligence", "Claude API step for judgement calls"], ["Data", "Their existing tools + Google Sheets"], ["Payments", "Stripe invoice + subscription"], ["Handover", "Loom"]],
     flow: ["Scoping form, then a 20-minute call", "Clone your master n8n template", "Connect their tools", "A Claude step handles the judgement calls", "Test on 3 real examples", "Loom handover; the care plan starts"],
   },
   {
@@ -360,6 +387,7 @@ export const FORMATS = [
     why: { build: "A chat space and a calendar invite.", auto: "Communities need a host. That's you.", clar: "Monthly membership is clear, but churn follows the energy." },
     bullets: ["A weekly live session", "Templates and teardown threads", "People who get it"],
     cta: "Join the club",
+    sys: "NETWORK INFRASTRUCTURE: {N} MEMBERS' CLUB", x: "a private {nn} members' club", tier: "CIRCLE COMMUNITY", t1: "Free founding month", t2: "{rec}/month membership",
     deliver: ["Private community access", "A weekly live call", "A resource library"],
     stack: [["Space", "Discord or Circle"], ["Payments", "Stripe subscription"], ["Access", "Automatic invites on payment"], ["Calls", "Zoom or Discord stage"]],
     flow: ["Stripe subscription triggers an automatic invite", "A welcome DM with the onboarding checklist", "A weekly call invite", "A monthly wins thread that doubles as testimonials", "A churn survey on cancel"],
@@ -375,9 +403,10 @@ export const FORMATS = [
     why: { build: "Ten designs and a print-on-demand connection.", auto: "The supplier prints and ships every order.", clar: "Clear per-item pricing, but margins are thin until you have volume." },
     bullets: ["Designed for {label}", "Printed on demand, shipped worldwide", "Limited drops every month"],
     cta: "Shop the drop",
+    sys: "DIGITAL ASSET: {N} PRINT-ON-DEMAND LINE", x: "print-on-demand {merch}", tier: "PRINT-ON-DEMAND STORE", t1: "{one} per item, printed on demand", t2: "{club}/month: a new design drop every month",
     deliver: ["Printed and shipped on demand", "Tracked delivery", "New drops every month"],
-    stack: [["Store", "Etsy or Shopify"], ["Printing", "Printful or Printify"], ["Design", "Canva + AI-assisted drafts, hand-finished"], ["Email", "Kit (ConvertKit)"]],
-    flow: ["Designs drafted with AI, then finished by hand", "Printful or Printify connected to the store", "Each order is printed and shipped by the supplier", "A review request email after delivery", "Best-sellers get new variants"],
+    stack: [["Store", "Etsy or Shopify"], ["Printing", "Printful or Printify"], ["Design", "Canva + generated drafts, hand-finished"], ["Email", "Kit (ConvertKit)"]],
+    flow: ["Designs drafted with an image model, then finished by hand", "Printful or Printify connected to the store", "Each order is printed and shipped by the supplier", "A review request email after delivery", "Best-sellers get new variants"],
   },
   {
     id: "refill", reel: "SUBSCRIPTION", kind: "service", stealOnly: true,
@@ -390,6 +419,7 @@ export const FORMATS = [
     why: { build: "A subscription page and one supplier. Pack the first boxes yourself.", auto: "Dropship once volume justifies it.", clar: "Auto-refill of something they already buy is the clearest sale in retail." },
     bullets: ["Set it once, never run out", "Skip or pause any month", "Cheaper than buying it in a hurry"],
     cta: "Start my subscription",
+    sys: "SYSTEMS INFRASTRUCTURE: {N} AUTO-REFILL", x: "an auto-refill {nn} subscription", tier: "SUBSCRIPTION STORE", t1: "Free first box", t2: "{rec}/month, refilled automatically",
     deliver: ["A monthly refill, sized to them", "Skip or pause any time", "Discreet packaging"],
     stack: [["Store", "Shopify subscriptions or Stripe"], ["Supply", "One wholesaler, then dropship"], ["Shipping", "Shippo or ShipStation"], ["Email", "Kit (ConvertKit)"]],
     flow: ["Stripe subscription", "The order sheet goes to the wholesaler (or you pack it)", "Shipping labels print automatically", "A monthly skip/pause email", "A churn survey on cancel"],
@@ -516,6 +546,7 @@ export const NICHES = [
     pains: [
       { id: "copy", type: "content", reel: "LISTING COPY", noun: "Listing", thing: "listing descriptions that all say \"stunning\"", task: "write listing descriptions and social posts", result: "list faster and look more expensive", data: "property photos and specs" },
       { id: "leads", type: "growth", reel: "COLD LEADS", noun: "Lead", thing: "portal leads that go cold in five minutes", task: "reply to portal leads instantly", result: "book viewings while other agents sleep", data: "lead emails and CRM notes" },
+      { id: "newsletter", type: "growth", reel: "PAST CLIENTS", noun: "Newsletter", thing: "a past-client list nobody has emailed since completion", task: "send past clients a monthly local-market newsletter", result: "win the repeat and referral listings", data: "past-client lists and local sales data" },
     ],
   },
   {
@@ -777,6 +808,91 @@ export const NICHES = [
     ],
   },
 
+  // Seeded from the mechanisms in the 697-concept "100 Ways to make Income
+  // with AI" list (supply-chain visibility, patient communication, law-firm
+  // marketing, genealogy, wedding vows...), each given a customer who pays.
+  {
+    id: "roasters", set: "core", label: "boutique coffee roasters", reel: "COFFEE ROASTERS", q: "doing 1–10 tonnes a year", wallet: 3, reach: 3, trust: 1,
+    hang: ["r/roasting", "specialty-coffee roaster Facebook groups", "Specialty Coffee Association forums"],
+    sub: ["micro-roasters", "roaster-cafés", "subscription-first roasters"],
+    when: ["new-harvest arrival season", "the month green-coffee prices spike"], ally: "green-coffee importers",
+    pains: [
+      { id: "supply", type: "leak", reel: "SUPPLY CHAIN", noun: "Supply Chain", thing: "green-coffee lots nobody can trace from farm to bag", find: "lots running low, stale stock and shipments stuck in port", task: "track green-coffee lots from port to roaster to bag", result: "never run out of a bestseller mid-month", data: "import documents, roast logs and stock sheets" },
+      { id: "wholesale", type: "growth", reel: "WHOLESALE", noun: "Wholesale", thing: "cafés that stay with the roaster down the road", task: "win and keep wholesale café accounts", result: "land ten new café accounts a quarter", data: "café lists and cupping notes", supply: "cafés looking for a new roaster" },
+      { id: "subs", type: "leak", reel: "SUBSCRIBERS", noun: "Subscription", thing: "coffee subscribers who cancel after three bags", find: "subscribers about to cancel", task: "keep coffee subscribers past bag three", result: "double what each subscriber is worth", data: "subscription and order data" },
+    ],
+  },
+  {
+    id: "nutritionists", set: "core", label: "nutritionists", reel: "NUTRITIONISTS", q: "with 20–60 clients", wallet: 2, reach: 4, trust: 2,
+    hang: ["nutritionist and dietitian Facebook groups", "r/nutrition", "wellness-business Slack groups"],
+    sub: ["sports nutritionists", "gut-health specialists", "registered dietitians"],
+    when: ["January", "the eight weeks before summer"], ally: "personal trainers and GPs",
+    pains: [
+      { id: "plans", type: "time", reel: "MEAL PLANS", noun: "Meal Plan", thing: "evenings spent writing meal plans by hand", task: "build personalised meal plans and shopping lists", result: "send every client their plan the same day", data: "client intake forms and food preferences" },
+      { id: "content", type: "content", reel: "CLIENT CONTENT", noun: "Recipe Post", thing: "a feed full of salad photos", task: "turn their advice into recipes, posts and handouts", result: "attract clients who already trust them", data: "their notes, recipes and client questions" },
+    ],
+  },
+  {
+    id: "lawfirms", set: "core", label: "small law firms", reel: "LAW FIRMS", q: "with 2–10 solicitors", wallet: 4, reach: 2, trust: 3, local: true,
+    hang: ["solicitor LinkedIn groups", "r/LawFirm", "local law-society networks"],
+    sub: ["conveyancing firms", "family-law firms", "immigration practices"],
+    when: ["the quarter a senior partner retires", "the week a rule change hits client-care letters"], ally: "legal IT consultants",
+    pains: [
+      { id: "intake", type: "growth", reel: "NEW ENQUIRIES", noun: "Enquiry", thing: "enquiries answered two days later", task: "answer and qualify new client enquiries within five minutes", result: "sign the client before they call the next firm", data: "enquiry forms and call notes" },
+      { id: "bundles", type: "time", reel: "DOC BUNDLES", noun: "Bundle", thing: "paralegal days lost to indexing document bundles", task: "index, paginate and summarise document bundles", result: "turn a two-day bundle into an afternoon", data: "case documents" },
+    ],
+  },
+  {
+    id: "physio", set: "core", label: "physio clinics", reel: "PHYSIO CLINICS", q: "with 2–8 practitioners", wallet: 3, reach: 2, trust: 2, local: true,
+    hang: ["physio practice-owner Facebook groups", "r/physicaltherapy", "clinic-owner LinkedIn groups"],
+    sub: ["sports-injury clinics", "women's health clinics", "chiropractic clinics"],
+    when: ["January running-injury season", "marathon training season"], ally: "gyms and running clubs",
+    pains: [
+      { id: "exercises", type: "time", reel: "HOME EXERCISES", noun: "Rehab Plan", thing: "home-exercise sheets photocopied since 2009", task: "send patients a personalised home-exercise plan after each session", result: "get patients better faster, and rebooking", data: "session notes and exercise libraries" },
+      { id: "dropoff", type: "leak", reel: "DROP-OFFS", noun: "Rebooking", thing: "patients who vanish after session two", find: "patients who stopped before finishing their plan", task: "follow up patients who didn't rebook", result: "complete twice as many treatment plans", data: "booking data" },
+    ],
+  },
+  {
+    id: "jobseekers", set: "core", label: "job seekers", reel: "JOB SEEKERS", q: "applying to 20+ roles a month", wallet: 1, reach: 5, trust: 1,
+    hang: ["r/jobs", "r/resumes", "LinkedIn job-hunting groups"],
+    sub: ["new graduates", "career changers", "laid-off tech workers"],
+    when: ["January hiring season", "the week after a round of layoffs"], ally: "career coaches and recruiters",
+    pains: [
+      { id: "interviews", type: "skill", reel: "INTERVIEWS", noun: "Interview", thing: "interviews that go blank at \"tell me about yourself\"", task: "rehearse answers for a specific role", result: "walk into interviews already practised" },
+      { id: "applications", type: "time", reel: "APPLICATIONS", noun: "Application", thing: "rewriting the same cover letter 40 times", task: "tailor CVs and cover letters to each job", result: "send 20 tailored applications in the time one used to take", data: "their CV and the job ads" },
+    ],
+  },
+  {
+    id: "historians", set: "core", label: "family historians", reel: "FAMILY HISTORY", q: "with a DNA test and a shoebox of photos", wallet: 1, reach: 4, trust: 1,
+    hang: ["r/Genealogy", "family-history Facebook groups", "Ancestry community forums"],
+    sub: ["adoptees tracing birth family", "retirees writing a memoir", "diaspora families tracing their roots"],
+    when: ["Christmas gift season", "a parent's 80th birthday"], ally: "local history societies",
+    pains: [
+      { id: "memoir", type: "content", reel: "MEMOIRS", noun: "Memoir", thing: "grandparents' stories nobody has written down", task: "turn recorded conversations into a family memoir", result: "hand every grandchild a printed family story", data: "voice notes and old photos", merch: "printed family memoir books" },
+      { id: "records", type: "skill", reel: "ANCESTRY", noun: "Ancestry", thing: "a family tree stuck at 1851", task: "search census and parish records", result: "break through the brick wall in the tree" },
+    ],
+  },
+  {
+    id: "brewers", set: "core", label: "craft breweries", reel: "CRAFT BREWERIES", q: "brewing 500–5,000 barrels a year", wallet: 3, reach: 3, trust: 2, local: true,
+    hang: ["r/TheBrewery", "craft-brewer Facebook groups", "brewers' association forums"],
+    sub: ["taproom breweries", "contract brewers", "craft cider makers"],
+    when: ["summer festival season", "the month duty rates change"], ally: "beer distributors",
+    pains: [
+      { id: "kegs", type: "leak", reel: "LOST KEGS", noun: "Keg", thing: "kegs that vanish into pub cellars", find: "kegs sitting unreturned in pubs for 90+ days", task: "track kegs out to pubs and back", result: "stop buying replacement kegs at ¤100 each", data: "delivery notes and keg logs" },
+      { id: "duty", type: "risk", reel: "DUTY RETURNS", noun: "Duty Return", thing: "duty returns worked out on a Sunday night", find: "duty miscalculations and missing records", task: "prepare alcohol duty returns from brew logs", result: "file duty on time without overpaying", data: "brew logs and sales records" },
+    ],
+  },
+  {
+    id: "engaged", set: "core", label: "engaged couples", reel: "ENGAGED COUPLES", q: "a year out from the wedding", wallet: 2, reach: 5, trust: 1,
+    hang: ["r/weddingplanning", "wedding-planning Facebook groups", "wedding TikTok"],
+    sub: ["couples marrying abroad", "second-time-around couples", "micro-wedding couples"],
+    when: ["January engagement season", "the month before the wedding"], ally: "wedding planners and venues",
+    pains: [
+      { id: "vows", type: "content", reel: "VOWS", noun: "Vow", thing: "vows still blank a week before the wedding", task: "write vows that sound like them", result: "make the whole room cry (the good kind)", data: "their story and inside jokes" },
+      { id: "seating", type: "time", reel: "SEATING PLAN", noun: "Seating Plan", thing: "a seating plan that restarts three family feuds", task: "build a seating plan around the family politics", result: "seat 120 guests without a scene", data: "guest lists and family notes" },
+    ],
+  },
+
   // DEGEN: strange, loud customers who are easy to reach and love a bit.
   {
     id: "dating", set: "degen", label: "dating-app users", reel: "DATING APPS", q: "on their third app this year", wallet: 1, reach: 5, trust: 1,
@@ -895,6 +1011,26 @@ export const NICHES = [
       { id: "clips", type: "content", reel: "STREAM CLIPS", noun: "Clip", thing: "six-hour VODs nobody rewatches", task: "turn VODs into TikTok clips", result: "grow off the 30 seconds that actually slapped", data: "VODs and chat logs" },
     ],
   },
+  {
+    id: "situationships", set: "degen", label: "college students", reel: "SITUATIONSHIPS", q: "on their phone at 1am", wallet: 1, reach: 5, trust: 1,
+    hang: ["r/college", "r/BreakUps", "campus meme pages"],
+    sub: ["freshers in long-distance relationships", "students ending a situationship", "serial situationship survivors"],
+    when: ["the week before Valentine's Day", "the end of first semester"], ally: "student meme pages and campus podcasts",
+    pains: [
+      { id: "breakup", type: "content", reel: "BREAKUP TEXTS", noun: "Breakup Text", thing: "a breakup text drafted and deleted 40 times", task: "write breakup texts that end it kindly and clearly", result: "end it without a 2am essay", data: "the situation, in their own words" },
+      { id: "nocontact", type: "mind", reel: "NO CONTACT", noun: "No-Contact", thing: "the 2am urge to text the ex", task: "stick to no-contact", result: "stop texting the ex at 2am", merch: "no-contact streak trackers" },
+    ],
+  },
+  {
+    id: "promoters", set: "degen", label: "club-night promoters", reel: "PROMOTERS", q: "throwing two or more nights a month", wallet: 1, reach: 5, trust: 1,
+    hang: ["nightlife Instagram", "promoter WhatsApp groups", "r/DJs"],
+    sub: ["techno collectives", "student-night promoters", "drag-night hosts"],
+    when: ["freshers' week", "New Year's Eve"], ally: "venues and DJs",
+    pains: [
+      { id: "tickets", type: "growth", reel: "TICKET SALES", noun: "Ticket", thing: "half the tickets sold in the final week", task: "sell out nights before the final week", result: "sell out two weeks early", data: "past guest lists and ticket data" },
+      { id: "flyers", type: "content", reel: "FLYERS", noun: "Flyer", thing: "a flyer made at 3am in Canva", task: "make flyers, lineup reveals and hype posts", result: "make every night look like the place to be", data: "lineups, venues and past photos" },
+    ],
+  },
 
   // BLACK SHEEP: unglamorous, awkward, often recession-proof. `gentle`
   // niches involve grief, care or family breakdown: the machine refuses to
@@ -1008,6 +1144,36 @@ export const NICHES = [
       { id: "weddings", type: "growth", reel: "LUXURY LOOS", noun: "Luxury Loo", thing: "couples who hate the idea of a portaloo", task: "sell luxury restroom trailers to weddings", result: "charge ¤1,500 a weekend per trailer", data: "venues and guest counts" },
     ],
   },
+  {
+    id: "wastesites", set: "sheep", label: "waste-site operators", reel: "WASTE SITES", q: "running a permitted transfer station or yard", wallet: 3, reach: 2, trust: 2, local: true,
+    hang: ["waste-industry LinkedIn groups", "recycling-trade forums", "trade-association newsletters"],
+    sub: ["skip-hire operators", "scrap-metal recyclers", "transfer-station managers"],
+    when: ["the week the quarterly permit return is due", "the month gate fees rise"], ally: "environmental consultants",
+    pains: [
+      { id: "returns", type: "risk", reel: "COMPLIANCE", noun: "Compliance", thing: "permit returns rebuilt from weighbridge tickets by hand", find: "missing waste transfer notes, tonnage gaps and overdue permit returns", task: "compile permit returns and duty-of-care records", result: "file every return on time and pass every site audit", data: "weighbridge tickets and waste transfer notes" },
+      { id: "tonnage", type: "leak", reel: "TONNAGE", noun: "Tonnage", thing: "loads charged at the wrong rate", find: "loads invoiced at the wrong rate or not at all", task: "reconcile weighbridge tickets against invoices", result: "bill every tonne that comes through the gate", data: "weighbridge exports and invoices" },
+    ],
+  },
+  {
+    id: "couriers", set: "sheep", label: "local courier firms", reel: "COURIERS", q: "running 3–20 vans", wallet: 3, reach: 2, trust: 1, local: true,
+    hang: ["courier-owner Facebook groups", "r/couriersofreddit", "logistics LinkedIn groups"],
+    sub: ["same-day couriers", "pharmacy delivery firms", "pallet-network members"],
+    when: ["peak season in November", "the week fuel prices jump"], ally: "local e-commerce brands",
+    pains: [
+      { id: "routes", type: "time", reel: "ROUTES", noun: "Route", thing: "drivers planning routes on their phones at 7am", task: "plan multi-drop routes every morning", result: "fit 20% more drops into every van", data: "delivery lists and addresses" },
+      { id: "pod", type: "leak", reel: "FAILED DROPS", noun: "Proof-of-Delivery", thing: "\"never arrived\" claims they can't disprove", find: "claims with no photo, signature or GPS trail", task: "capture proof of delivery on every drop", result: "stop paying out for parcels that did arrive", data: "delivery photos and driver logs" },
+    ],
+  },
+  {
+    id: "importers", set: "sheep", label: "small importers", reel: "IMPORTERS", q: "bringing in 10+ containers a year", wallet: 3, reach: 2, trust: 2,
+    hang: ["import-export LinkedIn groups", "freight-forwarder forums", "r/FulfillmentByAmazon"],
+    sub: ["furniture importers", "private-label Amazon importers", "specialty-food importers"],
+    when: ["the week tariffs change", "Q3 peak shipping season"], ally: "freight forwarders and customs brokers",
+    pains: [
+      { id: "customs", type: "risk", reel: "CUSTOMS DOCS", noun: "Customs", thing: "containers held at port over one wrong commodity code", find: "wrong commodity codes and missing certificates", task: "check customs paperwork before a shipment sails", result: "clear customs first time", data: "invoices, packing lists and commodity codes" },
+      { id: "duties", type: "leak", reel: "OVERPAID DUTY", noun: "Duty Refund", thing: "import duty overpaid for years", find: "duty overpaid under the wrong tariff code", task: "claim back overpaid import duty", result: "recover years of overpaid duty", data: "import entries and tariff codes" },
+    ],
+  },
 ];
 
 // STEAL LIKE AN ENGINEER: a proven model, re-aimed at a niche that
@@ -1017,12 +1183,13 @@ export const MODELS = [
   {
     id: "carfax", source: "Carfax", reel: "CARFAX", format: "audit", what: "a paid history report on an expensive used thing, bought right before the purchase",
     names: ["{N} History Check", "{N} Background Report", "The {N} Pre-Purchase Check"], pay: (b) => ({ one: b.kit * 1.5 }), offer: "{one} per report",
+    t1: "{one} per report", t2: "{club}/month watchlist: new listings checked before they see them",
     first: "run 5 free reports for buyers in {hang} and post the most shocking finding (anonymised)",
     targets: [
-      { id: "campervan", niche: "vanlife", wallet: 2, noun: "Camper Van", who: "people buying a used camper van for ¤20k+", type: "risk", twist: "A pre-purchase report on used camper vans: damp, dodgy electrics, weight limits and conversion quality, checked before the buyer hands over ¤30k.", thing: "hidden damp, dodgy electrics and an overweight conversion", task: "check a used camper van before buying", result: "buy a van without inheriting someone else's mistakes", data: "listings, seller photos and registration details" },
-      { id: "guitar", niche: "musicians", wallet: 2, noun: "Vintage Guitar", who: "players buying a vintage guitar for ¤2k+", type: "risk", twist: "A pre-purchase report on vintage guitars: originality, refinishes, swapped parts and stolen-instrument checks, before the money moves.", thing: "refinishes, swapped parts and stolen instruments", task: "check a vintage guitar before buying", result: "pay vintage prices only for genuinely vintage guitars", data: "listing photos and serial numbers" },
-      { id: "store", niche: "shopify", noun: "Store", who: "people buying an online store for ¤20k–¤200k", type: "risk", twist: "Due-diligence reports for people buying small online stores: real traffic, refund rates, ad dependence and supplier risk, before they wire the money.", thing: "inflated traffic, hidden refunds and one-supplier risk", task: "check an online store before buying it", result: "buy a store that's worth what they paid", data: "store analytics, payouts and supplier contracts" },
-      { id: "shortlet", niche: "airbnb", noun: "Short-Let", who: "investors buying their first short-let property", type: "risk", twist: "A pre-purchase report on would-be short-lets: local licensing rules, realistic occupancy, and what the reviews of the flat next door say.", thing: "licensing bans and fantasy occupancy numbers", task: "check a property's short-let potential before buying", result: "buy a short-let that actually pays", data: "addresses and local listing data" },
+      { id: "campervan", niche: "vanlife", aim: "used camper van buyers", wallet: 2, noun: "Camper Van", who: "people buying a used camper van for ¤20k+", type: "risk", twist: "A pre-purchase report on used camper vans: damp, dodgy electrics, weight limits and conversion quality, checked before the buyer hands over ¤30k.", thing: "hidden damp, dodgy electrics and an overweight conversion", task: "check a used camper van before buying", result: "buy a van without inheriting someone else's mistakes", data: "listings, seller photos and registration details" },
+      { id: "guitar", niche: "musicians", aim: "vintage guitar buyers", wallet: 2, noun: "Vintage Guitar", who: "players buying a vintage guitar for ¤2k+", type: "risk", twist: "A pre-purchase report on vintage guitars: originality, refinishes, swapped parts and stolen-instrument checks, before the money moves.", thing: "refinishes, swapped parts and stolen instruments", task: "check a vintage guitar before buying", result: "pay vintage prices only for genuinely vintage guitars", data: "listing photos and serial numbers" },
+      { id: "store", niche: "shopify", aim: "online-store buyers", noun: "Store", who: "people buying an online store for ¤20k–¤200k", type: "risk", twist: "Due-diligence reports for people buying small online stores: real traffic, refund rates, ad dependence and supplier risk, before they wire the money.", thing: "inflated traffic, hidden refunds and one-supplier risk", task: "check an online store before buying it", result: "buy a store that's worth what they paid", data: "store analytics, payouts and supplier contracts" },
+      { id: "shortlet", niche: "airbnb", aim: "short-let investors", noun: "Short-Let", who: "investors buying their first short-let property", type: "risk", twist: "A pre-purchase report on would-be short-lets: local licensing rules, realistic occupancy, and what the reviews of the flat next door say.", thing: "licensing bans and fantasy occupancy numbers", task: "check a property's short-let potential before buying", result: "buy a short-let that actually pays", data: "addresses and local listing data" },
     ],
   },
   {
@@ -1041,16 +1208,16 @@ export const MODELS = [
     targets: [
       { id: "revision", niche: "students", noun: "Revision", type: "skill", twist: "Five-minute daily revision streaks built from their own lecture notes, with a leaderboard for their course.", thing: "cramming", task: "revise in five-minute daily streaks", result: "remember it on exam day", data: "lecture notes" },
       { id: "drugcalc", niche: "nurses", noun: "Drug Calc", type: "skill", twist: "Five-minute daily drug-calculation drills with streaks, so the maths is automatic at 3am on a night shift.", thing: "rusty drug-calculation maths", task: "practise drug calculations daily", result: "make the maths automatic", data: "calculation types" },
-      { id: "barista", niche: "cafes", noun: "Barista", type: "skill", twist: "Three-minute daily drills for new café staff (menu, allergens and milk ratios) with a streak the manager can see.", thing: "new staff who don't know the allergens", task: "train new staff in three-minute drills", result: "get new staff shift-ready in a week", data: "menus and allergen sheets" },
-      { id: "regs", niche: "trades", noun: "Wiring Regs", type: "skill", twist: "Five-minute daily drills on wiring regulations for electricians heading into an exam, with streaks.", thing: "exam-day blanks on the regs", task: "drill the regulations daily", result: "pass the regs exam first time", data: "regulation topics" },
+      { id: "barista", niche: "cafes", aim: "new café staff", noun: "Barista", type: "skill", twist: "Three-minute daily drills for new café staff (menu, allergens and milk ratios) with a streak the manager can see.", thing: "new staff who don't know the allergens", task: "train new staff in three-minute drills", result: "get new staff shift-ready in a week", data: "menus and allergen sheets" },
+      { id: "regs", niche: "trades", aim: "trainee electricians", noun: "Wiring Regs", type: "skill", twist: "Five-minute daily drills on wiring regulations for electricians heading into an exam, with streaks.", thing: "exam-day blanks on the regs", task: "drill the regulations daily", result: "pass the regs exam first time", data: "regulation topics" },
     ],
   },
   {
     id: "headspace", source: "Headspace", reel: "HEADSPACE", format: "saas", what: "a subscription of short audio sessions for one specific state of mind",
     names: ["{N} Reset", "Calm {N}", "{N} Mind"], pay: (b) => ({ rec: Math.max(5, b.rec) }),
     targets: [
-      { id: "nightshift", niche: "nurses", noun: "Night Shift", type: "mind", twist: "Ten-minute wind-down audio for the drive home after a night shift, plus a sleep plan for rota changes.", thing: "wired-but-exhausted drives home", task: "wind down after night shifts", result: "actually sleep after nights", data: "shift patterns" },
-      { id: "datenerves", niche: "dating", noun: "Date Nerves", type: "mind", twist: "Short audio sessions for the 20 minutes before a first date, for people who dread first dates.", thing: "pre-date panic", task: "calm down before a first date", result: "walk in relaxed", data: "date times" },
+      { id: "nightshift", niche: "nurses", aim: "night-shift nurses", noun: "Night Shift", type: "mind", twist: "Ten-minute wind-down audio for the drive home after a night shift, plus a sleep plan for rota changes.", thing: "wired-but-exhausted drives home", task: "wind down after night shifts", result: "actually sleep after nights", data: "shift patterns" },
+      { id: "datenerves", niche: "dating", aim: "nervous first-daters", noun: "Date Nerves", type: "mind", twist: "Short audio sessions for the 20 minutes before a first date, for people who dread first dates.", thing: "pre-date panic", task: "calm down before a first date", result: "walk in relaxed", data: "date times" },
       { id: "speechnerves", niche: "bestmen", noun: "Speech Nerves", type: "mind", twist: "A seven-day audio course for people terrified of speaking at a wedding, ending with a rehearsal session on the morning.", thing: "wedding-speech terror", task: "rehearse and calm down before the speech", result: "deliver the speech without shaking", data: "the speech draft" },
       { id: "carerreset", niche: "carers", noun: "Carer", type: "mind", twist: "Five-minute resets for family carers, built for the car park after a hard visit.", thing: "carer burnout", task: "decompress after hard visits", result: "keep going without burning out", data: "visit schedules" },
     ],
@@ -1072,7 +1239,7 @@ export const MODELS = [
     targets: [
       { id: "newsletter", niche: "newsletters", noun: "Newsletter", type: "growth", twist: "Instant newsletter valuations: subscribers, open rate and niche in, a sale-price range out. Brokers pay for the leads.", thing: "not knowing what the newsletter is worth", task: "value a newsletter in 60 seconds", result: "know their exit number", data: "subscriber and revenue stats" },
       { id: "channel", niche: "youtubers", noun: "Channel", type: "growth", twist: "Instant channel valuations for YouTubers thinking of selling, with a paid due-diligence report for buyers.", thing: "guessing what a channel is worth", task: "value a channel from its stats", result: "know what the channel would sell for", data: "channel analytics" },
-      { id: "collection", niche: "sneakers", noun: "Collection", type: "growth", twist: "Instant valuations of a whole sneaker collection from a photo of the shelf, with sell-now or hold advice.", thing: "a shelf of unknown value", task: "value a collection from one photo", result: "know what to sell and what to hold", data: "shelf photos" },
+      { id: "collection", niche: "sneakers", aim: "sneaker collectors", noun: "Collection", type: "growth", twist: "Instant valuations of a whole sneaker collection from a photo of the shelf, with sell-now or hold advice.", thing: "a shelf of unknown value", task: "value a collection from one photo", result: "know what to sell and what to hold", data: "shelf photos" },
       { id: "saasvalue", niche: "saas", noun: "SaaS", type: "growth", twist: "An instant sale-price estimate for small SaaS from its Stripe numbers, paid for by referring sellers to brokers.", thing: "no idea what the company is worth", task: "value a SaaS from its revenue data", result: "know the exit number before the call", data: "Stripe revenue data" },
     ],
   },
@@ -1100,8 +1267,8 @@ export const MODELS = [
     names: ["{N} Masters", "Masters of {N}", "The {N} Masters Series"],
     targets: [
       { id: "trade", niche: "trades", noun: "Trade", type: "skill", twist: "Retired master tradespeople teaching the tricks the apprenticeship skipped, filmed on real jobs.", thing: "tricks that retire with the old-timers", task: "learn from master tradespeople", result: "work faster and price better", data: "job types" },
-      { id: "hotelier", niche: "hotels", noun: "Hospitality", type: "skill", twist: "Legendary hoteliers teaching small-hotel owners how they built repeat guests.", thing: "guests who never come back", task: "learn guest loyalty from the best", result: "build a hotel people return to", data: "guest data" },
-      { id: "streetfood", niche: "foodtrucks", noun: "Street Food", type: "skill", twist: "Street-food legends teaching the ops: pitch fees, menus that move fast, and surviving a rained-off festival.", thing: "expensive lessons learned the hard way", task: "learn street-food operations", result: "make money at every event", data: "event types" },
+      { id: "hotelier", niche: "hotels", aim: "small-hotel owners", noun: "Hospitality", type: "skill", twist: "Legendary hoteliers teaching small-hotel owners how they built repeat guests.", thing: "guests who never come back", task: "learn guest loyalty from the best", result: "build a hotel people return to", data: "guest data" },
+      { id: "streetfood", niche: "foodtrucks", aim: "street-food traders", noun: "Street Food", type: "skill", twist: "Street-food legends teaching the ops: pitch fees, menus that move fast, and surviving a rained-off festival.", thing: "expensive lessons learned the hard way", task: "learn street-food operations", result: "make money at every event", data: "event types" },
     ],
   },
   {
@@ -1129,7 +1296,7 @@ export const MODELS = [
     targets: [
       { id: "kitchen", niche: "cafes", noun: "Kitchen", type: "leak", twist: "Renting café kitchens after closing time to bakers and meal-prep startups, by the hour.", thing: "a kitchen that earns nothing after 4pm", task: "rent out the kitchen after hours", result: "earn from the kitchen while it's closed", data: "kitchen hours and equipment" },
       { id: "studio", niche: "studios", noun: "Studio", type: "leak", twist: "Filling empty studio hours by renting them to therapists, dance teachers and photographers.", thing: "empty studio hours", task: "rent out empty studio hours", result: "earn from every empty hour", data: "studio calendars" },
-      { id: "booth", niche: "musicians", noun: "Vocal Booth", type: "leak", twist: "Bedroom-studio owners renting their booth by the hour to vocalists and podcasters.", thing: "a studio that sits idle", task: "rent out a home studio by the hour", result: "make the studio pay for itself", data: "studio calendars" },
+      { id: "booth", niche: "musicians", aim: "home-studio owners", noun: "Vocal Booth", type: "leak", twist: "Bedroom-studio owners renting their booth by the hour to vocalists and podcasters.", thing: "a studio that sits idle", task: "rent out a home studio by the hour", result: "make the studio pay for itself", data: "studio calendars" },
       { id: "driveway", niche: "landlords", noun: "Parking Space", type: "leak", twist: "Landlords renting unused driveways and garages to commuters and EV owners by the month.", thing: "empty driveways and garages", task: "rent out unused parking", result: "earn from dead space", data: "property lists" },
     ],
   },
@@ -1145,8 +1312,9 @@ export const MODELS = [
   {
     id: "turbotax", source: "TurboTax", reel: "TURBOTAX", format: "saas", what: "guided self-serve for scary paperwork, one question at a time",
     names: ["{N} Wizard", "Easy {N}", "{N} Step-By-Step"], pay: (b) => ({ one: b.kit * 3 }), offer: "{one} per case, guided start to finish",
+    t1: "{one} per case, guided start to finish", t2: "{club}/month: every deadline tracked until the case closes",
     targets: [
-      { id: "probate", niche: "bereaved", noun: "Probate", type: "risk", twist: "A question-by-question guide through probate paperwork, with a checklist of every account to close (information, not legal advice).", thing: "probate paperwork", task: "work through probate step by step", result: "finish probate without a ¤3k bill", data: "estate details" },
+      { id: "probate", niche: "bereaved", aim: "executors", noun: "Probate", type: "risk", twist: "A question-by-question guide through probate paperwork, with a checklist of every account to close (information, not legal advice).", thing: "probate paperwork", task: "work through probate step by step", result: "finish probate without a ¤3k bill", data: "estate details" },
       { id: "cryptotax", niche: "crypto", noun: "Crypto Tax", type: "risk", twist: "Question-by-question crypto tax filing built for people with 4,000 memecoin trades.", thing: "a tax return they can't face", task: "file crypto taxes step by step", result: "file without the panic", data: "wallet exports" },
       { id: "disclosure", niche: "divorce", noun: "Financial Disclosure", type: "risk", twist: "A guided, question-by-question financial disclosure pack, so the solicitor starts from a finished file.", thing: "disclosure paperwork billed by the hour", task: "prepare financial disclosure step by step", result: "cut the legal bill", data: "financial statements" },
     ],
@@ -1158,6 +1326,35 @@ export const MODELS = [
       { id: "paintlog", niche: "minis", noun: "Paint", type: "mind", twist: "A feed where painters log hours and finished models, with streaks to beat the pile of shame.", thing: "painting alone with no motivation", task: "log painting sessions", result: "finish more models", data: "painting sessions" },
       { id: "investigation", niche: "ghosts", noun: "Investigation", type: "growth", twist: "A feed of investigations with evidence uploads, venue leaderboards and the most active locations this month.", thing: "evidence that dies on a hard drive", task: "log and share investigations", result: "build a following of fellow investigators", data: "evidence clips" },
       { id: "route", niche: "vanlife", noun: "Route", type: "time", twist: "A social route log for van lifers: legal overnight spots, water points and who's parked nearby.", thing: "travelling solo with no local knowledge", task: "log and share routes", result: "always know the next safe spot", data: "routes and spots" },
+    ],
+  },
+  // Massive SaaS, scaled down to one micro-niche.
+  {
+    id: "salesforce", source: "Salesforce", reel: "SALESFORCE", format: "saas", what: "a CRM that remembers every customer and tells you who to call next",
+    names: ["{N} CRM", "{N} Book", "{N} HQ"], pay: (b) => ({ rec: b.rec * 1.5 }),
+    targets: [
+      { id: "mobilegroom", niche: "groomers", aim: "mobile dog groomers", noun: "Groom", who: "mobile dog groomers running one or two vans", type: "time", twist: "A CRM built around the van: every dog's coat, temperament and vaccination date, tomorrow's route, and an automatic text when each dog is due back.", thing: "client details scattered across texts, a paper diary and the van's dashboard", task: "keep every dog, owner and due date in one place", result: "rebook every dog before it's matted", data: "client texts, diaries and breed notes" },
+      { id: "boilers", niche: "trades", aim: "heating engineers", noun: "Boiler", who: "heating engineers servicing 300+ boilers a year", type: "leak", twist: "A CRM of every boiler they've ever fitted: its warranty, its annual service, and reminders that book the job for them.", thing: "annual services nobody reminded the customer about", task: "track every installed boiler and its service date", result: "turn every install into a yearly service", data: "job sheets and install records" },
+      { id: "couples", niche: "weddingphoto", noun: "Wedding", type: "growth", twist: "A CRM for the wedding pipeline: every couple's date, venue and contract stage, and the one follow-up that turns an enquiry into a booking.", thing: "enquiries lost between Instagram DMs and email", task: "track every couple from enquiry to gallery", result: "book more of the couples who already enquired", data: "enquiry emails and contracts" },
+      { id: "families", niche: "tutors", noun: "Tutor", type: "growth", twist: "A CRM for tutoring: every student's exam date, weak topics and parent contact, plus the invoice that's overdue.", thing: "students, parents and invoices tracked in three apps", task: "keep every student, parent and payment in one place", result: "keep families booked all year", data: "lesson notes and invoices" },
+    ],
+  },
+  {
+    id: "mailchimp", source: "Mailchimp", reel: "MAILCHIMP", format: "saas", what: "email marketing that turns a customer list into repeat sales",
+    names: ["{N} Mail", "{N} Letter", "The {N} Post"], pay: (b) => ({ rec: b.rec }),
+    targets: [
+      { id: "pastclients", niche: "realtors", noun: "Market Update", type: "growth", twist: "A monthly local-market update, written from this month's sales and sent to every past client, so the next listing comes back to them.", thing: "past clients who forget their agent within a year", task: "email past clients a local-market update every month", result: "win the repeat and referral listings", data: "past-client lists and local sales data" },
+      { id: "regulars", niche: "cafes", noun: "Regulars", type: "growth", twist: "A weekly specials email and a free birthday coffee, sent from the till's customer list.", thing: "regulars who drift to the chain", task: "email regulars the week's specials", result: "bring regulars back every week", data: "till customer lists" },
+      { id: "patients", niche: "physio", noun: "Patient", type: "leak", twist: "Rehab tips and a rebooking nudge that land the week a patient's plan runs out.", thing: "patients who never come back for their last sessions", task: "email patients before their plan runs out", result: "finish more treatment plans", data: "booking data" },
+    ],
+  },
+  {
+    id: "quickbooks", source: "QuickBooks", reel: "QUICKBOOKS", format: "saas", what: "bookkeeping software that turns receipts into a tax-ready ledger",
+    names: ["{N} Books", "{N} Ledger", "Easy {N} Books"], pay: (b) => ({ rec: b.rec }),
+    targets: [
+      { id: "sellerbooks", niche: "etsy", noun: "Seller", type: "leak", twist: "Bookkeeping that reconciles every order, fee and ad click per listing, so they know which products actually make money.", thing: "a profit number nobody can explain", task: "reconcile orders, fees and ad spend per listing", result: "know their real profit per product", data: "Etsy CSV exports" },
+      { id: "brewbooks", niche: "brewers", noun: "Brewery", type: "risk", twist: "Duty, keg deposits and taproom sales in one ledger, with the duty return drafted each month.", thing: "duty and keg deposits tracked in a spreadsheet", task: "keep duty, deposits and sales in one ledger", result: "file duty with numbers they trust", data: "brew logs and sales records" },
+      { id: "flipbooks", niche: "sneakers", noun: "Flip", type: "leak", twist: "Every pair's buy price, fees and sale in one ledger, with the tax figure ready in April.", thing: "a year of flips and no idea what was profit", task: "log every flip's buy price, fees and sale", result: "hand the accountant one clean number", data: "sales history and fees" },
     ],
   },
 ];
@@ -1172,18 +1369,39 @@ export const PRICING = {
   names: [null, "PAY WHEN IT WORKS", "PREMIUM DONE-FOR-YOU"],
 };
 
+// MAKE IT CHEAPER walks down a stack ladder, per format kind: from the
+// format's own `tier` (a custom SaaS, say) to Make.com + a Tally form, to a
+// Notion template run by hand, to a presale that builds nothing at all.
 export const LEAN = [
   null,
-  { note: "LEAN LVL 1: NO-CODE", why: "No-code tools instead of code." },
-  { note: "LEAN LVL 2: WIZARD OF OZ. YOU ARE THE AI", why: "You do the work by hand behind a form.", mvp: ["a Carrd page", "a Tally form", "you doing it by hand"] },
-  { note: "LEAN LVL 3: PRESELL. BUILD NOTHING UNTIL 3 PAY", why: "Nothing gets built until three people pay.", mvp: ["a Google Doc offer", "a Stripe Payment Link", "20 DMs"] },
+  {
+    tier: { software: "MAKE.COM + TALLY FORM", service: "MAKE.COM + TALLY FORM", product: "NOTION TEMPLATE" },
+    why: { software: "Make.com and a Tally form instead of custom code.", service: "Make.com and a Tally form instead of a coded pipeline.", product: "A Notion template instead of a designed product." },
+    mvp: { product: ["a Gumroad page", "a Notion template", "a one-page quick-start"] },
+  },
+  {
+    tier: { software: "NOTION TEMPLATE + YOU", service: "TALLY FORM + YOU", product: "ONE GOOGLE DOC" },
+    why: { software: "A Notion template, with you doing what the software would.", service: "You do the work by hand behind a Tally form.", product: "One Google Doc, delivered by hand." },
+    mvp: { software: ["a Notion page", "a Tally form", "you running it by hand"], service: ["a Carrd page", "a Tally form", "you doing it by hand"], product: ["a Google Doc", "a Stripe Payment Link", "you emailing it"] },
+  },
+  {
+    tier: { software: "STRIPE LINK PRESALE", service: "STRIPE LINK PRESALE", product: "STRIPE LINK PRESALE" },
+    why: { software: "Nothing gets built until three people pay.", service: "Nothing gets built until three people pay.", product: "Nothing gets built until three people pay." },
+    mvp: { software: ["a Google Doc offer", "a Stripe Payment Link", "20 DMs"], service: ["a Google Doc offer", "a Stripe Payment Link", "20 DMs"], product: ["a Google Doc offer", "a Stripe Payment Link", "20 DMs"] },
+  },
 ];
 export const LEAN_MAXED = "ALREADY AT ¤0. THE ONLY THING LEFT TO CUT IS EXCUSES.";
+const NO_CODE = [["Page", "Carrd"], ["Forms", "Tally"], ["Automation", "Make.com (free tier)"], ["Data", "Google Sheets or Airtable"], ["Payments", "Stripe Payment Links"], ["Intelligence", "A Claude step inside Make"]];
+const PRESALE = [["Offer", "A Google Doc"], ["Payments", "A Stripe Payment Link"], ["Sales", "Your DMs"]];
 export const LEAN_STACK = [
   null,
-  [["Page", "Carrd"], ["Forms", "Tally"], ["Payments", "Stripe Payment Links"], ["Automation", "Make (free tier)"], ["Data", "Google Sheets"], ["AI", "Claude in a chat window"]],
-  [["Page", "Carrd"], ["Forms", "Tally"], ["Payments", "Stripe Payment Links"], ["Delivery", "Gmail + you"], ["AI", "Claude in a chat window"]],
-  [["Offer", "A Google Doc"], ["Payments", "A Stripe Payment Link"], ["Sales", "Your DMs"]],
+  { software: NO_CODE, service: NO_CODE, product: [["Product", "A Notion template (duplicate link)"], ["Storefront", "Gumroad"], ["Design", "Canva"], ["Email", "Gumroad workflows"]] },
+  {
+    software: [["Page", "A public Notion page"], ["Forms", "Tally"], ["Payments", "Stripe Payment Links"], ["Delivery", "You, working from a Notion template"], ["Intelligence", "Claude in a chat window"]],
+    service: [["Page", "Carrd"], ["Forms", "Tally"], ["Payments", "Stripe Payment Links"], ["Delivery", "Gmail + you"], ["Intelligence", "Claude in a chat window"]],
+    product: [["Product", "One Google Doc"], ["Payments", "A Stripe Payment Link"], ["Delivery", "You, by email"]],
+  },
+  { software: PRESALE, service: PRESALE, product: PRESALE },
 ];
 
 export const DEGEN = {

@@ -51,52 +51,60 @@ const LEAN_FLOW = [
   ["Customer pays (Stripe Payment Link)", "The Tally form lands in your inbox", "You do the work with Claude open in a tab", "You email the result from a template", "Log every step: it becomes the automation spec"],
   ["Customer pays the presale link", "Stripe emails you", "You deliver by hand within 48 hours", "Automate only after customer 3"],
 ];
+// Seven days, from buying the domain to the launch post.
 const PLAN = {
   service: [
-    "Write the offer (sections 2, 4 and 5). Post it in {hang} and count replies, not likes.",
-    "Put the landing page and payment link live. Connect the intake form.",
+    "Buy {domain}. Write the offer (sections 2, 4 and 5) and post it in {hang}: count replies, not likes.",
+    "Put the landing page and payment link live on {domain}. Connect the intake form.",
     "Do 3 {frees} by hand. Screenshot everything.",
     "Publish the before/afters in {hang} and {hang2}.",
     "DM 20 {label}. Founder price for the first 10.",
     "Deliver the paid jobs. Every step you repeat is tomorrow's automation.",
-    "Count paying customers, replies and objections. 3+ paying: keep going. Zero: mutate or reroll.",
+    "Publish the launch post in {hang}, {hang2} and on LinkedIn: the before/afters, the price and a real founder deadline. Then count: 3+ paying means keep going, zero means mutate or reroll.",
   ],
   product: [
-    "Presell: post the outline in {hang} with a founder price.",
+    "Buy {domain}. Presell: post the outline in {hang} with a founder price.",
     "Build the core asset: {mvp}.",
     "Finish it, package it on Gumroad and write the listing (section 11).",
-    "Launch in {hang} and {hang2}, and give away the {free}.",
+    "Give away the {free} in {hang2} and collect the emails.",
     "Follow up everyone who took the freebie.",
     "Ship one improvement from buyer feedback and ask for 3 reviews.",
-    "Count sales and conversion. High views and low sales means mutate the angle.",
+    "Publish the launch post in {hang} and {hang2} with the reviews and a 72-hour launch price. High views and low sales means mutate the angle.",
   ],
   software: [
-    "Validate: a 30-second mock-up video in {hang}. Collect 20 waitlist emails.",
+    "Buy {domain}. Validate: a 30-second mock-up video in {hang}. Collect 20 waitlist emails.",
     "Build the one core flow: {mvp}. No settings page.",
     "Add Stripe and onboarding. Charge from day one (founder price).",
     "Onboard 5 waitlisters by hand, on calls.",
-    "Fix the 3 things they tripped over.",
-    "Post the launch in {hang} and {hang2}, with a real customer result.",
-    "Count paying users, weekly actives and churn reasons. Double down, mutate or reroll.",
+    "Fix the 3 things they tripped over, and record a 60-second demo with a real result.",
+    "Line up the launch: the demo, one customer quote and the founder price.",
+    "Publish the launch post in {hang} and {hang2}. Then count paying users and churn reasons: double down, mutate or reroll.",
   ],
   presell: [
-    "Write the offer as a one-page Google Doc. No product yet.",
+    "Buy {domain}. Write the offer as a one-page Google Doc. No product yet.",
     "Create a Stripe Payment Link at the founder price.",
     "Send 20 DMs to {label} from {hang}.",
     "Send 20 more and follow up yesterday's.",
-    "Post the offer in {hang2} with a real deadline.",
     "If 3 people paid: build the smallest version and deliver it by hand.",
-    "If nobody paid: that was the cheapest lesson available. Mutate or reroll.",
+    "If nobody paid: rewrite the first line of the offer and send one more round of 20.",
+    "Publish the launch post in {hang2} with a real deadline and whatever proof you have. Still zero: mutate or reroll.",
   ],
   gentle: [
-    "Write the offer (sections 2, 4 and 5) in plain, kind language.",
+    "Buy {domain}. Write the offer (sections 2, 4 and 5) in plain, kind language.",
     "Put the landing page and payment link live.",
     "Meet or call 5 of the {ally}. Offer their clients the first cases free.",
     "Deliver those cases with real care, and ask for honest feedback.",
     "Turn the feedback into a one-page explainer partners can hand over.",
     "Follow up every partner and ask for a standing referral arrangement.",
-    "Count referrals and paid cases. Keep going, or mutate the offer.",
+    "Publish a quiet launch post for partners on LinkedIn and in {hang}, not a hype thread. Count referrals and paid cases: keep going, or mutate the offer.",
   ],
+};
+// Brand names: two or three words, e.g. ReceiptOps or ClearFlow Systems.
+const BRAND = {
+  pre: ["Clear", "True", "Swift", "Iron", "North", "Bright", "Prime", "Steady", "Signal", "Open"],
+  suf: ["Flow", "Line", "Stack", "Path", "Loop", "Grid", "Gate", "Works"],
+  carePre: ["Kind", "Quiet", "Steady", "Clear", "Gentle", "Still"],
+  careSuf: ["Path", "Harbour", "Hands", "Light", "Haven"],
 };
 const DATA_FORMATS = new Set(["detective", "watchdog", "audit", "api", "chatbot", "agent", "saas", "extension"]);
 
@@ -134,6 +142,8 @@ const money = (n) => (n == null ? undefined : `¤${String(n).replace(/\B(?=(\d{3
 const finish = (value, cur) =>
   typeof value === "string" ? value.replaceAll("¤", cur) : Array.isArray(value) ? value.map((v) => finish(v, cur)) : value;
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+// "No-Show" -> "no-show", but "SaaS", "PR" and "CPD" keep their capitals.
+const lowerNoun = (s) => s.split(" ").map((w) => (/^[A-Z][a-z'’]*(?:-[A-Za-z][a-z'’]*)*$/.test(w) ? w.toLowerCase() : w)).join(" ");
 const plural = (w) => (/(ch|sh|x|s)$/.test(w) ? `${w}es` : `${w}s`);
 const possessive = (label) => (label.endsWith("s") ? `${label}'` : `${label}'s`);
 const clamp = (x) => Math.max(1, Math.min(5, Math.round(x)));
@@ -225,12 +235,51 @@ function pivots(g) {
     .map((f) => ({ f: f.id, note: `FORMAT PIVOT → ${f.reel}` }));
 }
 
+// Where the same mechanism can go next: the same format (or stolen model)
+// and the same kind of problem, aimed at another niche the mode allows.
+function audiences(g) {
+  // A degenerate idea never lands on grief, care or divorce.
+  const allowed = (niche) => !(g.d > 0 && niche.gentle);
+  if (g.m === "steal") {
+    return MODEL.get(g.f).targets.filter((t) => t.id !== g.p && allowed(NICHE.get(t.niche))).map((t) => ({ n: t.niche, p: t.id }));
+  }
+  const fmt = FORMAT.get(g.f);
+  const pain = NICHE.get(g.n).pains.find((x) => x.id === g.p);
+  const rule = MODE_RULES[g.m];
+  const out = [];
+  for (const niche of NICHES) {
+    if (niche.id === g.n || !rule.sets.includes(niche.set) || !allowed(niche)) continue;
+    for (const q of niche.pains) if (fits(fmt, q, niche) && (fmt.needs || q.type === pain.type)) out.push({ n: niche.id, p: q.id });
+  }
+  return out;
+}
+
+// The audience in a few words: "plumbers", "mobile dog groomers".
+function aimOf(g) {
+  const niche = NICHE.get(g.n);
+  if (g.sub >= 0) return niche.sub[g.sub];
+  if (g.m === "steal") return MODEL.get(g.f).targets.find((t) => t.id === g.p).aim || niche.label;
+  return niche.label;
+}
+
+// MUTATE keeps the mechanism and flips the audience (freelancers -> plumbers),
+// landing on one sharp sub-niche of it. Only when there's nowhere to flip
+// does it narrow, reprice or pivot the idea instead.
 export function mutate(genes) {
   const g = { ...genes };
   const rand = rng(g.r);
+  const flips = audiences(g);
+  if (flips.length) {
+    const from = aimOf(g);
+    Object.assign(g, pick(rand, flips), { sub: -1, w: -1 });
+    const niche = NICHE.get(g.n);
+    if (g.m !== "steal" && niche.sub.length) g.sub = int(rand, niche.sub.length);
+    g.g += 1;
+    g.r = (rand() * 4294967296) >>> 0;
+    return { genes: g, note: `AUDIENCE FLIPPED: ${from} → ${aimOf(g)}`.toUpperCase() };
+  }
   const niche = NICHE.get(g.n);
   const target = g.m === "steal" ? MODEL.get(g.f).targets.find((t) => t.id === g.p) : null;
-  // MUTATE makes an idea more specific first; pricing and pivots come after.
   const narrow = [];
   if (g.sub < 0 && niche.sub.length && !target?.who) narrow.push("sub");
   if (g.w < 0 && niche.when.length) narrow.push("when");
@@ -275,10 +324,15 @@ export function mutate(genes) {
   return { genes: g, note: note.toUpperCase() };
 }
 
+const stackTier = (fmt, l) => (l ? LEAN[l].tier[fmt.kind] : fmt.tier);
+
+// MAKE IT CHEAPER downgrades the stack one rung: custom build -> Make.com +
+// Tally form -> a Notion template run by hand -> a presale.
 export function cheaper(genes) {
   if (genes.l >= 3) return { genes, note: LEAN_MAXED, maxed: true };
   const g = { ...genes, l: genes.l + 1, g: genes.g + 1, r: nextSeed(genes.r) };
-  return { genes: g, note: LEAN[g.l].note };
+  const { fmt } = context(genes);
+  return { genes: g, note: `STACK DOWNGRADED: ${stackTier(fmt, genes.l)} → ${stackTier(fmt, g.l)}` };
 }
 
 export function degenerate(genes) {
@@ -309,11 +363,13 @@ function context(g) {
   const vars = {
     label, poss: g.sub >= 0 ? possessive(label) : niche.poss || possessive(label),
     thing: pain.thing, find: pain.find || pain.thing, task: pain.task, result: pain.result, Result: cap(pain.result), data: pain.data,
-    supply: pain.supply, merch: pain.merch, N: pain.noun,
+    supply: pain.supply, merch: pain.merch, N: pain.noun, nn: lowerNoun(pain.noun),
     hang: hang[0], hang2: hang[1], hang3: hang[2], ally: niche.ally,
     moment: g.w >= 0 ? niche.when[g.w] : "", geo: g.geo >= 0 ? GEOS[g.geo] : "",
     n: count, one: money(p.one), rec: money(p.rec), setup: money(p.setup), usage: money(p.usage), take: p.take,
     premium: money(premium), anchor: money(p.one ?? p.rec ?? p.setup ?? p.usage ?? 19), free: fmt.free, frees: plural(fmt.free), cur: "¤",
+    // Recurring backends for the second pricing tier.
+    club: money(snap(Math.max(5, band.rec * 0.6))), care: money(snap(band.rec)), feature: money(snap(band.rec * 3)),
   };
   return { g, niche, steal, model, fmt, pain, label, h, hang, wallet, band, p, premium, vars };
 }
@@ -356,7 +412,7 @@ function reasons(c, s) {
     : fmt.why.clar;
   return {
     fcd,
-    build: g.l ? LEAN[g.l].why : fmt.why.build,
+    build: g.l ? LEAN[g.l].why[fmt.kind] : fmt.why.build,
     cost,
     clar,
     auto: g.l >= 2 ? "You are the automation for now. Systemise after customer 10." : fmt.why.auto,
@@ -380,7 +436,7 @@ function nameOf(c) {
   if (g.d === 0) return name;
   const adj = pickBy(DEGEN.adjectives, h);
   if (name.startsWith("The ")) return `The ${adj} ${name.slice(4)}`;
-  if (name.startsWith(vars.N) || name.startsWith("AI ")) return `${adj} ${name}`;
+  if (name.startsWith(vars.N)) return `${adj} ${name}`;
   return `${name} (${adj} Edition)`;
 }
 
@@ -397,7 +453,8 @@ function offerOf(c) {
 
 function mvpOf(c) {
   const { g, fmt, vars } = c;
-  const list = g.l >= 2 ? LEAN[g.l].mvp : g.l === 1 && fmt.nocode ? fmt.nocode : fmt.mvp;
+  const lean = LEAN[g.l]?.mvp?.[fmt.kind];
+  const list = g.l >= 2 ? lean : g.l === 1 ? fmt.nocode || lean || fmt.mvp : fmt.mvp;
   return list.map((x) => fill(x, vars));
 }
 
@@ -419,6 +476,30 @@ function customerOf(c) {
   return `${label}${geo} ${niche.q}`;
 }
 
+// The line the reveal prints: "INTELLIGENT AUTOMATION: NEWSLETTER
+// INFRASTRUCTURE", or "SALESFORCE, BUT EXCLUSIVELY FOR MOBILE DOG GROOMERS".
+function kickerOf(c) {
+  if (c.steal) return `${c.model.source}, but exclusively for ${aimOf(c.g)}`.toUpperCase();
+  if (c.niche.gentle) return `CARE INFRASTRUCTURE: ${c.pain.noun} SUPPORT`.toUpperCase();
+  return fill(c.fmt.sys, c.vars).toUpperCase();
+}
+
+// "X for Y": the one-line proposition.
+function propOf(c, who) {
+  if (c.steal) return `${c.model.source}, but exclusively for ${aimOf(c.g)}.`;
+  if (c.niche.gentle) return `${cap(c.pain.task)}, handled with care, for ${who}.`;
+  if (c.fmt.prop) return fill(c.fmt.prop, { ...c.vars, who });
+  return `${cap(fill(c.fmt.x, c.vars))} for ${who}.`;
+}
+
+function brandsOf(c) {
+  const { h, niche, pain } = c;
+  if (niche.gentle) return [`${pickBy(BRAND.carePre, h)}${pickBy(BRAND.careSuf, h >>> 3)} Care`];
+  const words = pain.noun.split(/[\s-]+/).map((w) => (/^[A-Z][a-z'’]*$/.test(w) || /^[a-z]/.test(w) ? cap(w.toLowerCase()) : w));
+  const stem = words.join("").length <= 12 ? words.join("") : words[0];
+  return [`${stem.replace(/[^A-Za-z0-9]/g, "")}Ops`, `${pickBy(BRAND.pre, h)}${pickBy(BRAND.suf, h >>> 4)} Systems`];
+}
+
 // -------------------------------------------------------------- describe
 
 export function describe(genes, cur = "$") {
@@ -435,13 +516,16 @@ export function describe(genes, cur = "$") {
   }
   if (g.d >= 1) notes.push(DEGEN.guardrail);
   const mode = MODE.get(g.m);
+  const customer = customerOf(c);
   const out = {
     code: encode(g),
     mode: { id: mode.id, emoji: mode.emoji, label: mode.label },
     gen: g.g, lean: g.l, degen: g.d, gentle: Boolean(niche.gentle),
     name: nameOf(c),
+    kicker: kickerOf(c),
+    prop: propOf(c, customer),
     pitch,
-    customer: customerOf(c),
+    customer,
     offer: offerOf(c),
     mvp: mvpOf(c).join(" + "),
     first: firstOf(c),
@@ -465,25 +549,46 @@ export function describe(genes, cur = "$") {
 
 // ------------------------------------------------------------- blueprint
 
+// Two tiers: a low-barrier entry and a recurring backend.
+function tierPair(c) {
+  const src = c.model?.t1 ? c.model : c.fmt;
+  return [fill(src.t1, c.vars), fill(src.t2, c.vars)];
+}
+
 function tiers(c, offer) {
-  const { p, fmt, band, vars } = c;
-  const rows = [{ k: "Headline offer", v: offer }];
-  if (p.take != null) {
-    rows.push({ k: "Entry", v: "Free to join, for both sides" });
-    rows.push({ k: "Core", v: `${p.take}% of every completed match` });
-    rows.push({ k: "Premium", v: `${money(snap(band.rec * 3))}/month for featured placement` });
-  } else if (p.usage) {
-    rows.push({ k: "Entry", v: "First 1,000 calls free" });
-    rows.push({ k: "Core", v: `${vars.usage}/month for 10,000 calls` });
-    rows.push({ k: "Premium", v: `${vars.premium}/month for unlimited calls and an SLA` });
-  } else {
-    rows.push({ k: "Entry", v: p.one ? vars.one : p.setup ? `${vars.setup} setup` : `Free (${fmt.free})` });
-    rows.push({ k: "Core", v: p.rec ? `${vars.rec}/month` : `${money(snap(p.one * 2))} bundle with bonus templates and lifetime updates` });
-    rows.push({ k: "Premium", v: `${vars.premium} done-for-you` });
+  const [t1, t2] = tierPair(c);
+  return [
+    { k: "Headline offer", v: offer },
+    { k: "Tier 1 · Entry", v: t1 },
+    { k: "Tier 2 · Recurring backend", v: t2 },
+    { k: "Founder offer", v: "First 10 customers get 50% off, locked for life. Scarcity that is actually true." },
+    { k: "Why this price", v: WALLET_WHY[c.wallet] },
+  ];
+}
+
+// The exact checkout to set up: Gumroad for downloads, Stripe for the rest.
+function checkout(c, name) {
+  const { fmt, niche, vars } = c;
+  const [t1, t2] = tierPair(c);
+  if (fmt.kind === "product") {
+    return [
+      `Gumroad product "${name}", type: digital product`,
+      `Price: ${t1}`,
+      "Content: the files, or the Notion duplicate link",
+      "Workflow emails on day 1, 3 and 7 (section 10)",
+      "Offer code FOUNDER50: 50% off, limited to 10 uses",
+      `Membership product for Tier 2: ${t2}`,
+    ];
   }
-  rows.push({ k: "Founder offer", v: "First 10 customers get 50% off, locked for life. Scarcity that is actually true." });
-  rows.push({ k: "Why this price", v: WALLET_WHY[c.wallet] });
-  return rows;
+  return [
+    `Stripe product "${name}" with two prices`,
+    `Price 1: ${t1}`,
+    `Price 2 (recurring): ${t2}`,
+    `Collect: email${niche.wallet >= 3 ? ", business name and VAT number" : ""}`,
+    `After payment: redirect to ${fmt.kind === "software" ? "onboarding (magic-link sign-in)" : "the Tally intake form"}`,
+    "Promotion code FOUNDER50: 50% off, 10 redemptions, then it expires",
+    `Receipts on; turn on Stripe Tax if you sell to ${vars.geo ? "customers abroad" : "other countries"}`,
+  ];
 }
 
 function faq(c) {
@@ -514,6 +619,7 @@ function acquisition(c) {
     ];
   }
   const rows = [
+    `Outreach angle: "I'm giving 3 ${vars.label} a ${fmt.free} this week: it's built for anyone dealing with ${pain.thing}. Want one of the slots?"`,
     `Community: ${first}, then repeat it every week in ${vars.hang2}.`,
     `Direct: DM or email 20 ${vars.label} a day. Lead with the ${fmt.free}, never a pitch.`,
     `Content: a free "${pain.noun} checklist for ${vars.label}" shared in ${vars.hang3}, ending with the offer.`,
@@ -557,10 +663,10 @@ function firstTen(c, offer) {
   ].map((line) => (g.d >= 1 && line.startsWith("Close") ? `${line} Degen mode: the DMs can be funny, never misleading.` : line));
 }
 
-function planOf(c, mvp) {
+function planOf(c, mvp, domain) {
   const { g, niche, fmt, vars } = c;
   const days = niche.gentle ? PLAN.gentle : g.l === 3 ? PLAN.presell : PLAN[fmt.kind];
-  return days.map((d) => fill(d, { ...vars, mvp }));
+  return days.map((d) => fill(d, { ...vars, mvp, domain }));
 }
 
 function alternates(c, current) {
@@ -576,58 +682,73 @@ export function blueprint(genes, cur = "$") {
   const { g, niche, fmt, pain, vars } = c;
   const mvp = mvpOf(c);
   const kind = fmt.kind;
-  const stack = g.l ? LEAN_STACK[g.l] : fmt.stack;
+  const stack = g.l ? LEAN_STACK[g.l][kind] : fmt.stack;
   const flow = g.l >= 2 ? LEAN_FLOW[g.l] : fmt.flow.map((x) => fill(x, vars));
+  const brands = brandsOf(c);
+  const domain = `${brands[0].toLowerCase().replace(/[^a-z0-9]/g, "")}.com`;
+  const geo = vars.geo ? ` ${vars.geo}` : "";
+  // The hyper-specific avatar: the sub-niche they flipped to, or the sharpest one on offer.
+  const avatar = g.sub >= 0 || (c.steal && pain.who) || !niche.sub.length ? d.customer : `${pickBy(niche.sub, c.h)}${geo} ${niche.q}`;
   const sections = [
-    { id: "name", title: "Product name", items: [{ v: d.name }, { k: "Also try", v: alternates(c, d.name).join(" · ") }] },
-    { id: "pitch", title: "One-line proposition", items: [{ v: d.pitch }] },
+    {
+      id: "name", title: "Product name", items: [
+        { v: d.name },
+        { k: "Brand options", v: brands.join(" · ") },
+        { k: "Domain to check", v: domain },
+        { k: "Also try", v: alternates(c, d.name).join(" · ") },
+      ],
+    },
+    { id: "pitch", title: "One-line proposition", items: [{ v: d.prop }, { k: "Positioning", v: d.kicker }, { k: "In one breath", v: d.pitch }] },
     {
       id: "customer", title: "Target customer", items: [
-        { k: "Who", v: d.customer },
+        { k: "Avatar", v: cap(avatar) },
+        { k: "Market", v: d.customer },
         { k: "Sharper wedges", v: niche.sub.filter((x) => x !== c.label).join(" · ") },
         { k: "Where they gather", v: c.hang.join(" · ") },
         { k: "When they buy", v: niche.when.join(" · ") },
         { k: "Who already serves them", v: cap(niche.ally) },
       ],
     },
-    { id: "pricing", title: "Pricing", items: tiers(c, d.offer) },
+    { id: "pricing", title: "Pricing model", items: tiers(c, d.offer) },
     {
       id: "landing", title: "Landing-page copy", items: [
-        { k: "Headline", v: fill(HEADLINES[pain.type], vars) },
-        { k: "Subhead", v: d.pitch },
+        { k: "H1", v: fill(HEADLINES[pain.type], vars) },
+        { k: "Subheadline", v: d.prop },
+        { k: "Primary CTA", v: fill(fmt.cta, vars) },
+        { k: "Body", v: d.pitch },
         { k: "Bullets", v: fmt.bullets.map((b) => fill(b, vars)) },
         { k: "Proof block", v: `Three before/after results from your first ${vars.frees}. Real numbers, real names (with permission).` },
-        { k: "Button", v: fill(fmt.cta, vars) },
         { k: "FAQ", v: faq(c) },
         { k: "Guarantee", v: guarantee(c) },
       ],
     },
     {
       id: "mvp", title: "MVP specification", items: [
-        { k: "Build", v: mvp },
+        { k: "Minimum to collect payment", v: mvp },
         { k: "Fake it for now", v: FAKE_IT[kind] },
         { k: "Cut from v1", v: CUT[kind] },
         { k: "Pass/fail test", v: "3 paying customers within 7 days of launch, or mutate and reroll." },
         ...d.notes.filter((n) => n.startsWith("Reality")).map((v) => ({ k: "Compliance", v })),
       ],
     },
-    { id: "stack", title: "Tech stack", items: stack.map(([k, v]) => ({ k, v })) },
+    { id: "stack", title: "Tech stack", items: [{ k: "Stack tier", v: stackTier(fmt, g.l) }, ...stack.map(([k, v]) => ({ k, v }))] },
     { id: "acquisition", title: "Acquisition plan", items: [{ v: acquisition(c) }] },
     { id: "first10", title: "First 10 customers", items: [{ v: firstTen(c, d.offer), ol: true }] },
     { id: "workflow", title: "Automation workflow", items: [{ v: flow, ol: true }] },
     {
-      id: "offer", title: "Gumroad/Stripe offer", items: [
+      id: "offer", title: "Monetisation setup", items: [
         { k: "Platform", v: kind === "product" ? "Gumroad" : kind === "software" ? "Stripe Checkout (subscription)" : "Stripe Payment Link" },
+        { k: "Checkout config", v: checkout(c, d.name) },
         { k: "Listing title", v: `${d.name}: ${vars.Result}` },
         { k: "Price", v: d.offer },
-        { k: "Description", v: `${d.pitch} ${guarantee(c)}` },
+        { k: "Description", v: `${d.prop} ${guarantee(c)}` },
         { k: "What's included", v: fmt.deliver.map((x) => fill(x, vars)) },
         { k: "Delivery", v: kind === "product" ? "Instant download" : kind === "software" ? "Instant access after checkout" : "Within 48 hours, by email" },
         { k: "Upsell", v: kind === "software" ? "Annual plan: two months free" : c.p.rec ? `Monthly plan at ${vars.rec}/month` : `Done-for-you version at ${vars.premium}` },
         { k: "Refunds", v: "14 days, no questions." },
       ],
     },
-    { id: "plan", title: "7-day execution plan", items: planOf(c, mvp.join(" + ")).map((v, i) => ({ k: `Day ${i + 1}`, v })) },
+    { id: "plan", title: "7-day plan", items: planOf(c, mvp.join(" + "), domain).map((v, i) => ({ k: `Day ${i + 1}`, v })) },
   ];
   return sections.map((s, i) => ({
     ...s,
@@ -640,6 +761,8 @@ export function markdown(genes, { cur = "$", url = "" } = {}) {
   const d = describe(genes, cur);
   const lines = [
     `# ${d.name}`,
+    "",
+    `**${d.kicker}**`,
     "",
     `> ${d.pitch}`,
     "",
@@ -737,21 +860,14 @@ export function decode(code) {
   return g;
 }
 
-// Distinct ideas a single spin can land on, and how many variants MUTATE,
-// MAKE IT CHEAPER and MAKE IT DEGENERATE can reach from them.
+// Distinct ideas a single spin can land on: the telemetry's IDEAS LOADED.
 export function ideaSpace() {
   const seen = new Set();
-  let variants = 0;
-  const add = (key, niche) => {
-    if (seen.has(key)) return;
-    seen.add(key);
-    variants += (niche.sub.length + 1) * (GEOS.length + 1) * (niche.when.length + 1) * 3 * 4 * (niche.gentle ? 1 : 4);
-  };
   for (const byFormat of Object.values(COMBOS)) {
-    for (const [f, list] of byFormat) for (const [n, p] of list) add(`${f}|${n}|${p}`, NICHE.get(n));
+    for (const [f, list] of byFormat) for (const [n, p] of list) seen.add(`${f}|${n}|${p}`);
   }
-  for (const model of MODELS) for (const t of model.targets) add(`${model.id}|${t.niche}|${t.id}`, NICHE.get(t.niche));
-  return { base: seen.size, variants };
+  for (const model of MODELS) for (const t of model.targets) seen.add(`${model.id}|${t.niche}|${t.id}`);
+  return { base: seen.size };
 }
 
 // Strips of words for the reels to spin through in a given mode.
