@@ -114,6 +114,13 @@ Everything else in the repo (`digikim/`, `gates-unbound/`, `launchwhere/`,
 and more) is a standalone script, static page, or experiment with no shared
 build or test process — read its own `README.md` before touching it.
 
+**Knowledge base:** `llm-wiki/` is a Markdown wiki about these projects,
+with every claim cited back to the document it came from. It covers what
+each project is, how it deploys, and where the projects' docs disagree. For
+questions that span projects, read `llm-wiki/wiki/index.md` first. Its
+rules are in `llm-wiki/CLAUDE.md`, and its health check is
+`python3 llm-wiki/lint.py`.
+
 ## 6. Project overview
 
 **Note:** sections 6–10 below describe **CRF** specifically — see section 5
