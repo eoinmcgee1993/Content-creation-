@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Money Machine | Digital Renaissance</title>
+<meta name="description" content="Spin a weird but commercially plausible business idea, mutate it, then get the 12-part plan to make it real. Digital Renaissance.">
+<meta name="theme-color" content="#050505">
+<meta property="og:title" content="DIGITAL RENAISSANCE // MONEY MACHINE">
+<meta property="og:description" content="Spin. Discover. Mutate. Build. Cash. A slot machine for business ideas, with a Reality Scorecard and a 7-day plan.">
+<script>
+  // Relative assets need the trailing slash: /money-machine would load /engine.js.
+  if (location.pathname === "/money-machine") location.replace("/money-machine/" + location.search + location.hash);
+</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.min.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
+    "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.core.js": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.core.min.js"
+  }
+}
+</script>
+<style>
+:root{
+  --bg:#050505;--panel:#0c0b09;--panel2:#12100d;--line:#2a2520;--fg:#e8e5df;--muted:#8b8881;--dim:#5f5c56;
+  --amber:#ffb52e;--amber-deep:#d98a0b;--red:#ff4d4d;--green:#4dff9a;
+  --common:#8b8881;--rare:#5ad1ff;--epic:#c792ff;--jackpot:#ffb52e;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --serif:Georgia,"Times New Roman",serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--serif);overflow-x:hidden}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* CRT: scanlines and vignette over everything, never catching clicks. */
+.crt{position:fixed;inset:0;pointer-events:none;z-index:40;
+  background:repeating-linear-gradient(to bottom,transparent 0 2px,rgba(0,0,0,.2) 2px 3px),radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.5) 100%);
+  animation:flicker 5s infinite steps(1)}
+@keyframes flicker{0%,100%{opacity:1}47%{opacity:.93}48%{opacity:1}83%{opacity:.96}}
+
+main{max-width:780px;margin:0 auto;padding:14px 16px 72px}
+.top{display:flex;align-items:center;gap:12px;font:600 11px/1.2 var(--mono);letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid var(--line);padding:6px 0 14px}
+.top .back{color:var(--muted);text-decoration:none;white-space:nowrap}
+.top .back:hover{color:var(--fg)}
+.top .brand{flex:1;color:var(--amber);text-shadow:0 0 10px rgba(255,181,46,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{font:600 10px/1 var(--mono);letter-spacing:.12em;color:var(--muted);background:transparent;border:1px solid var(--line);padding:8px 10px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.chip[aria-pressed=true]{color:var(--amber);border-color:rgba(255,181,46,.5)}
+
+.loop{display:flex;list-style:none;padding:0;margin:14px 0 12px;font:700 10px/1 var(--mono);letter-spacing:.12em;color:var(--dim)}
+.loop li{flex:1;text-align:center;padding:9px 0;border-bottom:2px solid var(--line);position:relative;transition:color .3s,border-color .3s}
+.loop li+li::before{content:"→";position:absolute;left:-.45em;color:var(--dim)}
+.loop li.on{color:var(--amber);border-color:var(--amber);text-shadow:0 0 8px rgba(255,181,46,.6)}
+.loop li.next{color:var(--fg);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{color:var(--dim)}}
+
+.modes{margin-bottom:12px}
+.mode-list{display:flex;flex-wrap:wrap;gap:6px}
+.mode{font:700 11px/1 var(--mono);letter-spacing:.06em;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 11px;cursor:pointer;transition:all .15s}
+.mode:hover{color:var(--fg);border-color:#4a4239}
+.mode[aria-pressed=true]{color:#140d00;background:var(--amber);border-color:var(--amber);box-shadow:0 0 18px rgba(255,181,46,.35)}
+.blurb{font:12px/1.45 var(--mono);color:var(--muted);margin:9px 2px 0;min-height:1.45em}
+
+.cabinet{border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#0e0c0a,#060505);padding:10px;box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 1px rgba(255,255,255,.04)}
+.stage{position:relative;height:clamp(380px,66vw,540px);border-radius:12px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#17120b 0,#070605 60%,#050505 100%)}
+.stage canvas{display:block;width:100%!important;height:100%!important}
+.stage-hint{position:absolute;left:12px;bottom:10px;font:10px/1.3 var(--mono);color:var(--dim);letter-spacing:.12em;pointer-events:none}
+.stage.is-2d .stage-hint{display:none}
+.stage-loading{position:absolute;inset:0;display:grid;place-items:center;font:11px var(--mono);letter-spacing:.2em;color:var(--dim)}
+.stage.is-3d .stage-loading,.stage.is-2d .stage-loading{display:none}
+.stage.is-2d{height:auto}
+.flat{display:flex;flex-direction:column;align-items:center;gap:18px;padding:26px 14px 30px}
+.flat[hidden]{display:none}
+.flat-marquee{font:700 clamp(22px,6.4vw,34px)/1 var(--serif);color:var(--amber);padding:12px 22px;border-radius:12px;border:2px dotted rgba(255,181,46,.75);box-shadow:0 0 22px rgba(255,181,46,.3),inset 0 0 18px rgba(255,181,46,.18);text-shadow:0 0 14px rgba(255,181,46,.7)}
+.flat-reels{align-self:stretch;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px;border-radius:14px;background:linear-gradient(180deg,#c9993f,#7d5a20);box-shadow:inset 0 2px 0 rgba(255,255,255,.25),0 10px 30px rgba(0,0,0,.5)}
+.flat-sign{font:700 clamp(20px,5.4vw,30px)/1 var(--serif);color:var(--red);text-shadow:0 0 12px rgba(255,77,77,.7)}
+.reel2d{height:110px;overflow:hidden;border:1px solid #3a3128;border-radius:10px;background:linear-gradient(180deg,#000 0,#15120e 30%,#15120e 70%,#000 100%);position:relative}
+.reel2d::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--red);box-shadow:0 0 8px var(--red)}
+.strip{will-change:transform}
+.sym{height:110px;display:grid;place-items:center;padding:0 6px;text-align:center;font:700 clamp(11px,3.1vw,17px)/1.15 var(--mono);color:var(--amber);text-shadow:0 0 10px rgba(255,181,46,.7)}
+
+.readout{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:end;gap:4px;margin:14px 2px 2px;text-align:center}
+.readout .val{font:700 clamp(11px,3vw,15px)/1.2 var(--mono);color:var(--amber);text-shadow:0 0 10px rgba(255,181,46,.45);min-height:2.4em;display:flex;align-items:flex-end;justify-content:center;overflow-wrap:anywhere}
+.readout .lab{font:700 9px/1 var(--mono);letter-spacing:.14em;color:var(--dim);margin-top:7px}
+.readout .x{font:13px var(--mono);color:var(--dim);padding-bottom:20px}
+.formula{text-align:center;font:700 10px var(--mono);letter-spacing:.2em;color:var(--muted);margin:4px 0 12px}
+.formula b{color:var(--green);text-shadow:0 0 8px rgba(77,255,154,.5)}
+
+.spin{display:block;width:100%;height:74px;border:0;border-radius:999px;cursor:pointer;font:800 clamp(17px,4.6vw,23px)/1 var(--mono);letter-spacing:.14em;color:#140d00;
+  background:linear-gradient(180deg,#ffd57f,#ffb52e 45%,var(--amber-deep));box-shadow:0 6px 0 #6b4306,0 0 34px rgba(255,181,46,.35),inset 0 1px 0 rgba(255,255,255,.6);transition:transform .08s,box-shadow .08s,filter .2s}
+.spin:hover{filter:brightness(1.06)}
+.spin:active{transform:translateY(4px);box-shadow:0 2px 0 #6b4306,0 0 20px rgba(255,181,46,.3)}
+.spin:disabled{filter:saturate(.35) brightness(.7);cursor:progress}
+.telemetry{margin:16px 4px 4px;font:11px/1.65 var(--mono);color:#7b776f;white-space:pre-wrap;overflow-wrap:anywhere}
+.telemetry .hi{color:var(--amber);text-shadow:0 0 8px rgba(255,181,46,.45)}
+
+/* Result card */
+.result{margin-top:22px;border:1px solid var(--line);border-radius:18px;background:var(--panel);padding:20px 18px;scroll-margin-top:12px}
+.result.slam{animation:slam .45s cubic-bezier(.2,.9,.25,1)}
+@keyframes slam{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+.result.glitch{animation:glitch .38s steps(2)}
+@keyframes glitch{0%{transform:translate(2px,-1px);filter:hue-rotate(40deg)}25%{transform:translate(-2px,1px)}50%{transform:translate(1px,2px);filter:none}100%{transform:none}}
+.result-top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font:700 10px/1 var(--mono);letter-spacing:.14em;color:var(--muted)}
+.rarity{--tier:var(--common);color:var(--tier);border:1px solid var(--tier);border-radius:6px;padding:6px 8px;box-shadow:0 0 14px color-mix(in srgb,var(--tier) 35%,transparent)}
+.idea-name{font:700 clamp(32px,7.4vw,50px)/1 var(--serif);letter-spacing:-.035em;margin:16px 0 12px;outline:none}
+.pitch{font-size:19px;line-height:1.45;margin:0 0 14px;color:#f3efe7}
+.stolen{font:12px/1.5 var(--mono);color:var(--muted);border-left:2px solid var(--amber);padding:2px 0 2px 10px;margin:0 0 14px}
+.stolen b{color:var(--amber)}
+.facts{display:grid;gap:10px;margin:0 0 16px}
+.facts div{display:grid;grid-template-columns:128px 1fr;gap:12px;align-items:baseline;border-top:1px solid var(--line);padding-top:10px}
+.facts dt{font:700 10px/1.4 var(--mono);letter-spacing:.14em;color:var(--dim)}
+.facts dd{margin:0;font-size:16px;line-height:1.45}
+.lineage{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:4px;font:11px/1.4 var(--mono);color:var(--green)}
+.lineage:empty{display:none}
+.lineage li::before{content:"› "}
+.scorecard{border:1px solid #3a3128;border-radius:12px;padding:14px;background:#090807}
+.scorecard h3{margin:0 0 10px;font:700 11px var(--mono);letter-spacing:.2em;color:var(--amber)}
+.scores{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.score-row{display:grid;grid-template-columns:1fr auto auto;gap:4px 10px;align-items:baseline}
+.score-row .k{font:700 10px/1.3 var(--mono);letter-spacing:.1em;color:#c9c4ba}
+.score-row .b{font:15px/1 var(--mono);color:var(--amber);letter-spacing:1px;text-shadow:0 0 8px rgba(255,181,46,.45)}
+.score-row .v{font:700 12px var(--mono);color:var(--fg)}
+.score-row .why{grid-column:1/-1;font:12px/1.45 var(--mono);color:var(--muted)}
+.estimates{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;font:700 10px/1.4 var(--mono);letter-spacing:.12em;color:var(--dim)}
+.estimates b{display:block;font-size:17px;letter-spacing:.04em;color:var(--green);margin-top:4px;text-shadow:0 0 10px rgba(77,255,154,.35)}
+.total{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;font:700 10px var(--mono);letter-spacing:.14em;color:var(--dim)}
+.total b{font-size:20px;color:var(--tier,var(--fg))}
+.notes{list-style:none;margin:14px 0 0;padding:0;font:12px/1.5 var(--mono);color:#ffb3a6;display:grid;gap:6px}
+.notes:empty{display:none}
+.primary{display:block;width:100%;margin:18px 0 0;height:60px;border:0;border-radius:14px;cursor:pointer;font:800 18px/1 var(--mono);letter-spacing:.12em;color:#fff;
+  background:linear-gradient(180deg,#ff6a3d,#e0321a);box-shadow:0 5px 0 #6e1405,0 0 26px rgba(255,90,40,.35);transition:transform .08s}
+.primary:active{transform:translateY(3px)}
+.dont{margin:18px 0 8px;font:700 10px var(--mono);letter-spacing:.2em;color:var(--dim);text-align:center}
+.ops{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ops button,.keep button,.bp-actions button,.vault button{min-height:48px;border:1px solid #3a3128;background:var(--panel2);border-radius:10px;cursor:pointer;font:700 11px/1.2 var(--mono);letter-spacing:.08em;color:#d8d3c9;padding:8px 6px;transition:border-color .15s,color .15s}
+.ops button:hover,.keep button:hover,.bp-actions button:hover,.vault button:hover{border-color:var(--amber);color:var(--amber)}
+.ops button:disabled{opacity:.45;cursor:progress}
+.ops .degen{color:#ff8a80;border-color:#5a2723}
+.ops .degen:hover{color:var(--red);border-color:var(--red)}
+.keep{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+
+/* Blueprint */
+.blueprint{margin-top:22px;border:1px solid #3a3128;border-radius:18px;background:#080706;padding:20px 18px;scroll-margin-top:12px}
+.bp-head h2{margin:0;font:800 22px var(--mono);letter-spacing:.12em;color:var(--amber);text-shadow:0 0 12px rgba(255,181,46,.4)}
+.bp-head p{margin:6px 0 14px;color:var(--muted)}
+.bp-head p b{color:var(--fg)}
+.bp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bp-sections{display:grid;gap:10px;margin:16px 0}
+.bp-sections details{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:0 14px}
+.bp-sections summary{cursor:pointer;list-style:none;display:flex;gap:12px;align-items:baseline;padding:14px 0;font:700 12px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.bp-sections summary::-webkit-details-marker{display:none}
+.bp-sections summary .n{color:var(--amber)}
+.bp-sections summary::after{content:"+";margin-left:auto;color:var(--dim)}
+.bp-sections details[open] summary::after{content:"–"}
+.bp-body{padding:0 0 14px;display:grid;gap:10px}
+.bp-row .k{font:700 10px/1.3 var(--mono);letter-spacing:.14em;color:var(--dim);text-transform:uppercase;margin-bottom:3px}
+.bp-row .v{font-size:16px;line-height:1.5}
+.bp-row ul,.bp-row ol{margin:0;padding-left:1.25em;display:grid;gap:5px}
+.bp-row li{line-height:1.45}
+.bp-lead{font-size:20px;line-height:1.35}
+
+/* Vault */
+.vault{margin-top:22px;border-top:1px solid var(--line);padding-top:20px}
+.vault h2{margin:0 0 6px;font:800 16px var(--mono);letter-spacing:.14em;color:var(--amber)}
+.vault .empty{color:var(--muted);font-size:15px;margin:6px 0 12px}
+.vault-list{list-style:none;margin:10px 0 12px;padding:0;display:grid;gap:8px}
+.vault-list li{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.vault-list .open{text-align:left;display:grid;gap:4px;min-height:auto;padding:10px 12px}
+.vault-list .open .nm{font:700 16px/1.25 var(--serif);letter-spacing:-.01em;color:var(--fg)}
+.vault-list .open .mt{font:10px/1.3 var(--mono);letter-spacing:.1em;color:var(--muted)}
+.vault-list .rm{width:48px;height:48px;min-height:0;padding:0;color:var(--muted)}
+.vault-actions{display:grid;grid-template-columns:1fr;gap:8px;max-width:320px}
+.upsell{font-size:15px;color:var(--muted);margin:18px 0 0}
+.upsell a{color:var(--amber)}
+
+footer{margin-top:40px;border-top:1px solid var(--line);padding-top:16px;font:10px/1.8 var(--mono);letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+footer a{color:var(--muted)}
+
+/* The reveal: flash, anamorphic streak, then the name on black. */
+.reveal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:transparent;transition:opacity .35s}
+.reveal[hidden]{display:none}
+.reveal.play{animation:rv-bg 2.4s forwards;cursor:pointer}
+.reveal.out{opacity:0}
+@keyframes rv-bg{0%,16%{background:rgba(0,0,0,0)}32%,100%{background:rgba(3,3,3,.96)}}
+.reveal .flash{position:absolute;inset:0;opacity:0;background:radial-gradient(circle at 50% 42%,#fff 0,rgba(255,236,200,.85) 16%,rgba(255,181,46,.25) 44%,transparent 70%)}
+.reveal.play .flash{animation:rv-flash .6s ease-out forwards}
+@keyframes rv-flash{25%{opacity:1}100%{opacity:0}}
+.reveal .streak{position:absolute;left:50%;top:50%;height:2px;width:0;transform:translate(-50%,-50%);opacity:0;
+  background:linear-gradient(90deg,transparent,#9fd8ff 20%,#fff 50%,#ffd79a 80%,transparent);box-shadow:0 0 18px 5px rgba(159,216,255,.55)}
+.reveal.play .streak{animation:rv-streak 1.2s .15s ease-out forwards}
+@keyframes rv-streak{0%{width:0;opacity:0}30%{width:150vw;opacity:1}100%{width:170vw;opacity:0}}
+.reveal-body{position:relative;text-align:center;padding:0 18px;opacity:0;max-width:980px}
+.reveal.play .reveal-body{animation:rv-in .85s .45s cubic-bezier(.2,.9,.25,1) forwards}
+@keyframes rv-in{from{opacity:0;transform:scale(1.2);filter:blur(14px)}to{opacity:1;transform:none;filter:none}}
+.reveal-rarity{--tier:var(--common);display:inline-block;font:800 12px var(--mono);letter-spacing:.34em;color:var(--tier);border:1px solid var(--tier);border-radius:6px;padding:7px 10px 7px 14px;margin-bottom:18px;box-shadow:0 0 22px color-mix(in srgb,var(--tier) 45%,transparent)}
+.reveal-name{font:700 clamp(40px,9.5vw,96px)/.96 var(--serif);letter-spacing:-.045em;
+  background:linear-gradient(100deg,#fff 34%,#ffe2a6 47%,#fff 60%);background-size:260% 100%;background-position:100% 0;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 22px rgba(255,181,46,.55))}
+.reveal.play .reveal-name{animation:rv-sheen 1.5s 1.05s ease-in-out forwards}
+@keyframes rv-sheen{to{background-position:0 0}}
+.reveal-line{font:12px/1.6 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:20px;opacity:0}
+.reveal.play .reveal-line{animation:rv-fade .6s 1.25s forwards}
+.reveal-skip{position:fixed;left:0;right:0;bottom:22px;text-align:center;font:10px var(--mono);letter-spacing:.24em;color:var(--dim);opacity:0}
+.reveal.play .reveal-skip{animation:rv-fade .4s 1.5s forwards}
+@keyframes rv-fade{to{opacity:1}}
+/* After every rule that sets a default --tier. */
+[data-tier=rare]{--tier:var(--rare)}[data-tier=epic]{--tier:var(--epic)}[data-tier=jackpot]{--tier:var(--jackpot)}
+
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);z-index:70;max-width:calc(100vw - 32px);font:700 11px/1.4 var(--mono);letter-spacing:.1em;color:var(--amber);background:#0b0a08;border:1px solid rgba(255,181,46,.5);border-radius:10px;padding:12px 14px;box-shadow:0 0 30px rgba(0,0,0,.8);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:640px){
+  .top .back span{display:none}
+  .loop{font-size:9px;letter-spacing:.06em}
+  .mode{font-size:10px;padding:9px 9px}
+  .facts div{grid-template-columns:1fr;gap:4px}
+  .ops{grid-template-columns:1fr 1fr}
+  .result,.blueprint{padding:18px 14px}
+  .pitch{font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  .crt{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="crt" aria-hidden="true"></div>
+<main>
+  <header class="top">
+    <a class="back" href="/">←<span> DIGITAL RENAISSANCE</span></a>
+    <span class="brand">// MONEY MACHINE</span>
+    <button id="sound" class="chip" type="button" aria-pressed="true">SOUND ON</button>
+  </header>
+  <h1 class="sr">Digital Renaissance Money Machine</h1>
+
+  <ol class="loop" id="loop" aria-label="Progress">
+    <li data-step="spin">SPIN</li><li data-step="discover">DISCOVER</li><li data-step="mutate">MUTATE</li><li data-step="build">BUILD</li><li data-step="cash">CASH</li>
+  </ol>
+
+  <section class="modes" aria-label="Machine mode">
+    <div class="mode-list" id="modes"></div>
+    <p class="blurb" id="blurb"></p>
+  </section>
+
+  <section class="cabinet" aria-label="The machine">
+    <div class="stage" id="stage">
+      <div class="stage-loading">LOADING MACHINE…</div>
+      <div class="flat" id="reels2d" hidden>
+        <div class="flat-marquee">MONEY MACHINE</div>
+        <div class="flat-reels">
+          <div class="reel2d"><div class="strip"></div></div>
+          <div class="reel2d"><div class="strip"></div></div>
+          <div class="reel2d"><div class="strip"></div></div>
+        </div>
+        <div class="flat-sign">$ CA$H $</div>
+      </div>
+      <div class="stage-hint">DRAG TO INSPECT · TAP THE LEVER</div>
+    </div>
+    <div class="readout" id="readout" aria-hidden="true">
+      <div><div class="val">AI</div><div class="lab">LEVERAGE</div></div><div class="x">×</div>
+      <div><div class="val">CREATOR</div><div class="lab">NICHE</div></div><div class="x">×</div>
+      <div><div class="val">PROBLEM</div><div class="lab">PROBLEM</div></div>
+    </div>
+    <div class="formula">= <b>REVENUE</b></div>
+    <button class="spin" id="spin" type="button">SPIN THE MACHINE</button>
+    <div class="telemetry" id="telemetry"></div>
+  </section>
+
+  <section class="result" id="result" hidden aria-labelledby="idea-name">
+    <div class="result-top">
+      <span class="rarity" id="rarity"></span>
+      <span id="meta"></span>
+    </div>
+    <h2 class="idea-name" id="idea-name" tabindex="-1"></h2>
+    <p class="pitch" id="pitch"></p>
+    <p class="stolen" id="stolen" hidden></p>
+    <dl class="facts">
+      <div><dt>CUSTOMER</dt><dd id="f-customer"></dd></div>
+      <div><dt>OFFER</dt><dd id="f-offer"></dd></div>
+      <div><dt>MVP</dt><dd id="f-mvp"></dd></div>
+      <div><dt>FIRST CUSTOMER</dt><dd id="f-first"></dd></div>
+    </dl>
+    <ol class="lineage" id="lineage" aria-label="Mutations"></ol>
+    <div class="scorecard">
+      <h3>REALITY SCORECARD</h3>
+      <ul class="scores" id="scores"></ul>
+      <div class="estimates">
+        <div>EST. MVP TIME<b id="est-time"></b></div>
+        <div>EST. START COST<b id="est-cost"></b></div>
+      </div>
+      <div class="total" id="total-row">MACHINE SCORE<b id="total"></b></div>
+    </div>
+    <ul class="notes" id="notes"></ul>
+    <button class="primary" id="make-real" type="button">🔥 MAKE IT REAL</button>
+    <p class="dont">DON'T LIKE IT?</p>
+    <div class="ops">
+      <button type="button" data-op="reroll">REROLL</button>
+      <button type="button" data-op="mutate">MUTATE</button>
+      <button type="button" data-op="cheaper">MAKE IT CHEAPER</button>
+      <button type="button" data-op="degenerate" class="degen">MAKE IT DEGENERATE</button>
+    </div>
+    <div class="keep">
+      <button type="button" id="vault-it">★ VAULT IT</button>
+      <button type="button" id="share">🔗 SHARE</button>
+    </div>
+  </section>
+
+  <section class="blueprint" id="blueprint" hidden aria-labelledby="bp-title">
+    <div class="bp-head">
+      <h2 id="bp-title" tabindex="-1">⚡ BUILD THIS</h2>
+      <p>The execution blueprint for <b id="bp-name"></b>.</p>
+      <div class="bp-actions">
+        <button type="button" data-md="copy">COPY AS MARKDOWN</button>
+        <button type="button" data-md="download">DOWNLOAD .MD</button>
+      </div>
+    </div>
+    <div class="bp-sections" id="bp-sections"></div>
+    <div class="bp-actions">
+      <button type="button" data-md="copy">COPY AS MARKDOWN</button>
+      <button type="button" data-md="download">DOWNLOAD .MD</button>
+    </div>
+  </section>
+
+  <section class="vault" id="vault" aria-labelledby="vault-title">
+    <h2 id="vault-title">★ THE VAULT <span id="vault-count"></span></h2>
+    <p class="empty" id="vault-empty">Nothing saved yet. Spin until something makes you nervous, then vault it.</p>
+    <ul class="vault-list" id="vault-list"></ul>
+    <div class="vault-actions"><button type="button" id="vault-export" hidden>EXPORT MY VAULT (.TXT)</button></div>
+    <p class="upsell">Want the systems behind these ideas? <a href="https://digitalrena1ssance.gumroad.com" target="_blank" rel="noopener">The Digital Renaissance Starter Pack</a>: 300+ digital business ideas, guides and workflows.</p>
+  </section>
+
+  <footer>
+    <div>Keys: space spin · m mutate · c cheaper · d degenerate · r reroll · b build · v vault · s share</div>
+    <div>Ideas are generated, not researched. Check the market before you spend money. · <a href="/">Digital Renaissance</a></div>
+  </footer>
+</main>
+
+<div class="reveal" id="reveal" hidden>
+  <div class="flash"></div>
+  <div class="streak"></div>
+  <div class="reveal-body">
+    <div class="reveal-rarity" id="rv-rarity"></div>
+    <div class="reveal-name" id="rv-name"></div>
+    <div class="reveal-line" id="rv-line"></div>
+  </div>
+  <div class="reveal-skip">TAP TO CONTINUE</div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<p class="sr" id="announce" aria-live="polite"></p>
+<noscript><p style="padding:16px;font-family:monospace">The Money Machine needs JavaScript.</p></noscript>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
