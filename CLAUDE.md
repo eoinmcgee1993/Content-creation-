@@ -88,10 +88,13 @@ no root `pytest.ini`/`conftest.py`):
 - `digital-renaissance/money-machine/` — tests and 3D-model build for the Money
   Machine page, which lives in `digital-renaissance/site/money-machine/`:
   `npm test` (from inside the directory; tests need no install).
+- `thai-id/` — PHP generator of checksum-valid Thai citizen IDs, for test data:
+  `php thai-id/tests/run.php`. No PHPUnit and no Composer install; `composer.json`
+  only maps the `ThaiId\` autoload for projects that require it.
 
 The first three also run in CI (`.github/workflows/{landing,offload,audits}.yml`,
-path-filtered to their own directory) — `kdp-compiler/`, `substack-os/` and the
-Money Machine do not yet.
+path-filtered to their own directory) — `kdp-compiler/`, `substack-os/`, the
+Money Machine and `thai-id/` do not yet.
 
 **Deploy targets, and the cross-cutting traps to know about:**
 - `render.yaml` is one Render blueprint provisioning `landing/` (service
