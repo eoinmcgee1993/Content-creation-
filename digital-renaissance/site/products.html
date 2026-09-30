@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Products — The Digital Renaissance | Eoin McGee</title>
+<meta name="description" content="Digital products, systems and frameworks built for independent operators. Starter Pack $7, Creator Kit $17, Empire Kit. Instant download from Gumroad.">
+<meta property="og:title" content="Products — The Digital Renaissance">
+<meta property="og:description" content="30+ digital products built for independent operators. Systems, frameworks, and AI workflows for building real leverage.">
+<meta property="og:url" content="https://digital-renaissance.tech/products">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23080808'/><text y='.9em' font-size='80' x='10' fill='%23C9A84C' font-family='serif' font-weight='700'>D</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--black:#080808;--deep:#0E0E0E;--dark:#141414;--card:#181818;--gold:#C9A84C;--gold-l:#E8C76A;--gold-d:#7A6128;--white:#F0F0F0;--grey:#777;--muted:rgba(240,240,240,.55);}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--black);color:var(--white);font-family:"DM Sans",sans-serif;overflow-x:hidden;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:62px;display:flex;align-items:center;justify-content:space-between;background:rgba(8,8,8,.96);border-bottom:1px solid rgba(201,168,76,.1);}
+.nav-logo{font-family:"Cormorant Garamond",serif;font-size:18px;font-weight:700;letter-spacing:5px;color:var(--gold);text-decoration:none;}
+.nav-logo span{color:var(--white);font-weight:300;}
+.nav-links{display:flex;align-items:center;gap:28px;}
+.nav-links a{font-family:"Space Mono",monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--grey);text-decoration:none;transition:color .2s;}
+.nav-links a:hover,.nav-links a.active{color:var(--gold);}
+.nav-cta{padding:8px 20px!important;background:var(--gold);color:var(--black)!important;font-weight:700!important;}
+.nav-cta:hover{background:var(--gold-l)!important;}
+
+.page-header{padding:120px 80px 60px;border-bottom:1px solid rgba(201,168,76,.1);}
+.page-eyebrow{font-family:"Space Mono",monospace;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.page-eyebrow::before{content:"";width:24px;height:1px;background:var(--gold);display:block;}
+.page-title{font-family:"Cormorant Garamond",serif;font-size:clamp(40px,5vw,72px);font-weight:700;line-height:.95;letter-spacing:-2px;margin-bottom:16px;animation:fadeUp .6s ease both;}
+.page-title em{font-style:italic;color:var(--gold-l);}
+.page-sub{font-size:15px;font-weight:300;line-height:1.85;color:var(--muted);max-width:560px;}
+.page-sub strong{color:var(--white);font-weight:500;}
+
+.divider{height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,.2),transparent);margin:0 80px;}
+
+section{padding:80px;}
+
+/* TIER HERO */
+.tier-hero{padding:60px 80px;text-align:center;background:var(--deep);}
+.tier-label{font-family:"Space Mono",monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.tier-title{font-family:"Cormorant Garamond",serif;font-size:clamp(24px,3vw,40px);font-weight:700;margin-bottom:8px;}
+.tier-desc{font-size:14px;font-weight:300;color:var(--muted);max-width:500px;margin:0 auto;}
+
+/* PRODUCT GRID */
+.products-section{background:var(--black);}
+.products-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-bottom:2px;}
+.prod{background:var(--card);padding:40px 32px;border:1px solid rgba(201,168,76,.06);position:relative;overflow:hidden;transition:all .3s;display:flex;flex-direction:column;}
+.prod::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .3s;}
+.prod:hover::before{transform:scaleX(1);}
+.prod:hover{background:rgba(201,168,76,.025);border-color:rgba(201,168,76,.14);}
+.prod.featured{background:linear-gradient(135deg,var(--card),rgba(201,168,76,.05));border-color:rgba(201,168,76,.2);}
+.prod.featured::before{transform:scaleX(1);}
+.prod-n{font-family:"Cormorant Garamond",serif;font-size:80px;font-weight:700;color:var(--gold);opacity:.05;position:absolute;top:8px;right:12px;line-height:1;}
+.prod-badge{font-family:"Space Mono",monospace;font-size:7px;letter-spacing:2px;text-transform:uppercase;padding:3px 9px;display:inline-block;margin-bottom:18px;font-weight:700;}
+.prod-badge.solid{background:var(--gold);color:var(--black);}
+.prod-badge.outline{border:1px solid rgba(201,168,76,.25);color:var(--gold-d);}
+.prod-price{font-family:"Cormorant Garamond",serif;font-size:52px;font-weight:700;color:var(--gold);line-height:1;margin-bottom:6px;}
+.prod-price sup{font-size:22px;vertical-align:super;}
+.prod-name{font-family:"Cormorant Garamond",serif;font-size:22px;font-weight:600;margin-bottom:12px;}
+.prod-tagline{font-size:14px;font-weight:500;color:var(--white);margin-bottom:10px;}
+.prod-desc{font-size:13px;font-weight:300;line-height:1.75;color:var(--muted);margin-bottom:20px;flex:1;}
+.prod-feats{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:28px;}
+.prod-feats li{font-size:12px;color:rgba(240,240,240,.45);display:flex;gap:8px;align-items:flex-start;}
+.prod-feats li::before{content:"—";color:var(--gold-d);font-size:10px;flex-shrink:0;margin-top:1px;}
+.prod-cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:"Space Mono",monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--black);text-decoration:none;background:var(--gold);padding:13px 24px;font-weight:700;transition:background .2s;margin-top:auto;}
+.prod-cta:hover{background:var(--gold-l);}
+.prod-cta.ghost{background:transparent;color:var(--gold);border:1px solid rgba(201,168,76,.3);}
+.prod-cta.ghost:hover{border-color:var(--gold);background:rgba(201,168,76,.05);}
+
+/* BUNDLES */
+.bundle-row{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:2px;}
+.bundle{background:var(--card);padding:36px 32px;border:1px solid rgba(201,168,76,.06);transition:all .3s;display:flex;align-items:center;justify-content:space-between;gap:32px;}
+.bundle:hover{border-color:rgba(201,168,76,.15);}
+.bundle-left{}
+.bundle-tag{font-family:"Space Mono",monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-d);margin-bottom:8px;}
+.bundle-name{font-family:"Cormorant Garamond",serif;font-size:24px;font-weight:700;margin-bottom:8px;}
+.bundle-desc{font-size:13px;font-weight:300;color:var(--muted);line-height:1.7;max-width:400px;}
+.bundle-right{text-align:right;flex-shrink:0;}
+.bundle-price{font-family:"Cormorant Garamond",serif;font-size:36px;font-weight:700;color:var(--gold);line-height:1;margin-bottom:12px;}
+
+/* CONSULTING */
+.consulting{background:var(--deep);}
+.consult-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:40px;}
+.consult-card{background:var(--card);padding:40px 32px;border:1px solid rgba(201,168,76,.06);transition:all .3s;}
+.consult-card:hover{border-color:rgba(201,168,76,.15);}
+.consult-icon{font-size:28px;margin-bottom:16px;opacity:.6;}
+.consult-name{font-family:"Cormorant Garamond",serif;font-size:24px;font-weight:700;margin-bottom:12px;}
+.consult-desc{font-size:13px;font-weight:300;line-height:1.8;color:var(--muted);margin-bottom:24px;}
+.consult-price{font-family:"Space Mono",monospace;font-size:10px;letter-spacing:2px;color:var(--gold-d);margin-bottom:20px;}
+
+.s-eyebrow{font-family:"Space Mono",monospace;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.s-eyebrow::before{content:"";width:24px;height:1px;background:var(--gold);display:block;}
+.s-title{font-family:"Cormorant Garamond",serif;font-size:clamp(32px,3.5vw,52px);font-weight:700;line-height:1.05;letter-spacing:-1px;margin-bottom:20px;}
+.s-title em{font-style:italic;color:var(--gold-l);}
+.s-body{font-size:14px;font-weight:300;line-height:1.85;color:var(--muted);}
+.s-body strong{color:var(--white);font-weight:500;}
+
+footer{padding:48px 80px;border-top:1px solid rgba(201,168,76,.1);display:flex;align-items:center;justify-content:space-between;}
+.f-logo{font-family:"Cormorant Garamond",serif;font-size:18px;font-weight:700;letter-spacing:5px;color:var(--gold);}
+.f-logo span{color:var(--white);font-weight:300;}
+.f-tagline{font-family:"Space Mono",monospace;font-size:8px;letter-spacing:2px;color:var(--grey);margin-top:6px;}
+.f-nav{display:flex;gap:22px;}
+.f-nav a{font-family:"Space Mono",monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey);text-decoration:none;transition:color .2s;}
+.f-nav a:hover{color:var(--gold);}
+.f-copy{font-family:"Space Mono",monospace;font-size:8px;color:#444;}
+
+@media(max-width:960px){
+  nav{padding:0 24px;}
+  .nav-links a:not(.nav-cta){display:none;}
+  .page-header{padding:100px 24px 40px;}
+  section{padding:60px 24px;}
+  .divider{margin:0 24px;}
+  .products-grid,.bundle-row,.consult-grid{grid-template-columns:1fr;}
+  footer{flex-direction:column;gap:20px;text-align:center;padding:36px 24px;}
+  .f-nav{justify-content:center;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">DIGITAL <span>RENAISSANCE</span></a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/products" class="active">Products</a>
+    <a href="/blog">Notes</a>
+    <a href="/#audit" class="nav-cta">Free Audit</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-eyebrow">Digital Products</div>
+  <h1 class="page-title">Everything in the<br><em>Renaissance</em></h1>
+  <p class="page-sub">30+ digital products across systems, frameworks and AI workflows. <strong>Built for independent operators</strong> who are done guessing and ready to build with leverage. Instant download from Gumroad.</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- CORE PRODUCTS -->
+<section class="products-section">
+  <div class="s-eyebrow">Core Products</div>
+  <h2 class="s-title">Choose your <em>entry point</em></h2>
+  <p class="s-body" style="margin-bottom:40px;max-width:540px;">Three tiers. One system. Start where you are and scale when you're ready.</p>
+
+  <div class="products-grid">
+    <div class="prod">
+      <div class="prod-n">01</div>
+      <span class="prod-badge outline">Entry Point</span>
+      <div class="prod-price"><sup>$</sup>7</div>
+      <div class="prod-name">Starter Pack</div>
+      <div class="prod-tagline">Your first real income system.</div>
+      <div class="prod-desc">300+ digital business ideas, 10 comprehensive guides and AI-powered workflows to get your first system live fast. For $7 you get the clarity, the roadmap and the tools to stop overthinking and start building.</div>
+      <ul class="prod-feats">
+        <li>300+ curated digital business ideas</li>
+        <li>10 step-by-step income guides</li>
+        <li>AI workflow templates included</li>
+        <li>Beginner-friendly — no experience needed</li>
+        <li>Instant download, keep forever</li>
+      </ul>
+      <a href="https://digitalrena1ssance.gumroad.com" target="_blank" class="prod-cta ghost">Get the Starter Pack →</a>
+    </div>
+
+    <div class="prod featured">
+      <div class="prod-n">02</div>
+      <span class="prod-badge solid">Most Popular</span>
+      <div class="prod-price"><sup>$</sup>17</div>
+      <div class="prod-name">Creator Kit</div>
+      <div class="prod-tagline">10 complete creator systems.</div>
+      <div class="prod-desc">The complete operating framework for building real digital income from scratch. 10 proven systems covering digital products, AI automation, Pinterest traffic, email revenue, Gumroad funnels and more. Everything you need, nothing you don't.</div>
+      <ul class="prod-feats">
+        <li>Digital Product Factory — build and sell fast</li>
+        <li>AI Automation Stack — work less, earn more</li>
+        <li>Pinterest Traffic System — free organic reach</li>
+        <li>Gumroad Sales Funnel — optimised for conversion</li>
+        <li>Email Revenue Machine — list building that pays</li>
+        <li>Faceless Brand Blueprint — no camera needed</li>
+        <li>12-Month Wealth Roadmap — the full picture</li>
+      </ul>
+      <a href="https://digitalrena1ssance.gumroad.com" target="_blank" class="prod-cta">Get the Creator Kit →</a>
+    </div>
+
+    <div class="prod">
+      <div class="prod-n">03</div>
+      <span class="prod-badge outline">Complete System</span>
+      <div class="prod-price" style="font-size:30px;margin-bottom:14px;line-height:1.1;">Empire Kit</div>
+      <div class="prod-name">The Full Ecosystem</div>
+      <div class="prod-tagline">Every system. Every framework. One download.</div>
+      <div class="prod-desc">The complete Digital Renaissance architecture — every system, framework and roadmap mapped out in full. 10 income streams. Built for operators who are serious about creating real, lasting leverage and are done piecing things together.</div>
+      <ul class="prod-feats">
+        <li>All Creator Kit systems included</li>
+        <li>10 income streams fully mapped</li>
+        <li>Advanced automation frameworks</li>
+        <li>Full business architecture guide</li>
+        <li>The complete operator playbook</li>
+      </ul>
+      <a href="https://digitalrena1ssance.gumroad.com" target="_blank" class="prod-cta ghost">Build Your Empire →</a>
+    </div>
+  </div>
+
+  <div class="bundle-row">
+    <div class="bundle">
+      <div class="bundle-left">
+        <div class="bundle-tag">AI Ebook Series</div>
+        <div class="bundle-name">Niche AI Agent Guides</div>
+        <div class="bundle-desc">Vol. 01 Dental · Vol. 02 Aesthetic Clinics · Vol. 03 Real Estate. Build-it-yourself guides for deploying AI agents in high-value niches. Not operator manuals — complete business-in-a-box playbooks for consultants and builders.</div>
+      </div>
+      <div class="bundle-right">
+        <a href="https://digitalrena1ssance.gumroad.com" target="_blank" class="prod-cta" style="white-space:nowrap;">View Series →</a>
+      </div>
+    </div>
+    <div class="bundle">
+      <div class="bundle-left">
+        <div class="bundle-tag">Lifestyle & Travel</div>
+        <div class="bundle-name">Thailand Operator Guides</div>
+        <div class="bundle-desc">Route guides, expat rider resources and location-specific playbooks for operators living and working in Southeast Asia. Built from firsthand experience living and building in Thailand.</div>
+      </div>
+      <div class="bundle-right">
+        <a href="https://digitalrena1ssance.gumroad.com" target="_blank" class="prod-cta ghost" style="white-space:nowrap;">Explore Guides →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CONSULTING & SERVICES -->
+<section class="consulting">
+  <div class="s-eyebrow">Consulting & Services</div>
+  <h2 class="s-title">Done-with-you &amp;<br><em>done-for-you</em></h2>
+  <p class="s-body" style="max-width:540px;">For businesses and operators who want the system built properly — not just the blueprint.</p>
+
+  <div class="consult-grid">
+    <div class="consult-card">
+      <div class="consult-icon">◎</div>
+      <div class="consult-name">Free Systems Audit</div>
+      <div class="consult-desc">A direct, no-pitch review of your business or digital presence. I'll identify exactly where you're leaving money on the table and outline the specific moves to fix it. Delivered as a personalised voice note or written breakdown.</div>
+      <div class="consult-price">Free · Response within 48 hours</div>
+      <a href="/#audit" class="prod-cta">Claim Free Audit →</a>
+    </div>
+    <div class="consult-card">
+      <div class="consult-icon">◈</div>
+      <div class="consult-name">AI Systems Consulting</div>
+      <div class="consult-desc">Custom AI agent builds, automation systems and digital infrastructure for clinics, real estate operations, gyms and service businesses. From scoping to deployment. Systems that create leverage without adding headcount.</div>
+      <div class="consult-price">Engagement-based · Starting from enquiry</div>
+      <a href="/#audit" class="prod-cta ghost">Start with an Audit →</a>
+    </div>
+    <div class="consult-card">
+      <div class="consult-icon">◆</div>
+      <div class="consult-name">DR Signal Group</div>
+      <div class="consult-desc">Daily market intelligence, trade setups and analysis from the Digital Renaissance trading signal group. Active Telegram-based community with real-time signals across major pairs and indices.</div>
+      <div class="consult-price">Paid membership · Telegram-based</div>
+      <a href="/#audit" class="prod-cta ghost">Enquire →</a>
+    </div>
+    <div class="consult-card">
+      <div class="consult-icon">✦</div>
+      <div class="consult-name">FightBook Thailand</div>
+      <div class="consult-desc">SaaS booking and management platform purpose-built for Muay Thai gyms across Thailand. If you run a gym and want to streamline bookings, manage fighters and reduce admin — this is built for you.</div>
+      <div class="consult-price">฿499/month · 7-day free trial</div>
+      <a href="https://fightbookthailand.com" target="_blank" class="prod-cta ghost">Visit FightBook →</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CTA STRIP -->
+<section style="background:var(--black);text-align:center;padding:80px;">
+  <div style="font-family:Space Mono,monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;">Not sure where to start?</div>
+  <h2 style="font-family:Cormorant Garamond,serif;font-size:clamp(28px,3.5vw,48px);font-weight:700;margin-bottom:16px;">Get the free audit first.<br><em style="color:var(--gold-l);">Everything else follows.</em></h2>
+  <p style="font-size:14px;font-weight:300;color:var(--muted);max-width:460px;margin:0 auto 32px;line-height:1.8;">If you're not sure which product is right for your situation — start with the audit. It's free, direct and will tell you exactly where to focus.</p>
+  <a href="/#audit" style="display:inline-flex;align-items:center;gap:8px;font-family:Space Mono,monospace;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;text-decoration:none;padding:16px 36px;background:var(--gold);color:var(--black);font-weight:700;">→ Claim Free Audit</a>
+</section>
+
+<footer>
+  <div>
+    <div class="f-logo">DIGITAL <span>RENAISSANCE</span></div>
+    <div class="f-tagline">Build systems. Cut noise. Make money.</div>
+  </div>
+  <div class="f-nav">
+    <a href="/">Home</a>
+    <a href="/products">Products</a>
+    <a href="/blog">Notes</a>
+    <a href="/#audit">Free Audit</a>
+    <a href="https://digitalrena1ssance.gumroad.com" target="_blank">Store</a>
+  </div>
+  <div class="f-copy">© 2026 The Digital Renaissance</div>
+</footer>
+
+</body>
+</html>
