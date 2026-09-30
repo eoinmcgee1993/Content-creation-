@@ -3,20 +3,23 @@
 ## The shape
 
 ```
-Substack  ──MCP──▶  AI assistant  ──HTTPS──▶  substack-ingest  ──▶  Postgres
-                    (Claude / ChatGPT)                                  │
-                                                             substack-metrics
-                                                                        │
-                                            ┌───────────────────────────┤
-                                            ▼                           ▼
-                                   substack-os/engine.js        (same engine)
-                                            │                           │
-                                       dashboard              a future ChatGPT app
-                                                              or Claude artifact
+Substack  ──MCP──▶  AI assistant  ──▶  ingest.js  ──▶  data/<publication>.json
+                    (Claude / ChatGPT)                            │
+                                                              store.js
+                                                                  │
+                                            ┌─────────────────────┤
+                                            ▼                     ▼
+                                   substack-os/engine.js    (same engine)
+                                            │                     │
+                                       dashboard          a future ChatGPT app
+                                                          or Claude artifact
 ```
 
 One engine, any number of front ends. That is the whole idea, and everything
 below is in service of it.
+
+There is no server anywhere in it, and no database. *Why a file and not a
+database* below explains how it got that way.
 
 ---
 
@@ -38,12 +41,12 @@ built**, for a reason that is structural rather than a matter of effort:
 
 The honest resolution is to move the schedule up a layer. **The assistant is
 the ingest agent.** A scheduled assistant session reads the publication through
-MCP and POSTs the result to `substack-ingest`. The database, the engine and the
+MCP and pipes the result into `ingest.js`. The store, the engine and the
 dashboard never talk to Substack at all.
 
-This costs little and buys a lot: the boundary is a plain JSON endpoint, so if
-Substack ever ships a token-authenticated HTTP API, a real scheduler posts to
-the *same* endpoint and nothing downstream changes.
+This costs little and buys a lot: the boundary is a plain JSON payload, so if
+Substack ever ships a token-authenticated HTTP API, a real scheduler emits the
+*same* payload and nothing downstream changes.
 
 ### Two access limits to plan around
 
@@ -56,13 +59,60 @@ the *same* endpoint and nothing downstream changes.
 
 ---
 
+## Why a file and not a database
+
+This was Postgres — a Supabase project, a migration, two Edge Functions and two
+shared secrets. Moving off it was a deliberate correction rather than a
+workaround, so it is worth being exact about the reason.
+
+**One publication writing one snapshot a day is about 365 rows a year.** Postgres
+was never here for scale; it was here to keep the history Substack will not let
+you query. A JSON file in a private repository does that, and adds an audit trail
+for free: `git log -p substack-os/data/<publication>.json` is every revision of
+every number, which the database version would have needed a schema change to
+get.
+
+What it removes matters more than what it adds:
+
+| | Before | Now |
+|---|---|---|
+| Setup | project, migration, two secrets, two deploys | none |
+| Secrets | `ingest_key`, `dashboard_key` | none |
+| Failure modes | project unreachable, key unset, RLS misconfigured, `onConflict` target missing | the file is not there |
+| Verification | drive two endpoints over HTTPS | `npm test` |
+| History | `captured_at`, and whatever you add | `git log` on the data file |
+
+That "project unreachable" row is not hypothetical. The hosted route spent a week
+returning fourteen consecutive connection timeouts from a project that reported
+`ACTIVE_HEALTHY` throughout, and in that week nothing about the system could be
+verified end to end. A file has no equivalent failure.
+
+### What was given up
+
+Honestly: a file is **single-writer and local.** Two people ingesting at once
+would race, and a reader with no checkout — a phone — cannot see it at all.
+Neither is true here, and paying a database's operational cost against the day
+one of them might be is how a system ends up with infrastructure nobody can
+justify.
+
+If that day comes, the seam is `store.js`: `merge()` takes a plain payload and
+`read()` returns plain rows. A server implementing those two functions changes
+nothing above it, and `payload.js` — which holds every validation rule, and is
+where all of this system's shipped defects lived — moves across untouched.
+
+---
+
 ## The ingest contract
 
-`POST` to the `substack-ingest` function URL:
+Pipe this JSON to `ingest.js`. There is no key: permission to write the file is
+the whole of the authorisation.
+
+```bash
+node substack-os/ingest.js substack-os/data/the-brief.json < payload.json
+```
 
 ```jsonc
 {
-  "key": "<ingest_key from substack_config>",
   "publication": "the-brief",
   "currency": "usd",              // optional, defaults to usd
   "source": "substack_mcp",       // optional, defaults to substack_mcp
@@ -93,61 +143,70 @@ the *same* endpoint and nothing downstream changes.
 }
 ```
 
-Rules the endpoint enforces, rather than trusting the caller:
+Rules `payload.js` enforces, rather than trusting the caller. Every one of them
+is a defect that shipped once, and in each case the value was accepted and
+quietly altered rather than refused:
 
-- **Upsert, never insert, and only the columns you sent.** Re-running a day is
-  normal — Substack revises recent numbers, and a half-finished ingest has to
-  be safe to repeat. A row carries only the fields its caller supplied, so
-  refreshing one metric cannot null out everything an earlier run captured.
-  An explicit `null` still clears a column; an absent key leaves it alone.
+- **Upsert, never append, and only the fields you sent.** Re-running a day is
+  normal — Substack revises recent numbers, and a half-finished ingest has to be
+  safe to repeat. A row carries only the fields its caller supplied, so
+  refreshing one metric cannot null out everything an earlier run captured. An
+  explicit `null` still clears a field; an absent key leaves it alone.
 - **A duplicate key inside one payload is refused by name.** Two rows sharing a
-  date make Postgres raise `ON CONFLICT DO UPDATE command cannot affect row a
-  second time`, which reached the caller as an opaque 500 with nothing stored.
+  date are a caller bug, and silently letting the second win would make which
+  number survived depend on array order.
 - **Counts are non-negative integers.** A float in a money field is refused, not
-  rounded. A typo'd currency is refused, not silently stored as `usd`.
-- **Only whitelisted columns are written.** A payload cannot set `captured_at`,
-  cannot override the authenticated `publication`, and cannot smuggle an
-  unrecognised key into the row.
+  rounded. A typo'd currency is refused, not silently stored as `usd` — which
+  relabelled a publication's revenue and still answered `{ok:true}`.
+- **Only known fields are written.** A payload cannot set `captured_at`, cannot
+  change which publication's file it is writing into, and cannot smuggle an
+  unrecognised key into a row.
 - **A present-but-invalid value is refused, never silently replaced.** An
-  over-long category, a `daily` that is an object rather than an array, a
-  typo'd currency: each is a 400 naming the field, not a quiet null and an
-  `{ok:true}`.
-- **An omitted metric is stored as `NULL`, never `0`.** A day with no snapshot
-  did not have zero subscribers, and a chart that draws it as zero is lying.
-- **No CORS headers.** Every caller is a server or an assistant's HTTP client.
-  No browser page should be able to reach a write endpoint at all.
+  over-long category, a `daily` that is an object rather than an array: each
+  names the offending field rather than becoming a quiet null.
+- **A refusal stores nothing at all.** `merge()` returns an error or a whole new
+  store, never a partial one — a half-applied snapshot leaves a history that
+  looks complete and is not.
+- **An omitted metric is absent, never `0`.** A day with no snapshot did not have
+  zero subscribers, and a chart that draws it as zero is lying.
 
 ## Security posture
 
-The same rule the rest of this repository runs on: **the browser can do
-nothing**. `anon` and `authenticated` hold no grant of any kind on any
-`substack_` table — not even `INSERT`, which the storefront tables do grant,
-because here there is no customer and nothing worth exposing.
+Most of the question dissolves: there is no endpoint to authenticate, no secret
+to leak, no role to misconfigure and no grant to get wrong. The rest of this
+repository runs on "the browser can do nothing"; here the browser cannot even
+reach a write path, because there isn't one to reach.
 
-Reads leave through `substack-metrics` under the service-role key, behind a
-shared secret, with constant-time comparison. Writes arrive through
-`substack-ingest` behind a **different** secret. An unconfigured key means no
-access, not open access.
+What remains is one rule, and it is the important one: **`substack-os/data/` is
+real business data.** Subscriber counts and revenue for a live publication sit in
+plain JSON in the repository. What protects them is that the repository is
+private and the checkout is yours — so:
 
-The two keys are separate because the dashboard key gets typed into a browser
-and will eventually leak. It must not also be able to write.
+- Never publish `substack-os/data/` to a static host. Serve the dashboard from a
+  local checkout, not from a public deploy.
+- Never make this repository public without moving that directory out first.
+- Note the root `netlify.toml` publishes `digital-renaissance/site`, so this
+  directory is not in any current deploy — do not add it to one.
+
+That is a weaker guarantee than RLS with zero policies, and worth saying plainly
+rather than dressing up. It is the right trade for one person's own numbers on
+their own machine; it would not be for a multi-tenant product.
 
 ## Why the front ends do no arithmetic
 
-`substack-metrics` returns rows. Growth, conversion, churn, anomalies and
-attribution are all computed in `substack-os/engine.js`, by whichever front end
-asked.
+`store.js` returns rows. Growth, conversion, churn, anomalies and attribution
+are all computed in `substack-os/engine.js`, by whichever front end asked.
 
-The alternative — computing in the function *and* in the dashboard — gives two
+The alternative — computing in the store *and* in the dashboard — gives two
 implementations to keep in agreement, and the first time they disagree nobody
 knows which is lying. A Claude artifact and a ChatGPT app importing the same
 module cannot tell the user different stories about the same week.
 
-## The engine knows nothing about Supabase
+## The engine knows nothing about where its rows came from
 
 `engine.js` imports nothing, references no host API, and contains no mention of
 a database. It takes plain arrays of plain objects and returns plain objects.
-It does not know whether its rows came from PostgREST, a CSV export, an MCP
+It does not know whether its rows came from a history file, a CSV export, an MCP
 tool result or a fixture — and it must not learn.
 
 That is what lets the same calculation run in all of these without a rewrite:
@@ -155,7 +214,8 @@ That is what lets the same calculation run in all of these without a rewrite:
 | Where | How it consumes the engine |
 |---|---|
 | The dashboard | `import { brief } from "./engine.js"` in a `<script type="module">` |
-| A Deno Edge Function | Copy the file in and `import` it — no npm, no bundler |
+| A history file | `read()` in `store.js` hands it rows; neither knows about the other |
+| A server, if one is ever needed | Copy the file in and `import` it — no npm, no bundler |
 | An n8n Function node | Paste the module, or fetch it from the deployed static host |
 | An MCP tool | `import` it in the tool's handler and return `brief()` as the result |
 | Node / CI | `node --test *.test.js` |
