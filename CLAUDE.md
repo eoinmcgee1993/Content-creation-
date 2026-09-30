@@ -85,16 +85,13 @@ no root `pytest.ini`/`conftest.py`):
 - `substack-os/` — Substack analytics engine: `npm test` (from inside the directory).
   No install step and no dependencies; `package.json` exists only to name the
   command and mark the directory as ESM.
-- `digital-renaissance/money-machine/` — tests and 3D-model build for the Money
-  Machine page, which lives in `digital-renaissance/site/money-machine/`:
-  `npm test` (from inside the directory; tests need no install).
 - `thai-id/` — PHP generator of checksum-valid Thai citizen IDs, for test data:
   `php thai-id/tests/run.php`. No PHPUnit and no Composer install; `composer.json`
   only maps the `ThaiId\` autoload for projects that require it.
 
 The first three also run in CI (`.github/workflows/{landing,offload,audits}.yml`,
-path-filtered to their own directory) — `kdp-compiler/`, `substack-os/`, the
-Money Machine and `thai-id/` do not yet.
+path-filtered to their own directory) — `kdp-compiler/`, `substack-os/` and
+`thai-id/` do not yet.
 
 **Deploy targets, and the cross-cutting traps to know about:**
 - `render.yaml` is one Render blueprint provisioning `landing/` (service
@@ -102,11 +99,14 @@ Money Machine and `thai-id/` do not yet.
   (`mediafetch`) as separate services.
 - `landing/` *also* deploys to Vercel independently, via `api/index.py` +
   root `vercel.json` — two live deploy targets for one app.
-- The root `netlify.toml` publishes **`digital-renaissance/site`**. Any
-  other static project connected to this repo's Netlify site (rather than
-  deployed by its own upload/GitHub Action) would be silently overridden by
-  that config — this has already shaped how `crf-builder/` and
-  `trading-dashboard/` deploy (see their own docs/workflows).
+- The root `netlify.toml` builds and publishes **`trading-dashboard/`**. Any
+  other static project connected to a Netlify site that builds from this repo
+  (rather than deployed by its own upload/GitHub Action) would be silently
+  overridden by that config — this has already shaped how `crf-builder/`
+  deploys (see its own docs).
+- The Digital Renaissance site (digital-renaissance.tech) no longer lives here:
+  it is its own repository, `eoinmcgee1993/DigitalRenaissanceNew`, which the
+  Netlify project `digitalrenaissancearchitect` builds from.
 - A single `supabase/` project's migrations serve multiple unrelated apps
   (`crf-builder/`'s racewear/ECU tables, `mediafetch/`'s subscriptions) in
   one shared Postgres schema — check existing migration numbering and table
@@ -220,7 +220,7 @@ unshipped larger one.
 
 **Deploying:** the site is published by uploading `crf-builder/`, and
 `crf-garage` is deliberately **not** connected to this repository. The root
-`netlify.toml` publishes `digital-renaissance/site`, so linking the site would
+`netlify.toml` publishes `trading-dashboard/`, so linking the site would
 make its next build serve a different project on this domain. Deploy an
 explicit list of files, never the folder — `privacy.html`, `terms.html` and
 `legal-details.js` sit in it and must not ship until their four facts exist.

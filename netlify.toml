@@ -1,2 +1,11 @@
 [build]
-  publish = "digital-renaissance/site"
+  command = "cd trading-dashboard && npm ci && npm run build"
+  publish = "trading-dashboard/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
