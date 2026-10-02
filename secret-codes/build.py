@@ -1,7 +1,10 @@
-"""Validate registry.json and render system-prompt.md from it.
+"""Validate registry.json and render the outputs generated from it.
 
-    python build.py           # validate, then write system-prompt.md
-    python build.py --check   # validate, and fail if system-prompt.md is stale
+    python build.py           # validate, then write every output
+    python build.py --check   # validate, and fail if any output is stale
+
+Outputs: system-prompt.md (paste into any model) and the Claude skill in
+skill/secret-codes/ (router in SKILL.md, index in references/commands.md).
 """
 import json
 import re
@@ -11,7 +14,16 @@ from pathlib import Path
 HERE = Path(__file__).parent
 REGISTRY = HERE / "registry.json"
 ROUTER = HERE / "router.md"
-OUTPUT = HERE / "system-prompt.md"
+SKILL = HERE / "skill" / "secret-codes"
+
+# The description is what makes Claude load the skill, so it names the
+# triggers rather than describing the product.
+SKILL_FRONTMATTER = """---
+name: secret-codes
+description: Natural-language command layer. Use whenever a message contains /slash shortcuts such as /human, /critic, /research, /rewrite, /decision, /auditcode or /recap (alone or stacked, e.g. "/rewrite /human /punchy"), mentions Secret Codes, or invokes /secret-codes. Resolves each token to one canonical command, applies modes and permission controls, runs tasks and workflows in order, and checks the result before answering.
+---
+
+"""
 
 # Tokens are typed after a slash, so no spaces or punctuation: V1's
 # "/case study" could never be typed as one command.
@@ -53,8 +65,13 @@ def validate(reg):
     return problems
 
 
-def render(reg):
-    lines = [ROUTER.read_text().rstrip(), ""]
+def render_index(reg):
+    lines = [
+        "## Command index",
+        "",
+        "Format: `/command (aliases) — what it does [fields or stages]`.",
+        "",
+    ]
     for cat, label in reg["categories"].items():
         lines += [f"### {label}", ""]
         for cmd in reg["commands"]:
@@ -77,20 +94,37 @@ def render(reg):
     return "\n".join(lines)
 
 
+def render(reg):
+    """Return {path: text} for every generated file."""
+    router = ROUTER.read_text().rstrip()
+    index = render_index(reg)
+    return {
+        HERE / "system-prompt.md": router + "\n\n" + index,
+        SKILL / "SKILL.md": SKILL_FRONTMATTER + router + "\n\n"
+        "## Command index\n\n"
+        "The full index is in `references/commands.md`. Read it whenever the\n"
+        "request contains a `/word`, or names an operation you need the exact\n"
+        "fields or stages for.\n",
+        SKILL / "references" / "commands.md": "# Secret Codes command index\n\n" + index,
+    }
+
+
 def main(argv):
     reg = load()
     problems = validate(reg)
     if problems:
         print("\n".join(problems), file=sys.stderr)
         return 1
-    text = render(reg)
+    outputs = render(reg)
     if "--check" in argv:
-        if not OUTPUT.exists() or OUTPUT.read_text() != text:
-            print("system-prompt.md is stale: run python build.py", file=sys.stderr)
-            return 1
-        return 0
-    OUTPUT.write_text(text)
-    print(f"{len(reg['commands'])} commands -> {OUTPUT.name} ({len(text)} chars)")
+        stale = [p for p, t in outputs.items() if not p.exists() or p.read_text() != t]
+        for p in stale:
+            print(f"{p.relative_to(HERE)} is stale: run python build.py", file=sys.stderr)
+        return 1 if stale else 0
+    for path, text in outputs.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+        print(f"wrote {path.relative_to(HERE)} ({len(text)} chars)")
     return 0
 
 

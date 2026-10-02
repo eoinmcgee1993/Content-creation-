@@ -88,9 +88,10 @@ no root `pytest.ini`/`conftest.py`):
 - `thai-id/` — PHP generator of checksum-valid Thai citizen IDs, for test data:
   `php thai-id/tests/run.php`. No PHPUnit and no Composer install; `composer.json`
   only maps the `ThaiId\` autoload for projects that require it.
-- `secret-codes/` — AI command registry + generated system prompt:
-  `pytest secret-codes/tests -q`. Edit `registry.json`/`router.md`, then run
-  `python secret-codes/build.py`; never hand-edit `system-prompt.md`.
+- `secret-codes/` — AI command registry + generated system prompt and Claude
+  skill: `pytest secret-codes/tests -q`. Edit `registry.json`/`router.md`, then
+  run `python secret-codes/build.py`; never hand-edit `system-prompt.md` or
+  `skill/`.
 
 The first three also run in CI (`.github/workflows/{landing,offload,audits}.yml`,
 path-filtered to their own directory) — `kdp-compiler/`, `substack-os/`,

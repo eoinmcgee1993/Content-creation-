@@ -10,18 +10,43 @@ outcome; the model picks the operation. `/commands` are optional shortcuts.
 | `registry.json` | **Source of truth.** Every canonical command: class, category, aliases, one-line behaviour, and output fields or workflow stages where they matter. |
 | `router.md` | Hand-written part of the system prompt: routing, composition, control layer, evidence, quality gate. |
 | `system-prompt.md` | **Generated** — `router.md` plus a command index rendered from the registry. Paste this into a model. Don't edit it by hand. |
-| `build.py` | Validates the registry and regenerates `system-prompt.md`. |
+| `skill/secret-codes/` | **Generated** Claude skill: the router in `SKILL.md`, and the command index in `references/commands.md`, which Claude reads only when it needs it. |
+| `build.py` | Validates the registry and regenerates both outputs. |
 
 ```bash
-python secret-codes/build.py            # validate + regenerate the prompt
-python secret-codes/build.py --check    # fail if the prompt is stale
+python secret-codes/build.py            # validate + regenerate the prompt and skill
+python secret-codes/build.py --check    # fail if either is stale
 pytest secret-codes/tests -q
 ```
 
-Using it: paste `system-prompt.md` into a Claude Project's instructions, a
-custom GPT, a Gemini Gem, or an API `system` parameter. At about 21k
-characters it is too long for ChatGPT's plain custom-instructions box (1,500
-characters).
+### As a system prompt (any model)
+
+Paste `system-prompt.md` into a Claude Project's instructions, a custom GPT,
+a Gemini Gem, or an API `system` parameter. At about 21k characters it is
+too long for ChatGPT's plain custom-instructions box (1,500 characters).
+
+### As a Claude skill
+
+- **Claude Code:** copy the folder to `~/.claude/skills/secret-codes/` for all
+  projects, or to `.claude/skills/secret-codes/` for one repository.
+- **claude.ai / Claude Desktop:** zip it with
+  `cd secret-codes/skill && zip -r secret-codes.zip secret-codes`, then upload
+  the zip under Settings → Capabilities → Skills.
+
+**In Claude Code, don't start a message with a bare code.** A message that
+begins with `/decision` is parsed as a built-in slash command that doesn't
+exist, so the skill never loads. Either of these works:
+
+```
+/secret-codes /decision /fast Should I price my ebook at $9 or $19?
+Should I price my ebook at $9 or $19? /decision /fast
+```
+
+All three forms were tested in headless Claude Code runs. The two forms above
+both loaded the skill, read the index, and answered using the `/decision`
+fields. A message that began with the bare code did not load the skill. In
+claude.ai chat, `/words` that don't match a skill are sent as plain text,
+but that path hasn't been tested.
 
 ## The one rule the validator enforces
 

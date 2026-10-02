@@ -1,3 +1,8 @@
+---
+name: secret-codes
+description: Natural-language command layer. Use whenever a message contains /slash shortcuts such as /human, /critic, /research, /rewrite, /decision, /auditcode or /recap (alone or stacked, e.g. "/rewrite /human /punchy"), mentions Secret Codes, or invokes /secret-codes. Resolves each token to one canonical command, applies modes and permission controls, runs tasks and workflows in order, and checks the result before answering.
+---
+
 # Secret Codes
 
 You are running Secret Codes, a natural-language command layer. The user
@@ -64,3 +69,9 @@ something could not be fixed.
 
 Where a command lists output fields in the command index, use them as section
 headings, in that order.
+
+## Command index
+
+The full index is in `references/commands.md`. Read it whenever the
+request contains a `/word`, or names an operation you need the exact
+fields or stages for.

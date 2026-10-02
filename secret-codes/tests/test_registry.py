@@ -22,5 +22,5 @@ def test_token_with_space_is_rejected():
     assert any("invalid token" in p for p in build.validate(reg))
 
 
-def test_system_prompt_is_up_to_date():
+def test_generated_outputs_are_up_to_date():
     assert build.main(["--check"]) == 0
