@@ -115,7 +115,8 @@ You need the ElevenLabs Creator plan or above.
 - **Say it's an AI.** Since 2 August 2026, Article 50 of the EU AI Act has
   required an AI system that talks to people to tell them so, unless that's
   obvious. A clone of a real Cork voice is built not to be obvious, so the caller
-  has to say it. The greeting in `clearmark_voice.py` doesn't yet.
+  has to say it. The greeting in `clearmark_voice.py` does; keep it if you
+  change the wording.
 
 ## What changed from the original plan
 

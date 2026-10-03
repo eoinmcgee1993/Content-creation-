@@ -38,5 +38,7 @@ python clearmark_voice.py --in practices_uk_ie.csv --limit 5   # cap the batch
 
 Each call gets a system prompt built from the practice's ads/SEO angle (same split as
 `clearmark_outreach.py`): a Google Ads observation drives the Account Health Check pitch,
-everything else drives the Search Console pitch. A single hosted number is bought once per
-`--live` run and reused across calls.
+everything else drives the Search Console pitch. One hosted agent and one number are set up
+once per `--live` run and reused across calls, with each practice's prompt and greeting sent
+along with its call. The greeting says the caller is an AI, as the EU AI Act (Article 50)
+requires for calls to Irish practices.
