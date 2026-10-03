@@ -23,6 +23,8 @@ Reviewed: Internal Training Guide v1.1, Cross-Cultural Sales Training v1.0, Call
 14. **Escalation and quality.** No rules for a client dispute, a wrong number, an insulted contact or a no-show. The "note what worked" habit has no log format.
 15. **Pronunciation** of the name for agents answering phones. Needed given item 1.
 
+Proposed drafts for items 11, 12, 14 and 15 are in `training/PROPOSED_ADDITIONS.md`.
+
 ## D. Smaller notes
 16. The cultural table describes tendencies as if universal. The merged guide adds "mirror the individual", which is a one-line softening and **[Added]**.
 17. The first video frame shows two captions overlapping ("EVERY IMPORTANT CLIENT" over "HANDLED."). It may be an intentional cross-fade; I sampled one frame every 5 s and can't tell.

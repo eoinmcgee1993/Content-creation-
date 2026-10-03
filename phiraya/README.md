@@ -9,6 +9,7 @@ This folder is a standalone project, separate from the rest of the repo. It has 
 | `training/PHIRAYA_TRAINING_GUIDE.md` | One merged internal guide (principles, sales approach, scripts). Internal only. |
 | `site/index.html` | Public one-page website: plain HTML/CSS/JS. Copy and palette come from the source documents and brand video. |
 | `site/assets/` | `phiraya-intro.mp4` (34 s brand intro) and `poster.jpg` (its last frame). |
+| `training/PROPOSED_ADDITIONS.md` | Draft follow-up cadence, booking brief, escalation, contact log. Proposals only, needing owner approval. |
 | `social/CONTENT_KIT.md` | The four posts, video caption, and carousel/clip ideas. |
 | `REVIEW.md` | Contradictions and gaps found in the source documents, with the blockers to fix before going public. |
 
