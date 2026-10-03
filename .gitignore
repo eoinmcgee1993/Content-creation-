@@ -20,3 +20,6 @@ downloads/
 
 # Local secrets (e.g. higgsfield-seedance HF_KEY) — never commit
 .env.local
+
+# Voice-clone recordings: enough for anyone to clone the voice, never commit
+voice_clone/takes/

@@ -88,10 +88,13 @@ no root `pytest.ini`/`conftest.py`):
 - `thai-id/` — PHP generator of checksum-valid Thai citizen IDs, for test data:
   `php thai-id/tests/run.php`. No PHPUnit and no Composer install; `composer.json`
   only maps the `ThaiId\` autoload for projects that require it.
+- `voice_clone/` — recording kit for an ElevenLabs Professional Voice Clone; its
+  checker grades takes against ElevenLabs' audio targets:
+  `pytest voice_clone/tests -q` (needs `pip install -r voice_clone/requirements.txt`).
 
 The first three also run in CI (`.github/workflows/{landing,offload,audits}.yml`,
-path-filtered to their own directory) — `kdp-compiler/`, `substack-os/` and
-`thai-id/` do not yet.
+path-filtered to their own directory) — `kdp-compiler/`, `substack-os/`,
+`thai-id/` and `voice_clone/` do not yet.
 
 **Deploy targets, and the cross-cutting traps to know about:**
 - `render.yaml` is one Render blueprint provisioning `landing/` (service
