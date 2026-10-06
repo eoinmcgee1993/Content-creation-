@@ -460,7 +460,7 @@ def ig_slides(slug: str) -> list[str]:
 
             f"<div class='kicker'>EdgeVault</div>"
             f"<h1 class='hero'>{b['price']}. <em>One time.</em></h1>"
-            f"<p class='lede'>Extracted from a system that has taken <b>real, live-mode Stripe payments</b> — "
+            f"<p class='lede'>Extracted from a deployed system wired to <b>live-mode Stripe</b> — "
             f"not a tutorial project.</p>"
             f"<div class='chips' style='gap:12px'>"
             + "".join(f"<span class='chip' style='font-size:20px;padding:10px 18px'>{c}</span>"

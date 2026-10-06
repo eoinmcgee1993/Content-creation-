@@ -43,8 +43,8 @@ should be:
 
 ### What EdgeVault is
 
-A working pattern, extracted from a system that has taken real, live-mode
-Stripe payments in production: your customer's browser can **create an
+A working pattern, extracted from a deployed system wired to a live-mode
+Stripe payment link: your customer's browser can **create an
 order and nothing else**. It cannot read orders back, cannot mark itself
 paid, cannot approve its own submitted artwork. Every one of those
 restrictions is enforced in the database itself — not just "the UI doesn't
@@ -102,9 +102,9 @@ Stripe integration — the comments explain the reasoning, not just the code.
 
 Every claim above is something you can check yourself — the setup guide
 gives you the exact SQL to verify each guarantee (grants, RLS, trigger
-behavior) rather than asking you to trust the README. This shipped and took
-real payments before being extracted into this kit, and it went through
-multiple dedicated hardening passes based on real use. That said: this is
+behavior) rather than asking you to trust the README. This shipped to
+production before being extracted into this kit, and it went through
+multiple dedicated hardening passes. That said: this is
 one team's self-directed hardening, not a third-party penetration test.
 Treat it as a strong, security-conscious starting point — and if you're
 handling anything beyond a low-stakes digital download, get your own review
