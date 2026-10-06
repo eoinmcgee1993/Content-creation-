@@ -12,5 +12,13 @@
     "./.claude/agents/code-reviewer.md",
     "./.claude/agents/doc-writer.md"
   ],
-  "skills": "./.claude/skills/"
+  "skills": [
+    "./.claude/skills/higgsfield-generate",
+    "./.claude/skills/higgsfield-marketplace-cards",
+    "./.claude/skills/higgsfield-product-photoshoot",
+    "./.claude/skills/higgsfield-soul-id",
+    "./.claude/skills/higgsfield-websites",
+    "./.claude/skills/open-video",
+    "./.claude/skills/productize-code-asset"
+  ]
 }
