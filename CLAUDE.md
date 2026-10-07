@@ -117,8 +117,12 @@ path-filtered to their own directory) — `kdp-compiler/`, `substack-os/`,
 
 Everything else in the repo (`digikim/`, `gates-unbound/`, `launchwhere/`,
 `local-downloader/`, `sales/`, `plugins/`, `trading/`, `gridstrike-core/`,
-and more) is a standalone script, static page, or experiment with no shared
-build or test process — read its own `README.md` before touching it.
+`phiraya/`, `phone-agent/`, and more) is a standalone script, static page, or
+experiment with no shared build or test process — read its own `README.md`
+before touching it.
+
+The conventions every project shares (commits, secrets, personal data, CI,
+new-project layout) are in **section 11**, after the CRF sections.
 
 ## 6. Project overview
 
@@ -227,3 +231,88 @@ unshipped larger one.
 make its next build serve a different project on this domain. Deploy an
 explicit list of files, never the folder — `privacy.html`, `terms.html` and
 `legal-details.js` sit in it and must not ship until their four facts exist.
+
+## 11. Repo-wide conventions (every project)
+
+These came out of the repo itself (CI, hooks, `.gitignore`, git history and
+the existing projects). A project's own `README.md` overrides them where the
+two disagree. The CRF rules in sections 6–10 stay scoped to `crf-builder/`.
+
+**Starting a new project**
+- Give it its own top-level directory and a `README.md` covering: what it is,
+  a table of its paths, how to run it locally, and how it deploys or why it
+  doesn't yet. `phiraya/` and `phone-agent/` are the template.
+- Keep it standalone: no imports from sibling projects, and its own
+  `requirements.txt` / `package.json` where it needs dependencies. Add to the
+  root `requirements.txt` only for deps the session needs for everything.
+- Static sites are plain HTML/CSS/JS, one file per page, no build step, and
+  are deployed **by upload**. Never connect a Netlify site that builds from
+  this repo (see section 5). Write "Not deployed" in the README until a site is.
+- If a page depends on an asset that isn't committed yet (generated video,
+  portrait), make it degrade visibly and gracefully (show a fallback, not a
+  black box) and list the missing asset in the README.
+- If a placeholder must be filled before launch (a contact URL, legal facts),
+  hide the UI it drives until it's filled. Never ship a dead link.
+
+**Python projects** (`landing/`, `offload/`, `audits/`, `voice_clone/`)
+- Python 3.11 (pinned in CI and `render.yaml`).
+- Flask apps use an app factory (`create_app()`), start modules with
+  `from __future__ import annotations`, and read config from `os.environ.get`
+  with a safe default. File paths are overridable by env var (`LEADS_PATH`,
+  `SIGNUPS_PATH`, `FREEBIE_OUT`) so tests and serverless hosts can redirect them.
+- Tests are pytest, run from the repo root scoped to the project
+  (`pytest <project>/tests -q`), and isolate state with the `tmp_path` and
+  `monkeypatch` fixtures rather than touching real files.
+
+**JavaScript projects**
+- Zero-dependency Node tools use the built-in runner: `node --test`
+  (`kdp-compiler/`, `substack-os/`), with `"type": "module"` where ESM.
+- Next.js projects (`degen-diaries/`, `gridstrike-core/apps/web`) ship
+  `typecheck`/`lint` scripts. Run them before pushing. `degen-diaries` CI runs
+  `typecheck` before `build`.
+- A `PostToolUse` hook in `.claude/settings.json` runs `substack-os` tests
+  after every edit to `substack-os/*.js` and blocks on failure. Fix the
+  failure; don't route around the hook.
+
+**CI** (`.github/workflows/`)
+- One workflow per project, path-filtered to that project's directory plus
+  the workflow file itself, so unrelated changes don't trigger it.
+- Pin actions to a full commit SHA with the version as a comment
+  (`actions/checkout@11bd…683 # v4.2.2`). Two workflows still use `@v4`
+  tags; match the pinned style in anything new.
+
+**Secrets and personal data**
+- Secrets never enter the repo. Locally they go in `.env` / `.env.local`
+  (both gitignored). On Render they're declared with `sync: false`. CRF
+  is the exception: secrets live in `public.crf_config` (section 7).
+- Personal data is gitignored at the source: captured leads
+  (`landing/leads.csv`), signups (`offload/signups.csv`) and voice recordings
+  (`voice_clone/takes/`). Any new project that captures people's data adds its
+  output path to `.gitignore` in the same commit.
+- Log lines carry no email addresses, user IDs or request bodies. The
+  existing apps log only the provider's error detail.
+
+**Database** (`supabase/migrations/`)
+- Migrations are numbered with three zero-padded digits (`004_…`). Take the
+  next free number, and prefix the file name and table names with the owning
+  project (`crf_`, `mediafetch_`), because the schema is shared.
+
+**Vendored code** (`.claude/skills/higgsfield-*`, `ai-marketing/`)
+- Vendor upstream unmodified in its own commit, then make local changes in
+  separate commits, so a re-vendor shows exactly what was ours. For the
+  Higgsfield skills, re-vendor and bump the version in
+  `.claude/skills/README.md` instead of editing them.
+
+**Commits and PRs**
+- Commit subjects are a plain imperative sentence that says what changed
+  and, where it matters, why: "Fix the Clearmark dialer's live calls and have
+  it say it's an AI". No `feat:`-style prefixes. A `project:` prefix is fine
+  when it adds clarity.
+- Work on a branch and open a PR. PRs are merged with merge commits.
+
+**Claude tooling in this repo**
+- `scripts/setup.sh` runs on every session start (Python deps, `ffmpeg`,
+  Higgsfield CLI). Keep it idempotent and non-fatal for optional tools.
+- Project subagents live in `.claude/agents/` (`code-reviewer`,
+  `bug-investigator`, `architecture-validator`, `doc-writer`). Project skills
+  live in `.claude/skills/` (see its README).
