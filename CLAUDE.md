@@ -96,6 +96,22 @@ The first three also run in CI (`.github/workflows/{landing,offload,audits}.yml`
 path-filtered to their own directory) — `kdp-compiler/`, `substack-os/`,
 `thai-id/` and `voice_clone/` do not yet.
 
+**Projects with a build step rather than tests:**
+- `trading-dashboard/` — React 19 + Vite: `npm ci && npm run build`, `npm run lint`
+  (from inside the directory). Deployed by `.github/workflows/netlify-deploy.yml`
+  using its own `NETLIFY_TRADING_DASHBOARD_SITE_ID` secret — never reuse the
+  shared `NETLIFY_SITE_ID`, which belongs to a different site.
+- `degen-diaries/` — Next.js + Drizzle (Postgres): `npm run typecheck` and
+  `npm run build` are the CI gates (`degen-diaries-build.yml`). It carries its
+  own `ARCHITECTURE.md`, `DEPLOYMENT.md`, `PRODUCT.md` and `STRIPE.md`; read
+  those first.
+- `phiraya/` — no build, no tests; see "Phiraya" below.
+
+**Stale CI to be aware of:** `.github/workflows/deploy-ecu-app.yml` ("Deploy CRF
+Builder site to Netlify") is `workflow_dispatch`-only — its push trigger is
+commented out because the Netlify token was revoked, and CRF has since moved to
+Vercel. Do not re-enable it without checking `docs/crf/DEPLOYMENT.md`.
+
 **Deploy targets, and the cross-cutting traps to know about:**
 - `render.yaml` is one Render blueprint provisioning `landing/` (service
   `audit-landing`), `offload/` (`offload-waitlist`), and `mediafetch/`
@@ -118,7 +134,98 @@ path-filtered to their own directory) — `kdp-compiler/`, `substack-os/`,
 Everything else in the repo (`digikim/`, `gates-unbound/`, `launchwhere/`,
 `local-downloader/`, `sales/`, `plugins/`, `trading/`, `gridstrike-core/`,
 and more) is a standalone script, static page, or experiment with no shared
-build or test process — read its own `README.md` before touching it.
+build or test process — read its own `README.md` before touching it. Roughly
+half of the top-level directories have no README at all; when you add or
+substantially change one, give it a README rather than relying on this file.
+
+### Repo-wide conventions (outside CRF, which has its own rules below)
+
+- **This repository is public.** Anything committed is world-readable. Never
+  commit secrets, personal data, or documents marked confidential. Internal
+  material belongs in a private repository.
+- **Secrets come from environment variables, never files or arguments.**
+  `.env` and `.env.local` are git-ignored; `.env.example` files hold
+  placeholders only (`sk_live_...`). `scripts/create_stripe_account.py` is the
+  reference pattern: config files hold non-secret details, the key is read from
+  `STRIPE_SECRET_KEY`. (CRF is the exception: it keeps secrets in
+  `public.crf_config`, see section 7.)
+- **Personal data and recordings stay out of git.** `landing/leads.csv`,
+  `offload/signups.csv`, `downloads/` and `voice_clone/takes/` are ignored on
+  purpose — a voice recording is enough to clone the voice. Add new data
+  artifacts to `.gitignore` in the same change that creates them.
+- **Claims are verified against source, not asserted.** Recent history fixes
+  copy that overstated what a system had done ("Stop claiming EdgeVault's
+  source system has taken live payments") and made the Clearmark dialer
+  disclose that it is an AI. Don't write "live", "24/7", "verified" or
+  "discreet" into customer-facing copy unless the code or a document in the
+  repo supports it; put unsupported claims in the project's gaps list instead.
+- **Match each project's own stack and idiom.** Python projects are
+  Flask (`landing/`, `offload/`) or FastAPI (`mediafetch/`) with `pytest`;
+  `substack-os/` and `trading-dashboard/` are ESM, `kdp-compiler/` is not;
+  static pages are single-file HTML/CSS/JS with no bundler. Don't add a
+  framework or build tool to a static project, and don't add a root-level
+  config that assumes one shared runtime.
+- **Pin third-party GitHub Actions by commit SHA with a version comment**, as
+  `landing.yml` and `netlify-deploy.yml` do (`degen-diaries-build.yml` uses
+  floating `@v4` tags — don't copy that), and path-filter each workflow to its
+  own directory.
+- **Commits and PRs:** imperative, sentence-case subject with no
+  conventional-commit prefix ("Add a Thai citizen ID generator for test data").
+  Work lands through pull requests from `claude/<slug>` or `ccr-*` branches,
+  merged with merge commits. Netlify deploy previews run on every PR, even for
+  unrelated projects, and only some projects have real checks — a green preview
+  is not a passing test suite.
+- **Shared state:** the Supabase `supabase/` migrations, the root
+  `requirements.txt` and root `netlify.toml`/`vercel.json` affect unrelated
+  projects. Change them only when the task is about them, and say so.
+
+### Claude Code setup in this repo
+
+- `.claude/settings.json` runs `scripts/setup.sh` on session start (Python deps,
+  `ffmpeg`, Higgsfield CLI) and, after any `Write`/`Edit` of a
+  `substack-os/*.js` file, runs `npm test` there and blocks on failure.
+  Editing other projects triggers no automatic check — run their tests yourself.
+- `.claude/agents/` holds `architecture-validator` (checks changes against the
+  rules in this file), `bug-investigator`, `code-reviewer` (read-only) and
+  `doc-writer`.
+- `.claude/skills/` holds `productize-code-asset` and five `higgsfield-*` skills
+  vendored from `higgsfield-ai/skills` (v0.12.0). Don't hand-edit the vendored
+  ones; update them from upstream.
+- MCP servers declared in `settings.json`: `notebooklm`, `muapi`, `open-video`,
+  `open-video-upload`.
+
+### Phiraya (`phiraya/`)
+
+Cross-cultural agent and secretary service bridging Thailand and Western
+markets. Tagline **"Every Client Connection, Handled."** Read `phiraya/README.md`
+and `phiraya/REVIEW.md` first. Layout: `training/` (merged internal guide and
+proposed additions), `site/` (plain-HTML one-pager plus the brand intro video),
+`social/` (content kit).
+
+- **Spelling is "Phiraya".** The brand video's captions read "Firaya"; that is
+  an unresolved discrepancy, not a variant. Don't copy it.
+- **No invented facts.** Contact details are deliberately empty (`CONTACT` in
+  `site/index.html`); pricing, coverage hours and privacy practice don't exist
+  in any source document. Leave them blank or marked `[Added]` / "owner to fill
+  in" rather than guessing.
+- **Don't publish the open claims.** "24/7", "discreet" for clinics and the
+  cross-border cold-calling scripts are listed as blockers in `REVIEW.md`
+  section A. Resolve those before the site goes live.
+- **The merged guide is the source of truth**, not the PDF/DOCX digest, which
+  has dropped several scripts. Mark anything that reconciles two sources
+  `[Reconciled]` and anything new `[Added]`; proposals live in
+  `training/PROPOSED_ADDITIONS.md` until approved.
+- **No Thai-language copy exists.** Don't machine-write Thai scripts for live
+  calls without review by a native speaker.
+- **Plain HTML/CSS/JS only, one file per page, no bundler.** Palette from the
+  brand video: background `#F1EEE7`, terracotta accent, near-black serif
+  headings; tone is warm, capable, discreet, responsive, internationally minded.
+- **Not deployed anywhere, and the training material is currently public.**
+  `training/` and `REVIEW.md` were merged into this public repo (PR #125); the
+  decision to move them to a private repo is still open with the owner. Don't
+  add more internal or confidential Phiraya material here until it is settled.
+  The root `netlify.toml` publishes `trading-dashboard/`, so deploy
+  `phiraya/site/` by upload or from its own site.
 
 ## 6. Project overview
 
@@ -131,12 +238,14 @@ while working on CRF.
 CRF250L / CRF300L — a print-ready graphics-kit SVG, custom club racewear, and a
 free ECU tune template. No accounts, no server, no build step.
 
-**Stack:** Netlify (static hosting, deployed by upload) · Supabase Postgres +
-Edge Functions (Deno) · Stripe Payment Links · Resend for email, when a sending
-domain exists.
+**Stack:** Vercel (hosting) · Supabase Postgres + Edge Functions (Deno) ·
+Stripe Payment Links · Resend for email, when a sending domain exists.
 
-**Live at:** https://crf-garage.netlify.app — `/`, `/apparel`, `/ecu`, `/mods`,
-`/approve`, `/desk`. "CRF Garage" is a prototype name, not a trading name.
+**Live at:** https://crf-eoins-projects-99ff5888.vercel.app — `/`, `/apparel`,
+`/ecu`, `/mods`, `/approve`, `/desk`. "CRF Garage" is a prototype name, not a
+trading name. The old `crf-garage.netlify.app` now answers 404 everywhere; that
+is expected, not an outage. Hosting facts come from `docs/crf/DEPLOYMENT.md`
+(Phase 3) — if this section and that file disagree, that file wins.
 
 **Current focus:** the trading name. It blocks the domain, the legal pages, the
 email sending domain, and the Stripe merchant name a buyer sees at checkout.
@@ -194,7 +303,7 @@ replaces them:
 
 # 2. Every live route answers.
 for p in "" apparel ecu mods approve desk; do
-  curl -s -o /dev/null -w "$p %{http_code}\n" "https://crf-garage.netlify.app/$p"
+  curl -s -o /dev/null -w "$p %{http_code}\n" "https://crf-eoins-projects-99ff5888.vercel.app/$p"
 done   # privacy and terms must stay 404 until their four facts exist
 
 # 3. anon holds INSERT and nothing else.
@@ -221,9 +330,12 @@ Work toward one milestone at a time.
 Governing rule: ship before build. A working, shipped, smaller version beats an
 unshipped larger one.
 
-**Deploying:** the site is published by uploading `crf-builder/`, and
-`crf-garage` is deliberately **not** connected to this repository. The root
-`netlify.toml` publishes `trading-dashboard/`, so linking the site would
-make its next build serve a different project on this domain. Deploy an
-explicit list of files, never the folder — `privacy.html`, `terms.html` and
-`legal-details.js` sit in it and must not ship until their four facts exist.
+**Deploying:** per `docs/crf/DEPLOYMENT.md`, the live site deploys
+automatically on push to `main` of a *separate* repository,
+`eoinmcgee1993/crf-builder` — merging here does not publish it. The root
+`netlify.toml` publishes `trading-dashboard/`, so never link a Netlify site
+that builds from this repo for CRF. The legal drafts (`privacy.html`,
+`terms.html`, `legal-details.js`) live in `docs/crf/legal-drafts/`, outside any
+publish root; moving them into a served `public/` directory is the deliberate
+act that publishes them, and must not happen until their four facts exist.
+Never copy them back into `crf-builder/`.
