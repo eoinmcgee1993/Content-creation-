@@ -10,6 +10,15 @@ blueprint — with every claim verified against source. Built from the session
 that produced `productized/`, which is its reference implementation.
 `evals/evals.json` holds three test prompts that haven't been run yet.
 
+## retro
+
+User-invoked (`/retro`) retrospective on a coding session: suggests changes to
+the agent's environment (navigation pointers, automated checks, steering
+files) ranked by severity. Vendored unmodified from
+[`mattpocock/skills`](https://github.com/mattpocock/skills); update with
+`npx skills update retro`. Its first step calls a `writing-for-agents` skill
+from the same repo, which isn't installed here, so that step is skipped.
+
 ## Higgsfield (`higgsfield-*`)
 
 Five skills for Higgsfield AI generation, vendored from
