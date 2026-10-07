@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Phitara — the clinic phone, answered</title>
+<meta name="description" content="Phitara answers your clinic's calls in Thai and English, books appointments, and follows up on LINE." />
+<style>
+  :root {
+    --navy: #0B1626; --navy-2: #12223A; --navy-3: #1A2F4E;
+    --teal: #2BB3A3; --teal-ink: #1E8C7F; --amber: #F2A93B;
+    --text: #E8EEF5; --muted: #9AABBF; --line: #24395A;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--navy); color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", "Noto Sans Thai", sans-serif;
+  }
+  a { color: var(--teal); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+  header { border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .logo { font-weight: 700; letter-spacing: .02em; font-size: 1.15rem; }
+  .logo span { color: var(--teal); }
+  nav a { color: var(--muted); text-decoration: none; margin-left: 22px; font-size: .95rem; }
+  nav a:hover { color: var(--text); }
+
+  .btn {
+    display: inline-block; padding: 12px 22px; border-radius: 999px; font-weight: 600;
+    text-decoration: none; border: 0; cursor: pointer; font-size: 1rem;
+  }
+  .btn-primary { background: var(--amber); color: var(--navy); }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .btn-ghost:hover { border-color: var(--teal); }
+
+  /* Hero */
+  .hero { padding: 72px 0 56px; }
+  .hero-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; }
+  .eyebrow { color: var(--teal); font-weight: 600; font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; }
+  h1 { font-size: clamp(2rem, 4.5vw, 3.2rem); line-height: 1.12; margin: 12px 0 18px; }
+  h1 em { font-style: normal; color: var(--amber); }
+  .lede { color: var(--muted); font-size: 1.1rem; max-width: 34em; }
+  .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+
+  .hero-media {
+    background: var(--navy-2); border: 1px solid var(--line); border-radius: 20px; padding: 18px;
+  }
+  .call-bar { display: flex; align-items: center; gap: 10px; font-size: .9rem; color: var(--muted); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  .hero-video { width: 100%; border-radius: var(--radius); display: block; margin-top: 18px; background: #000; }
+  /* The video stays hidden until it actually loads; the transcript below is the fallback. */
+  .hero-video[hidden] { display: none; }
+  .transcript { margin-top: 18px; display: grid; gap: 10px; }
+  .transcript[hidden] { display: none; }
+  .line { padding: 10px 14px; border-radius: 12px; max-width: 88%; font-size: .95rem; }
+  .line small { display: block; color: var(--muted); font-size: .78rem; margin-bottom: 2px; }
+  .line.agent { background: var(--navy-3); border: 1px solid var(--line); }
+  .line.caller { background: rgba(43,179,163,.14); border: 1px solid rgba(43,179,163,.35); justify-self: end; }
+  .th { display: block; }
+  .en { display: block; color: var(--muted); font-size: .85rem; }
+
+  /* Sections */
+  section { padding: 64px 0; }
+  section.alt { background: var(--navy-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); margin: 0 0 10px; }
+  .sub { color: var(--muted); max-width: 40em; margin: 0 0 36px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; }
+  .step { background: var(--navy); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
+  .step::before {
+    counter-increment: step; content: counter(step);
+    display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--teal); color: var(--navy); font-weight: 700; margin-bottom: 12px;
+  }
+  .step h3, .feature h3 { margin: 0 0 6px; font-size: 1.1rem; }
+  .step p, .feature p { margin: 0; color: var(--muted); }
+
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .feature { border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; background: var(--navy-2); }
+  .feature .icon { font-size: 1.6rem; margin-bottom: 10px; }
+
+  .line-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .chat { background: #E9EEF2; border-radius: 20px; padding: 18px; color: #1B1B1B; max-width: 380px; }
+  .chat-head { font-weight: 700; font-size: .9rem; padding-bottom: 10px; border-bottom: 1px solid #CED6DD; margin-bottom: 12px; }
+  .bubble { padding: 9px 13px; border-radius: 16px; margin: 6px 0; max-width: 85%; font-size: .92rem; }
+  .bubble.in { background: #fff; }
+  .bubble.out { background: #06C755; color: #fff; margin-left: auto; }
+  ul.checks { list-style: none; padding: 0; margin: 0; }
+  ul.checks li { padding-left: 28px; position: relative; margin-bottom: 12px; color: var(--muted); }
+  ul.checks li::before { content: "✓"; position: absolute; left: 0; color: var(--teal); font-weight: 700; }
+  ul.checks strong { color: var(--text); }
+
+  .cta { text-align: center; }
+  .cta .sub { margin-left: auto; margin-right: auto; }
+
+  footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted); font-size: .9rem; }
+
+  @media (max-width: 860px) {
+    .hero-grid, .line-grid { grid-template-columns: 1fr; gap: 32px; }
+    .steps, .features { grid-template-columns: 1fr; }
+    nav { display: none; }
+    .hero { padding-top: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">Phi<span>tara</span></div>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#line">LINE follow-up</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">AI phone agent for clinics</div>
+        <h1>Every call answered. <em>In Thai and English.</em></h1>
+        <p class="lede">Phitara picks up when your front desk can't. She greets the patient, answers the
+          common questions, books the appointment, and sends a confirmation on LINE. Anything she
+          can't handle goes to your staff.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="#contact">Book a demo</a>
+          <a class="btn btn-ghost" href="phitara-video-preview.html">Hear Phitara</a>
+        </div>
+      </div>
+
+      <div class="hero-media" aria-label="Example call">
+        <div class="call-bar"><span class="dot"></span> Incoming call · answered by Phitara</div>
+
+        <video class="hero-video" autoplay loop muted playsinline hidden>
+          <source src="assets/video/phitara-call-demo-v2.mp4" type="video/mp4" />
+        </video>
+
+        <div class="transcript">
+          <div class="line agent"><small>Phitara</small>
+            <span class="th">สวัสดีค่ะ ขอบคุณที่โทรหาคลินิกค่ะ ให้ดิฉันช่วยเรื่องอะไรดีคะ</span>
+            <span class="en">Hello, thank you for calling the clinic. How can I help?</span></div>
+          <div class="line caller"><small>Caller</small>
+            <span class="th">อยากนัดตรวจวันเสาร์นี้ค่ะ</span>
+            <span class="en">I'd like an appointment this Saturday.</span></div>
+          <div class="line agent"><small>Phitara</small>
+            <span class="th">วันเสาร์มีคิวว่างตอน 10 โมงกับบ่ายสองค่ะ สะดวกช่วงไหนคะ</span>
+            <span class="en">Saturday has 10am or 2pm free. Which suits you?</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="alt">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <p class="sub">Calls still come to your clinic's number. Phitara answers the ones your team can't get to.</p>
+      <div class="steps">
+        <div class="step"><h3>She answers</h3><p>Calls to your number that go unanswered, or come in after hours, go to Phitara. She speaks Thai or English, whichever the caller uses.</p></div>
+        <div class="step"><h3>She books or answers</h3><p>She answers questions from your clinic's own information (hours, location, services) and books into your open slots.</p></div>
+        <div class="step"><h3>She follows up</h3><p>The patient gets a confirmation on LINE. Your team gets a summary of every call, and anything urgent is flagged for a person.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>Built for a busy front desk</h2>
+      <p class="sub">The receptionists stay. Phitara takes the calls they miss.</p>
+      <div class="features">
+        <div class="feature"><div class="icon">🌙</div><h3>After-hours cover</h3><p>Evenings, weekends and lunch breaks get answered instead of going to voicemail.</p></div>
+        <div class="feature"><div class="icon">🗣️</div><h3>Thai and English</h3><p>She answers in the caller's language, so international patients get the same service as local ones.</p></div>
+        <div class="feature"><div class="icon">🧑‍⚕️</div><h3>Hands off to a person</h3><p>Anything medical, urgent or unclear goes to your staff. She doesn't guess.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="line" class="alt">
+    <div class="wrap line-grid">
+      <div>
+        <h2>The call ends. The conversation moves to LINE.</h2>
+        <p class="sub">Patients in Thailand already use LINE. Phitara sends the booking there, so they get a reminder and can reply in the same chat.</p>
+        <ul class="checks">
+          <li><strong>Confirmation</strong>: date, time and location, sent right after the call.</li>
+          <li><strong>Reminder</strong>: before the visit, cutting no-shows.</li>
+          <li><strong>Reschedule</strong>: the patient replies and Phitara handles it.</li>
+        </ul>
+      </div>
+      <div class="chat" aria-label="Example LINE chat">
+        <div class="chat-head">Clinic · LINE Official Account</div>
+        <div class="bubble out">ยืนยันนัดหมาย ✅<br>วันเสาร์ 10:00 น.<br>แล้วพบกันนะคะ</div>
+        <div class="bubble in">ขอบคุณค่ะ ขอเลื่อนเป็นบ่ายสองได้ไหมคะ</div>
+        <div class="bubble out">ได้ค่ะ เปลี่ยนเป็นวันเสาร์ 14:00 น. เรียบร้อยค่ะ</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="cta">
+    <div class="wrap">
+      <h2>Hear her on a call</h2>
+      <p class="sub">We'll set Phitara up with your clinic's details and you can call her yourself before anything goes live.</p>
+      <a class="btn btn-primary" id="contact-btn" href="#contact" hidden>Book a demo</a>
+      <p id="contact-pending" class="sub">Contact details coming soon.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">© <span id="year"></span> Phitara</div>
+</footer>
+
+<script>
+  // Fill in before going live. The demo button stays hidden while this is empty,
+  // so the page never ships a dead link.
+  const CONTACT_URL = "";
+
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  if (CONTACT_URL) {
+    const btn = document.getElementById("contact-btn");
+    btn.href = CONTACT_URL;
+    btn.hidden = false;
+    document.getElementById("contact-pending").hidden = true;
+  }
+
+  // Swap the transcript for the demo video only once the video has really loaded,
+  // so a missing file leaves the transcript in place instead of a black box.
+  const video = document.querySelector(".hero-video");
+  video.addEventListener("loadeddata", () => {
+    video.hidden = false;
+    document.querySelector(".hero-media .transcript").hidden = true;
+  });
+</script>
+</body>
+</html>
