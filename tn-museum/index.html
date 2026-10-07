@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>TN Neon Archive</title>
+<style>
+:root{
+  --p:#a01cff; --g:#3dff1a; --k:#ff1493; --ink:#efeaff; --dim:#8f86b8;
+  --c:#a01cff;
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+  --sl:env(safe-area-inset-left,0px); --sr:env(safe-area-inset-right,0px);
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+html,body{margin:0;height:100%;background:#000;color:var(--ink);overflow:hidden;
+  overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none;
+  -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;font-family:var(--sans)}
+body{position:fixed;inset:0}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+#touch{position:fixed;inset:0;z-index:1;touch-action:none}
+
+/* ---------- HUD (pointer-events off so touches fall through to #touch) ---------- */
+.hud{position:fixed;z-index:2;pointer-events:none}
+#top{left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;
+  padding:calc(var(--st) + 10px) calc(var(--sr) + 14px) 0 calc(var(--sl) + 14px)}
+.brand{font:700 clamp(11px,3.1vmin,15px)/1.1 var(--mono);letter-spacing:.18em;color:#fff;
+  text-shadow:0 0 6px var(--p),0 0 14px var(--p)}
+.brand small{display:block;font-weight:400;font-size:.72em;letter-spacing:.3em;color:var(--dim);
+  text-shadow:none;margin-top:3px}
+.stats{text-align:right;font:600 clamp(10px,2.8vmin,13px)/1.4 var(--mono);letter-spacing:.12em}
+#found{color:var(--g);text-shadow:0 0 8px rgba(61,255,26,.7)}
+#fps{color:var(--dim);font-weight:400}
+
+/* holographic exhibit card */
+#card{left:50%;top:calc(var(--st) + 54px);width:min(92vw,420px);box-sizing:border-box;
+  padding:14px 16px 13px;border:1px solid var(--c);border-radius:4px;
+  background:linear-gradient(160deg,rgba(28,6,48,.84),rgba(6,2,14,.88));
+  box-shadow:0 0 18px -2px var(--c),inset 0 0 22px -8px var(--c);overflow:hidden;
+  opacity:0;transform:translate3d(-50%,-10px,0) scale(.97);
+  transition:opacity .38s ease,transform .38s ease;will-change:opacity,transform}
+#card.on{opacity:1;transform:translate3d(-50%,0,0) scale(1)}
+#card::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px)}
+#card::after{content:"";position:absolute;left:0;right:0;top:-40%;height:40%;pointer-events:none;
+  background:linear-gradient(transparent,rgba(255,255,255,.07),transparent);
+  animation:sweep 3.2s linear infinite;animation-play-state:paused}
+#card.on::after{animation-play-state:running}
+@keyframes sweep{to{transform:translate3d(0,350%,0)}}
+.row1{display:flex;justify-content:space-between;align-items:center;
+  font:600 clamp(9px,2.5vmin,11px)/1 var(--mono);letter-spacing:.2em;color:var(--c)}
+.chip{border:1px solid currentColor;padding:3px 6px 2px;border-radius:2px}
+#cNew{color:var(--g);opacity:0;transition:opacity .3s}
+#cNew.on{opacity:1}
+#cName{margin:8px 0 2px;font:800 clamp(17px,5.2vmin,24px)/1.05 var(--mono);letter-spacing:.06em;
+  color:#fff;text-shadow:0 0 8px var(--c),0 0 20px var(--c)}
+#cTag{font:400 clamp(10px,2.7vmin,12px)/1.3 var(--mono);color:var(--dim);letter-spacing:.08em}
+#cWay{display:flex;flex-wrap:wrap;gap:4px 12px;margin:9px 0 8px;font:500 clamp(10px,2.7vmin,12px)/1.2 var(--sans)}
+#cWay span{display:inline-flex;align-items:center;gap:6px}
+#cWay i{width:9px;height:9px;border-radius:50%;display:inline-block}
+#cDesc{margin:0;font:400 clamp(12px,3.3vmin,14px)/1.42 var(--sans);color:#ddd6f5}
+#cSpec{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+#cSpec div{border-top:1px solid rgba(255,255,255,.14);padding-top:5px;
+  font:400 clamp(8px,2.2vmin,10px)/1.25 var(--mono);color:var(--dim);letter-spacing:.08em}
+#cSpec b{display:block;color:#fff;font-weight:600;font-size:1.12em;letter-spacing:.02em;margin-top:2px}
+
+/* joysticks */
+.stick{position:fixed;z-index:2;pointer-events:none;width:120px;height:120px;margin:-60px 0 0 -60px;
+  border-radius:50%;border:1.5px solid rgba(190,120,255,.45);background:rgba(120,30,200,.08);
+  box-shadow:0 0 16px -4px rgba(160,28,255,.7),inset 0 0 18px -6px rgba(160,28,255,.6);
+  left:0;top:0;transition:opacity .25s;opacity:.35}
+.stick.on{opacity:.95;transition:none}
+.knob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.55),rgba(190,110,255,.25) 55%,rgba(160,28,255,.1));
+  border:1.5px solid rgba(225,190,255,.7);box-shadow:0 0 14px rgba(160,28,255,.8)}
+#lookR{border-color:rgba(61,255,26,.4);background:rgba(61,255,26,.05);
+  box-shadow:0 0 16px -4px rgba(61,255,26,.6),inset 0 0 18px -6px rgba(61,255,26,.5)}
+#lookR .knob{width:14px;height:14px;margin:-7px 0 0 -7px;background:rgba(61,255,26,.7);border:0;
+  box-shadow:0 0 10px var(--g)}
+.lbl{position:absolute;left:0;right:0;top:calc(100% + 8px);text-align:center;
+  font:600 10px/1 var(--mono);letter-spacing:.28em;color:rgba(255,255,255,.55)}
+.stick.on .lbl{opacity:0}
+
+#toast{left:50%;bottom:calc(var(--sb) + 26%);transform:translate3d(-50%,10px,0);opacity:0;
+  transition:opacity .5s,transform .5s;text-align:center;font:800 clamp(16px,5vmin,24px)/1.2 var(--mono);
+  letter-spacing:.14em;color:#fff;text-shadow:0 0 10px var(--k),0 0 24px var(--k);white-space:nowrap}
+#toast small{display:block;font-weight:400;font-size:.55em;letter-spacing:.24em;color:var(--ink);text-shadow:none;margin-top:6px}
+#toast.on{opacity:1;transform:translate3d(-50%,0,0)}
+
+/* intro */
+#intro{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 40%,rgba(40,6,70,.72),rgba(0,0,0,.92) 70%);
+  transition:opacity .6s;padding:calc(var(--st) + 20px) 20px calc(var(--sb) + 20px);box-sizing:border-box}
+#intro.off{opacity:0;pointer-events:none}
+.ib{max-width:440px;text-align:center}
+.ib h1{margin:0;font:900 clamp(30px,10vmin,54px)/.95 var(--mono);letter-spacing:.08em;color:#fff;
+  text-shadow:0 0 10px var(--p),0 0 28px var(--p),0 0 2px #fff}
+.ib h1 span{color:var(--g);text-shadow:0 0 10px var(--g),0 0 26px var(--g)}
+.ib .sub{margin:10px 0 22px;font:500 clamp(10px,3vmin,13px)/1.4 var(--mono);letter-spacing:.32em;color:var(--k);
+  text-shadow:0 0 8px var(--k)}
+.how{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 22px;font:400 clamp(11px,3.2vmin,13px)/1.4 var(--sans);color:#cfc6ee}
+.how div{border:1px solid rgba(255,255,255,.14);border-radius:4px;padding:10px 8px}
+.how b{display:block;font:700 11px/1 var(--mono);letter-spacing:.2em;margin-bottom:6px}
+#go{pointer-events:auto;font:800 15px/1 var(--mono);letter-spacing:.28em;color:#fff;background:rgba(160,28,255,.16);
+  border:1.5px solid var(--p);border-radius:3px;padding:15px 26px;cursor:pointer;
+  box-shadow:0 0 18px -2px var(--p),inset 0 0 14px -4px var(--p);text-shadow:0 0 8px var(--p)}
+#go:active{background:rgba(160,28,255,.35)}
+.fine{margin-top:20px;font:400 10px/1.5 var(--sans);color:#7d7599}
+#err{display:none;color:var(--k);font:600 13px/1.5 var(--mono);margin-top:14px}
+
+@media (orientation:landscape) and (max-height:520px){
+  #card{left:auto;right:calc(var(--sr) + 12px);top:calc(var(--st) + 10px);width:min(46vw,380px);
+    padding:10px 12px;transform:translate3d(0,-10px,0) scale(.97)}
+  #card.on{transform:translate3d(0,0,0) scale(1)}
+  #cDesc{font-size:12px;line-height:1.35}
+  #cName{font-size:18px;margin-top:6px}
+  #cSpec{margin-top:7px}
+  #top .stats{margin-right:min(48vw,392px)}
+  .how{margin-bottom:14px}.ib .sub{margin-bottom:14px}.fine{margin-top:12px}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="touch"></div>
+
+<div class="hud" id="top">
+  <div class="brand">TN//NEON ARCHIVE<small>CONCEPT MUSEUM</small></div>
+  <div class="stats"><div id="found">◆ 0/7 LOGGED</div><div id="fps">-- FPS</div></div>
+</div>
+
+<div class="hud" id="card" aria-live="polite">
+  <div class="row1"><span class="chip" id="cCode">TN-01</span><span class="chip" id="cNew">NEW ENTRY LOGGED</span></div>
+  <div id="cName"></div>
+  <div id="cTag"></div>
+  <div id="cWay"></div>
+  <p id="cDesc"></p>
+  <div id="cSpec"></div>
+</div>
+
+<div class="stick" id="moveL"><div class="knob"></div><div class="lbl">MOVE</div></div>
+<div class="stick" id="lookR"><div class="knob"></div><div class="lbl">LOOK</div></div>
+<div class="hud" id="toast">ARCHIVE COMPLETE<small>ALL 7 CONCEPTS LOGGED</small></div>
+
+<div id="intro">
+  <div class="ib">
+    <h1>TN<span>//</span>NEON<br>ARCHIVE</h1>
+    <div class="sub">A DIGITAL SNEAKER MUSEUM</div>
+    <div class="how">
+      <div><b style="color:var(--p)">LEFT THUMB</b>Drag anywhere on the left half to walk and strafe.</div>
+      <div><b style="color:var(--g)">RIGHT THUMB</b>Drag on the right half to look around.</div>
+    </div>
+    <button id="go" type="button">ENTER</button>
+    <div id="err"></div>
+    <div class="fine">Walk up to each pedestal to log the concept. Desktop: WASD + drag.<br>
+      Unofficial fan concept. Not affiliated with or endorsed by Nike, Inc.</div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const canvas = $('c');
+
+/* ======================================================================
+   EXHIBIT DATA
+   ====================================================================== */
+const P=[.62,.10,1.0], G=[.22,1.0,.10], K=[1.0,.07,.55], LIME=[.62,1.0,.06],
+      MAG=[.95,.12,.92], UV=[.36,.07,1.0], LAV=[.78,.55,1.0], PINKL=[1.0,.42,.78];
+const hex = c => '#'+c.map(v=>Math.round(Math.min(1,v)*255).toString(16).padStart(2,'0')).join('');
+
+// index 0 is reserved for static world geometry
+const EX = [null,
+ {code:'TN-01',name:'VOLT FRONDS',tag:'Photoluminescent exo-cage',x:-3.4,z:-4,
+  pal:[G,LIME,P],way:['Hyper Green','Electric Lime','Ultraviolet'],
+  desc:'The palm-frond cage re-cut as photoluminescent ribs that soak up light all day and bleed green after dark. Each rib is tuned to flex with the forefoot.',
+  spec:[['EXO RIBS','5 / side'],['AIR','Heel 2 · Fore 3'],['SHANK','Split, clear']],
+  shape:{ribs:5,wave:.02,shrink:.86,shards:1,top:1,wide:1,seed:11}},
+ {code:'TN-02',name:'SUNSET PROTOCOL',tag:'Lenticular dusk fade',x:3.4,z:-8,
+  pal:[K,MAG,P],way:['Hot Pink','Magenta','Deep Purple'],
+  desc:'A dusk gradient that runs heel to toe and never sits still: the fade is printed on lenticular film, so it shifts colour as you walk past.',
+  spec:[['EXO RIBS','5 / side'],['UPPER','Lenticular'],['FADE','Heel → toe']],
+  shape:{ribs:5,wave:.035,shrink:.9,shards:1,top:1.05,wide:1,seed:23}},
+ {code:'TN-03',name:'GRID GHOST',tag:'Wireframe-only lattice',x:-3.4,z:-12,
+  pal:[UV,LAV,P],way:['Ultraviolet','Lavender','Violet'],
+  desc:'The shell is stripped back to a sparse lattice of floating shards, so the structure lines alone have to carry the whole silhouette.',
+  spec:[['SHELL','45% shards'],['EXO RIBS','4 / side'],['WEIGHT','Ghost']],
+  shape:{ribs:4,wave:.02,shrink:.7,shards:.45,top:1,wide:.97,seed:37}},
+ {code:'TN-04',name:'ACID RAIN',tag:'Reflective drip overlays',x:3.4,z:-16,
+  pal:[G,K,LIME],way:['Hyper Green','Hot Pink','Acid Lime'],
+  desc:'Toxic-green wave overlays drip down into a pink midsole. The ribs carry a reflective coat that throws back passing headlights.',
+  spec:[['EXO RIBS','6 / side'],['WAVE','High amp'],['COAT','Retro-reflective']],
+  shape:{ribs:6,wave:.045,shrink:.84,shards:.9,top:1,wide:1.02,seed:41}},
+ {code:'TN-05',name:'ULTRAVIOLET SPLIT',tag:'Whale-tail shank study',x:-3.4,z:-20,
+  pal:[P,K,UV],way:['Purple','Hot Pink','Ultraviolet'],
+  desc:'Built around the split shank: the midsole breaks at the arch and the twin TPU tines glow through the gap. Check its reflection in the floor.',
+  spec:[['SHANK','Twin tine'],['SOLE','Split pods'],['AIR','Heel 2 · Fore 3']],
+  shape:{ribs:5,wave:.02,shrink:.88,shards:.85,top:.97,wide:1,seed:53,shank:1.7}},
+ {code:'TN-06',name:'NEON KOI',tag:'Scaled shard upper',x:3.4,z:-24,
+  pal:[K,G,PINKL],way:['Hot Pink','Hyper Green','Koi Blush'],
+  desc:'Scale-like shards and six ribs per side, swimming in a current that runs from pink to green and back again.',
+  spec:[['EXO RIBS','6 / side'],['SHARDS','Scaled'],['FLOW','Looping']],
+  shape:{ribs:6,wave:.03,shrink:.76,shards:1,top:1,wide:1,seed:67}},
+ {code:'TN-∞',name:'TUNED SINGULARITY',tag:'Centrepiece · all channels',x:0,z:-29.5,hero:true,
+  pal:[P,G,K],way:['Purple','Hyper Green','Hot Pink'],
+  desc:'Every idea in the archive compressed into one oversized sculpture: all three neon channels, the full rib cage and a fully exposed split sole.',
+  spec:[['SCALE','1.7×'],['EXO RIBS','6 / side'],['CHANNELS','3']],
+  shape:{ribs:6,wave:.03,shrink:.86,shards:1,top:1,wide:1,seed:79,shank:1.4}},
+];
+const NEX = EX.length - 1;
+for (let i=1;i<=NEX;i++){
+  const e=EX[i];
+  e.S = e.hero ? 1.45 : .85;
+  e.top = e.hero ? 1.25 : 1.0;          // pedestal top height
+  e.half = e.hero ? .85 : .5;           // pedestal half size
+  e.cy = e.top + .22*e.S + (e.hero ? .25 : .18);
+  e.yaw = i*1.7; e.focus = 0; e.y = e.cy;
+}
+
+/* ======================================================================
+   ROOM CONSTANTS
+   ====================================================================== */
+const H=6.5, XW=7, ZF=6, ZB=-34;            // height, half width, front & back wall z
+const FINS=[2,-6,-14,-22,-30];              // brutalist wall fins / ceiling beams
+
+/* ======================================================================
+   GEOMETRY BUILDERS  (built once into typed arrays; GPU upload is static)
+   ====================================================================== */
+const WV=[];   // world: pos3 nor3 col3 mat1 = 10 floats
+function tri(a,b,c,n,col,mat){
+  const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];
+  if((uy*vz-uz*vy)*n[0]+(uz*vx-ux*vz)*n[1]+(ux*vy-uy*vx)*n[2]<0){const t=b;b=c;c=t;}
+  for(const p of [a,b,c]) WV.push(p[0],p[1],p[2],n[0],n[1],n[2],col[0],col[1],col[2],mat);
+}
+function quad(a,b,c,d,n,col,mat){tri(a,b,c,n,col,mat);tri(a,c,d,n,col,mat);}
+const NOCOL=[0,0,0];
+function box(x0,y0,z0,x1,y1,z1,mat,topMat,topCol){
+  quad([x1,y0,z0],[x1,y1,z0],[x1,y1,z1],[x1,y0,z1],[1,0,0],NOCOL,mat);
+  quad([x0,y0,z0],[x0,y1,z0],[x0,y1,z1],[x0,y0,z1],[-1,0,0],NOCOL,mat);
+  quad([x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1],[0,0,1],NOCOL,mat);
+  quad([x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],[0,0,-1],NOCOL,mat);
+  quad([x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1],[0,1,0],topCol||NOCOL,topMat===undefined?mat:topMat);
+  if(y0>0) quad([x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1],[0,-1,0],NOCOL,mat);
+}
+
+const LN=[];   // glow-line instances: a.xyz uA | b.xyz uB | colA.rgb idx | colB.rgb width = 16 floats
+function seg(a,b,ua,ub,ca,cb,idx,w){
+  LN.push(a[0],a[1],a[2],ua, b[0],b[1],b[2],ub, ca[0],ca[1],ca[2],idx, cb[0],cb[1],cb[2],w);
+}
+const scl=(c,s)=>[c[0]*s,c[1]*s,c[2]*s];
+// world-space neon line, subdivided so camera-facing ribbons stay stable on long runs
+function wline(a,b,col,w,colB){
+  colB=colB||col;
+  const len=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]), n=Math.max(1,Math.ceil(len/2.5));
+  for(let i=0;i<n;i++){
+    const t0=i/n,t1=(i+1)/n, l=(p,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+    const c0=[col[0]+(colB[0]-col[0])*t0,col[1]+(colB[1]-col[1])*t0,col[2]+(colB[2]-col[2])*t0];
+    const c1=[col[0]+(colB[0]-col[0])*t1,col[1]+(colB[1]-col[1])*t1,col[2]+(colB[2]-col[2])*t1];
+    seg(l(a,t0),l(a,t1),0,0,c0,c1,0,w);
+  }
+}
+function wpoly(pts,col,w,closed){
+  for(let i=0;i<pts.length-1;i++) wline(pts[i],pts[i+1],col,w);
+  if(closed) wline(pts[pts.length-1],pts[0],col,w);
+}
+
+const SV=[];   // shard triangles: pos3 nor3 u1 idx1 = 8 floats
+
+/* ---------------- room ---------------- */
+const C0=[0,0,0];
+quad([-XW,0,ZF],[-XW,0,ZB],[-XW,H,ZB],[-XW,H,ZF],[1,0,0],C0,0);
+quad([XW,0,ZF],[XW,0,ZB],[XW,H,ZB],[XW,H,ZF],[-1,0,0],C0,0);
+quad([-XW,0,ZB],[XW,0,ZB],[XW,H,ZB],[-XW,H,ZB],[0,0,1],C0,0);
+quad([-XW,0,ZF],[XW,0,ZF],[XW,H,ZF],[-XW,H,ZF],[0,0,-1],C0,0);
+quad([-XW,H,ZF],[XW,H,ZF],[XW,H,ZB],[-XW,H,ZB],[0,-1,0],C0,0);
+
+const FINCOL=[P,K,G,P,K];
+FINS.forEach((zf,i)=>{
+  box(-XW,0,zf-.4,-XW+.8,H,zf+.4,0);
+  box(XW-.8,0,zf-.4,XW,H,zf+.4,0);
+  box(-XW,H-.55,zf-.3,XW,H+.01,zf+.3,0);
+  // vertical neon strips on the inner fin faces
+  const cL=FINCOL[i], cR=FINCOL[(i+2)%5];
+  wline([-XW+.82,.25,zf],[-XW+.82,H-.75,zf],cL,.045);
+  wline([XW-.82,.25,zf],[XW-.82,H-.75,zf],cR,.045);
+  // beam underside accent
+  wline([-XW+.9,H-.57,zf],[XW-.9,H-.57,zf],scl(K,.55),.03);
+});
+// floor & ceiling trims (these also act as the analytic line lights below)
+wline([-XW+.1,.08,ZF-.1],[-XW+.1,.08,ZB+.1],P,.06);
+wline([XW-.1,.08,ZF-.1],[XW-.1,.08,ZB+.1],G,.06);
+wline([-XW+.1,H-.08,ZF-.1],[-XW+.1,H-.08,ZB+.1],K,.05);
+wline([XW-.1,H-.08,ZF-.1],[XW-.1,H-.08,ZB+.1],P,.05);
+wline([0,H-.6,ZF-.1],[0,H-.6,ZB+.1],scl(K,.8),.035);
+// back wall neon "TN" with double tubes and a wave underline
+{
+  const z=ZB+.06, T=(a,b,c)=>{wline(a,b,c,.07);};
+  for(const o of [0,.13]){
+    T([-2.7+o*0,4.7-o,z],[-.7,4.7-o,z],K);
+    T([-1.7+o,4.7-o,z],[-1.7+o,2.1,z],K);
+    T([.5+o,2.1,z],[.5+o,4.7,z],P);
+    T([.5+o,4.7,z],[2.5+o,2.1,z],P);
+    T([2.5+o,2.1,z],[2.5+o,4.7,z],P);
+  }
+  const wv=[]; for(let i=0;i<=40;i++){const x=-3.4+i*.17; wv.push([x,1.55+.16*Math.sin(i*.55),z]);}
+  wpoly(wv,G,.05);
+  wpoly([[-4,1,z],[4,1,z],[4,5.3,z],[-4,5.3,z]],scl(P,.6),.04,true);
+}
+// entrance doorway frame behind the spawn point
+{
+  const z=ZF-.06;
+  wpoly([[-1.5,.05,z],[-1.5,3.1,z],[1.5,3.1,z],[1.5,.05,z]],G,.06);
+  wpoly([[-1.7,.05,z],[-1.7,3.3,z],[1.7,3.3,z],[1.7,.05,z]],scl(P,.7),.04);
+}
+
+/* ---------------- pedestals ---------------- */
+for(let i=1;i<=NEX;i++){
+  const e=EX[i], h=e.half, c=e.pal[0], x=e.x, z=e.z, t=e.top;
+  if(e.hero){
+    box(x-1.15,0,z-1.15,x+1.15,.35,z+1.15,1);
+    box(x-h,.35,z-h,x+h,t,z+h,1,2,scl(c,.75));
+    wpoly([[x-1.17,.36,z-1.17],[x+1.17,.36,z-1.17],[x+1.17,.36,z+1.17],[x-1.17,.36,z+1.17]],scl(e.pal[1],.8),.03,true);
+  } else {
+    box(x-h,0,z-h,x+h,t,z+h,1,2,scl(c,.75));
+  }
+  const r=h+.015;
+  wpoly([[x-r,t+.01,z-r],[x+r,t+.01,z-r],[x+r,t+.01,z+r],[x-r,t+.01,z+r]],c,.03,true);
+  wpoly([[x-r,.03,z-r],[x+r,.03,z-r],[x+r,.03,z+r],[x-r,.03,z+r]],scl(c,.7),.035,true);
+  // projector ring + light cone up to the floating shoe
+  const ring=[], R=e.hero?.7:.4;
+  for(let k=0;k<20;k++){const a=k/20*Math.PI*2; ring.push([x+Math.cos(a)*R,t+.03,z+Math.sin(a)*R]);}
+  wpoly(ring,e.pal[2],.02,true);
+  const top=e.cy-.2*e.S;
+  for(const [sx,sz] of [[-1,-1],[1,-1],[1,1],[-1,1]])
+    wline([x+sx*h*.8,t+.02,z+sz*h*.8],[x+sx*.12*e.S,top,z+sz*.12*e.S],scl(c,.55),.02,[0,0,0]);
+}
+
+/* ---------------- procedural TN shoes ---------------- */
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const lerp=(a,b,t)=>a+(b-a)*t, sstep=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
+function spline(U,Y,u){ // cubic hermite through non-uniform knots
+  const n=U.length; if(u<=U[0])return Y[0]; if(u>=U[n-1])return Y[n-1];
+  let i=0; while(u>U[i+1]) i++;
+  const h=U[i+1]-U[i], t=(u-U[i])/h;
+  const m0=i>0?(Y[i+1]-Y[i-1])/(U[i+1]-U[i-1]):(Y[i+1]-Y[i])/h;
+  const m1=i<n-2?(Y[i+2]-Y[i])/(U[i+2]-U[i]):(Y[i+1]-Y[i])/h;
+  const t2=t*t,t3=t2*t;
+  return (2*t3-3*t2+1)*Y[i]+(t3-2*t2+t)*h*m0+(-2*t3+3*t2)*Y[i+1]+(t3-t2)*h*m1;
+}
+// side profile: heel (u=0) to toe (u=1), shoe length = 1 unit
+const UT=[0,.05,.15,.3,.42,.55,.7,.85,.95,1];
+const YT=[.30,.40,.385,.375,.37,.33,.275,.22,.17,.125];
+const UW=[0,.05,.15,.3,.42,.55,.7,.85,.95,.985,1];
+const WW=[.07,.13,.15,.152,.158,.168,.172,.152,.105,.06,0];
+
+function buildShoe(idx){
+  const e=EX[idx], p=e.shape, S=e.S, rnd=mulberry(p.seed), shank=p.shank||1;
+  const yb=u=>.035*Math.pow(sstep(.72,1,u),2)+.012*Math.pow(1-sstep(0,.1,u),2);
+  const ys=u=>yb(u)+lerp(.17,.085,sstep(.1,.85,u));
+  const yt=u=>{const s=ys(u);return s+(spline(UT,YT,u)-s)*p.top;};
+  const w=u=>spline(UW,WW,u)*p.wide;
+  const ws=u=>w(u)*1.06+.004;
+  const tilt=.11, ct=Math.cos(tilt), st=Math.sin(tilt);
+  const X=(x,y,z)=>{ // local unit space -> sculpture space (scaled, centred, nose tilted up)
+    const lx=x, ly=y-.22; return [(lx*ct-ly*st)*S,(lx*st+ly*ct)*S,z*S];
+  };
+  // point on the upper shell; v: 0 = +z side at sole, .5 = top centre, 1 = -z side
+  const up=(u,v,off)=>{
+    const s=ys(u),t=yt(u),W=w(u),ph=v*Math.PI,c=Math.cos(ph),sn=Math.sin(ph);
+    const zc=Math.sign(c)*Math.pow(Math.abs(c),.55), yc=Math.pow(sn,.6);
+    let ny=sn*.8,nz=c; const L=Math.hypot(ny,nz)||1;
+    return X(u-.5, s+(t-s)*yc+ny/L*(off||0), W*zc+nz/L*(off||0));
+  };
+  const side=(u,h,sg,off)=>up(u,sg>0?h*.5:1-h*.5,off);
+  const sole=(u,h,sg,off)=>X(u-.5, yb(u)+(ys(u)-yb(u))*h, sg*(ws(u)+(off||0)));
+  const bot=(u,f)=>X(u-.5, yb(u)-.004, f*ws(u));
+
+  /* --- shards: faceted low-poly shell, each triangle shrunk toward its centroid --- */
+  const shard=(a,b,c,u)=>{
+    const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];
+    let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx; const L=Math.hypot(nx,ny,nz);
+    if(L<1e-7) return; nx/=L;ny/=L;nz/=L;
+    const cx=(a[0]+b[0]+c[0])/3,cy=(a[1]+b[1]+c[1])/3,cz=(a[2]+b[2]+c[2])/3;
+    const k=p.shrink+(rnd()-.5)*.06, j=rnd()*.006*S;
+    for(const q of [a,b,c]) SV.push(cx+(q[0]-cx)*k+nx*j,cy+(q[1]-cy)*k+ny*j,cz+(q[2]-cz)*k+nz*j,nx,ny,nz,u,idx);
+  };
+  const NU=16,NV=8;
+  for(let i=0;i<NU;i++)for(let j=0;j<NV;j++){
+    const u0=i/NU,u1=(i+1)/NU,v0=j/NV,v1=(j+1)/NV,um=(u0+u1)/2,vm=(v0+v1)/2;
+    if(um>.12&&um<.43&&vm>.28&&vm<.72) continue;          // collar opening
+    if(rnd()>p.shards) continue;
+    const A=up(u0,v0),B=up(u1,v0),C=up(u1,v1),D=up(u0,v1);
+    shard(A,B,C,um); shard(A,C,D,um);
+  }
+  // heel cap fan
+  { const c=X(-.5,(ys(0)+yt(0))/2,0); for(let j=0;j<NV;j++) if(rnd()<p.shards) shard(c,up(0,j/NV),up(0,(j+1)/NV),0); }
+  // split sole pods (gap at the arch exposes the shank)
+  const GAP0=.395,GAP1=.565;
+  for(let i=0;i<NU;i++){
+    const u0=i/NU,u1=(i+1)/NU,um=(u0+u1)/2;
+    const a0=um<.5?Math.min(u0,GAP0):Math.max(u0,GAP1), a1=um<.5?Math.min(u1,GAP0):Math.max(u1,GAP1);
+    if(a1-a0<.005) continue;
+    for(const sg of [1,-1]) quadShard(sole(a0,0,sg),sole(a1,0,sg),sole(a1,1,sg),sole(a0,1,sg),um+.33);
+    quadShard(bot(a0,-1),bot(a1,-1),bot(a1,0),bot(a0,0),um+.33);
+    quadShard(bot(a0,0),bot(a1,0),bot(a1,1),bot(a0,1),um+.33);
+  }
+  function quadShard(a,b,c,d,u){shard(a,b,c,u);shard(a,c,d,u);}
+  for(const gu of [GAP0,GAP1]) quadShard(sole(gu,0,1),sole(gu,0,-1),sole(gu,1,-1),sole(gu,1,1),gu+.33);
+  quadShard(sole(0,0,1),sole(0,0,-1),sole(0,1,-1),sole(0,1,1),.33);
+
+  /* --- neon line work --- */
+  const L=(pts,us,wd,inten,closed)=>{
+    const n=pts.length, c=[inten,0,0];
+    for(let i=0;i<n-(closed?0:1);i++){const k=(i+1)%n; seg(pts[i],pts[k],us[i],us[k],c,c,idx,wd*S);}
+  };
+  const curve=(n,f)=>{const pts=[],us=[];for(let i=0;i<=n;i++){const r=f(i/n);pts.push(r[0]);us.push(r[1]);}return [pts,us];};
+  const OFF=.006;
+  // collar loop
+  {
+    const pts=[],us=[];
+    for(let i=0;i<=8;i++){const u=lerp(.42,.13,i/8);pts.push(up(u,.28,OFF));us.push(u);}
+    pts.push(up(.09,.5,OFF));us.push(.09);
+    for(let i=0;i<=8;i++){const u=lerp(.13,.42,i/8);pts.push(up(u,.72,OFF));us.push(u);}
+    pts.push(up(.445,.5,OFF));us.push(.445);
+    L(pts,us,.013,1,true);
+  }
+  // heel spine + heel counter, toe top line, toe band
+  L(...curve(3,s=>[up(s*.09,.5,OFF),s*.09]),.012,.9);
+  L(...curve(8,s=>[up(0,s,OFF),0]),.011,.8);
+  L(...curve(12,s=>{const u=lerp(.445,1,s);return [up(u,.5,OFF),u];}),.012,.9);
+  L(...curve(10,s=>[up(.86,lerp(.03,.97,s),OFF),.86]),.011,.85);
+  // lace zigzag
+  { const pts=[],us=[]; for(let k=0;k<=12;k++){const u=.47+k*.0275;pts.push(up(u,k%2?.62:.38,OFF*1.5));us.push(u);} L(pts,us,.008,.7); }
+  for(const sg of [1,-1]){
+    // signature exoskeleton fingers: closed loops rising from the midsole, leaning back like palm fronds
+    for(let k=0;k<p.ribs;k++){
+      const f=k/(p.ribs-1), ub=.30+f*.48, ut=ub-.13+f*.03, ht=.56-f*.14, hw=.018;
+      const edge=(s,o)=>{const u=lerp(ub+o*hw,ut+o*hw*.4,s)+p.wave*Math.sin(s*Math.PI*1.5+k)*s;
+        return [side(u,lerp(.04,ht,Math.pow(s,.85)),sg,OFF),u];};
+      const pts=[],us=[];
+      for(let i=0;i<=8;i++){const r=edge(i/8,-1);pts.push(r[0]);us.push(r[1]);}
+      const tipU=ut+p.wave*Math.sin(Math.PI*1.5+k);
+      pts.push(side(tipU,ht+.045,sg,OFF));us.push(tipU);
+      for(let i=8;i>=0;i--){const r=edge(i/8,1);pts.push(r[0]);us.push(r[1]);}
+      L(pts,us,.011,1.05,true);
+    }
+    // horizontal wave cage line
+    L(...curve(24,s=>{const u=lerp(.06,.9,s);return [side(u,.2+p.wave*1.6*Math.sin(u*24),sg,OFF),u];}),.009,.75);
+    // upper base edge across the exposed arch
+    L(...curve(4,s=>{const u=lerp(GAP0,GAP1,s);return [up(u,sg>0?0:1,OFF),u];}),.01,.8);
+    // sole pods
+    for(const [a,b] of [[0,GAP0],[GAP1,1]]){
+      const pts=[],us=[];
+      for(let i=0;i<=8;i++){const u=lerp(a,b,i/8);pts.push(sole(u,0,sg,.004));us.push(u+.33);}
+      for(let i=8;i>=0;i--){const u=lerp(a,b,i/8);pts.push(sole(u,1,sg,.004));us.push(u+.33);}
+      L(pts,us,.012,.9,true);
+    }
+    // visible Tuned-Air windows
+    for(const [cu,ru,rh] of [[.1,.055,.3],[.26,.055,.3],[.63,.035,.27],[.74,.035,.27],[.85,.035,.25]])
+      L(...curve(12,s=>{const a=s*Math.PI*2,u=cu+ru*Math.cos(a);return [sole(u,.5+rh*Math.sin(a),sg,.006),u+.33];}),.008,1.1);
+    // split shank: twin TPU tines bridging the pods on each side
+    L(...curve(8,s=>{const u=lerp(GAP0,GAP1,s);return [sole(u,1-.9*Math.sin(Math.PI*s),sg,-.01),u+.5];}),.011,shank);
+    L(...curve(8,s=>{const u=lerp(GAP0,GAP1,s);return [sole(u,1-.5*Math.sin(Math.PI*s),sg,-.01),u+.5];}),.009,shank*.8);
+    // whale-tail on the outsole (shows in the floor reflection)
+    L([[.40,0],[.45,.35],[.52,.85],[.565,.95],[.54,.45],[.5,0]].map(([u,f])=>bot(u,f*sg)),[.9,.95,1,1.05,1,.95],.01,shank);
+  }
+  // heel back joins
+  seg(sole(0,0,1,.004),sole(0,0,-1,.004),.33,.33,[.9,0,0],[.9,0,0],idx,.012*S);
+  seg(sole(0,1,1,.004),sole(0,1,-1,.004),.33,.33,[.9,0,0],[.9,0,0],idx,.012*S);
+}
+for(let i=1;i<=NEX;i++) buildShoe(i);
+
+const worldData=new Float32Array(WV), shardData=new Float32Array(SV), lineData=new Float32Array(LN);
+const NWORLD=WV.length/10, NSHARD=SV.length/8, NLINE=LN.length/16;
+
+/* ======================================================================
+   SHADERS
+   ====================================================================== */
+const COMMON=`#version 300 es
+precision highp float; precision highp int;
+uniform float uTime; uniform vec3 uEye; uniform float uMirror;
+`;
+const FS_HEAD=`
+const vec3 FOG=vec3(.0016,0.,.0042);
+uniform vec4 uLA[6]; uniform vec4 uLB[6]; uniform vec3 uLC[6];
+uniform vec4 uPt[8]; uniform vec3 uPtC[8];
+float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float vnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
+// All illumination comes from neon: analytic line lights (trims) + point lights (exhibits)
+vec3 neon(vec3 P,vec3 N){
+  vec3 acc=vec3(0.);
+  for(int i=0;i<6;i++){
+    vec3 a=uLA[i].xyz, ab=uLB[i].xyz-a;
+    float t=clamp(dot(P-a,ab)/dot(ab,ab),0.,1.);
+    vec3 d=a+ab*t-P; float dd=dot(d,d)+1e-4;
+    float ndl=dot(N,d)*inversesqrt(dd);
+    acc+=uLC[i]*(uLA[i].w*(max(ndl,0.)*.8+.2)/(1.+dd*2.2));
+  }
+  for(int i=0;i<8;i++){
+    vec3 d=uPt[i].xyz-P; float dd=dot(d,d)+1e-4;
+    acc+=uPtC[i]*(uPt[i].w*max(dot(N,d)*inversesqrt(dd),0.)/(1.+dd*.9));
+  }
+  return acc;
+}
+vec3 fogit(vec3 c,float d){return mix(FOG,c,exp(-d*.045));}
+`;
+const PAL=`
+uniform vec3 uPal[24]; uniform vec4 uExB[8];
+vec3 pal(int i,float t){t=fract(t)*3.;int k=int(t);float f=smoothstep(0.,1.,fract(t));
+  return mix(uPal[i*3+k],uPal[i*3+(k+1)%3],f);}
+`;
+const XFORM=`
+uniform vec4 uEx[8];
+vec3 rotY(vec3 p,float a){float c=cos(a),s=sin(a);return vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);}
+`;
+
+const WORLD_VS=COMMON+`
+layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNor; layout(location=2) in vec4 aCol;
+uniform mat4 uVP;
+out vec3 vPos; out vec3 vNor; out vec4 vCol;
+void main(){vPos=aPos;vNor=aNor;vCol=aCol;gl_Position=uVP*vec4(aPos.x,aPos.y*uMirror,aPos.z,1.);}`;
+const WORLD_FS=COMMON+FS_HEAD+`
+in vec3 vPos; in vec3 vNor; in vec4 vCol; out vec4 o;
+void main(){
+  vec3 N=normalize(vNor), P=vPos;
+  vec2 uv=abs(N.x)>.5?P.zy:(abs(N.z)>.5?P.xy:P.xz);
+  vec3 col;
+  if(vCol.a>1.5){ // emissive pedestal plate
+    float scan=.75+.25*sin((P.x+P.z)*22.-uTime*3.);
+    col=vCol.rgb*scan+vCol.rgb*.4;
+  } else {
+    // brutalist board-formed concrete: panel seams, tie holes, grain
+    vec2 g=uv/vec2(2.4,1.2), f=fract(g);
+    float seam=smoothstep(0.,.02,min(min(f.x,1.-f.x)*2.4,min(f.y,1.-f.y)*1.2));
+    vec2 h=fract(g*vec2(2.,1.))-.5;
+    float hole=smoothstep(.05,.03,length(h*vec2(1.2,.6)));
+    float grain=.65+.35*vnoise(uv*3.)+.18*vnoise(uv*19.);
+    float alb=(vCol.a>.5?.2:.13)*grain*mix(.35,1.,seam)*(1.-.7*hole);
+    col=alb*neon(P,N);
+  }
+  o=vec4(sqrt(fogit(col,length(P-uEye))),1.);
+}`;
+
+const SHARD_VS=COMMON+XFORM+`
+layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNor; layout(location=2) in vec2 aUI;
+uniform mat4 uVP;
+out vec3 vPos; out vec3 vNor; out float vU; flat out int vIdx;
+void main(){
+  int i=int(aUI.y+.5); vec4 e=uEx[i];
+  vec3 p=rotY(aPos,e.w)+e.xyz;
+  vPos=p; vNor=rotY(aNor,e.w); vU=aUI.x; vIdx=i;
+  gl_Position=uVP*vec4(p.x,p.y*uMirror,p.z,1.);
+}`;
+const SHARD_FS=COMMON+FS_HEAD+PAL+`
+in vec3 vPos; in vec3 vNor; in float vU; flat in int vIdx; out vec4 o;
+void main(){
+  vec3 N=normalize(vNor), V=normalize(uEye-vPos);
+  float nv=dot(N,V); if(nv<0.){N=-N;nv=-nv;}
+  float fr=pow(1.-nv,3.), focus=uExB[vIdx].x;
+  vec3 c=pal(vIdx,vU*.8+uTime*.08);
+  vec3 H=normalize(normalize(vec3(.3,1.,.4))+V);
+  float sp=pow(max(dot(N,H),0.),40.);
+  float scan=.7+.3*sin(vPos.y*90.-uTime*5.);
+  vec3 col=vec3(.004,.003,.01)+c*c*(.05+fr*1.3)*scan*(1.+focus*.8)+(c+.6)*sp*.6;
+  o=vec4(sqrt(fogit(col,length(vPos-uEye))),1.);
+}`;
+
+// Instanced camera-facing ribbons: one draw call renders every neon line in the scene
+const LINE_VS=COMMON+XFORM+`
+layout(location=0) in vec2 aCorner; layout(location=1) in vec4 aA; layout(location=2) in vec4 aB;
+layout(location=3) in vec4 aCA; layout(location=4) in vec4 aCB;
+uniform mat4 uVP; uniform float uPxK;
+out vec3 vCol; out float vSide; out float vU; out float vI; out float vDist; flat out int vIdx;
+void main(){
+  int idx=int(aCA.w+.5); vec4 e=uEx[idx];
+  vec3 a=rotY(aA.xyz,e.w)+e.xyz, b=rotY(aB.xyz,e.w)+e.xyz;
+  vec3 p=mix(a,b,aCorner.x);
+  vec3 dir=b-a; float len=length(dir); dir=len>1e-6?dir/len:vec3(1,0,0);
+  vec3 toE=uEye-p; float dist=length(toE);
+  vec3 sd=cross(dir,toE/max(dist,1e-4)); float sl=length(sd); sd=sl>1e-4?sd/sl:vec3(0,1,0);
+  float w=aCB.w, ww=max(w,dist*uPxK*1.25);   // never thinner than ~1px: no shimmer at range
+  vI=w/ww; p+=sd*aCorner.y*ww;
+  vSide=aCorner.y; vU=mix(aA.w,aB.w,aCorner.x); vCol=mix(aCA.rgb,aCB.rgb,aCorner.x); vIdx=idx; vDist=dist;
+  gl_Position=uVP*vec4(p.x,p.y*uMirror,p.z,1.);
+}`;
+const LINE_FS=COMMON+PAL+`
+in vec3 vCol; in float vSide; in float vU; in float vI; in float vDist; flat in int vIdx; out vec4 o;
+void main(){
+  float s=abs(vSide);
+  float glow=exp(-s*s*5.)*.5, core=smoothstep(.32,0.,s);
+  vec3 c=vCol;
+  if(vIdx>0){ float f=uExB[vIdx].x; c=pal(vIdx,vU+uTime*.12)*vCol.r*(1.+f*.7); }
+  vec3 outc=(c*glow+mix(c,vec3(1.),.55)*core*.9)*vI*exp(-vDist*.03);
+  o=vec4(outc,1.);
+}`;
+
+const FLOOR_VS=COMMON+`
+layout(location=0) in vec3 aPos; uniform mat4 uVP; out vec3 vPos;
+void main(){vPos=aPos;gl_Position=uVP*vec4(aPos,1.);}`;
+const FLOOR_FS=COMMON+FS_HEAD+`
+uniform sampler2D uRefl; uniform vec2 uRes; uniform vec2 uPlayer;
+in vec3 vPos; out vec4 o;
+void main(){
+  vec3 P=vPos, N=vec3(0,1,0), V=normalize(uEye-P);
+  float dist=length(P-uEye), fogf=exp(-dist*.045);
+  // brushed metal plates, 2m
+  vec2 tf=abs(fract(P.xz*.5)-.5);
+  float seam=smoothstep(.492,.499,max(tf.x,tf.y));
+  float brushed=.8+.2*vnoise(vec2(P.x*.7,P.z*38.));
+  vec3 base=vec3(.03,.026,.04)*brushed;
+  vec3 lit=base*neon(P,N)*1.1;
+  vec3 R=reflect(-V,N), spec=vec3(0.);
+  for(int i=0;i<8;i++){vec3 d=uPt[i].xyz-P; float dl=length(d);
+    spec+=uPtC[i]*uPt[i].w*pow(max(dot(R,d/dl),0.),220.)*.9/(1.+dl*.25);}
+  // planar reflection (mirror pass) with ripple + 5-tap blur for a satin metal finish
+  vec2 uv=gl_FragCoord.xy/uRes;
+  vec2 rip=(vec2(vnoise(P.xz*3.1),vnoise(P.xz*3.1+7.3))-.5)*.007;
+  vec2 tx=3./uRes; uv+=rip;
+  vec3 r=texture(uRefl,uv).rgb*.36
+    +(texture(uRefl,uv+vec2(tx.x,0)).rgb+texture(uRefl,uv-vec2(tx.x,0)).rgb
+     +texture(uRefl,uv+vec2(0,tx.y)).rgb+texture(uRefl,uv-vec2(0,tx.y)).rgb)*.16;
+  float F=.62+.5*pow(1.-max(V.y,0.),5.);
+  // pulsing neon grid (anti-aliased with fwidth, faded out before it can moire)
+  vec2 g=P.xz, fw=max(fwidth(g),vec2(1e-4));
+  vec2 a1=abs(fract(g+.5)-.5)/fw;
+  float l1=(1.-min(min(a1.x,a1.y),1.))*clamp(1.-max(fw.x,fw.y)*3.,0.,1.);
+  vec2 g4=g*.25, fw4=fw*.25;
+  vec2 a4=abs(fract(g4+.5)-.5)/(fw4*1.6);
+  float l4=(1.-min(min(a4.x,a4.y),1.))*clamp(1.-max(fw4.x,fw4.y)*5.,0.,1.);
+  float pz=pow(.5+.5*sin(P.z*.5+uTime*2.4),10.);
+  float dp=length(P.xz-uPlayer);
+  float pr=pow(.5+.5*sin(dp*2.4-uTime*4.),14.)*exp(-dp*.35);
+  vec3 minorC=mix(vec3(.62,.1,1.),vec3(1.,.07,.55),.5+.5*sin(P.z*.12+uTime*.5));
+  vec3 majorC=mix(vec3(.22,1.,.1),vec3(.62,.1,1.),.5+.5*sin(P.x*.3-uTime*.7));
+  vec3 grid=minorC*l1*(.07+.8*pz+1.1*pr)+majorC*l4*(.22+1.*pz+.9*pr);
+  vec3 col=sqrt(fogit(lit+spec,dist))+r*F*(1.-.7*seam)+grid*fogf;
+  o=vec4(col,1.);
+}`;
+
+/* ======================================================================
+   GL SETUP  (re-runnable for context restore)
+   ====================================================================== */
+let gl, progs, vaos, mirror={fbo:null,tex:null,rb:null,w:0,h:0};
+function compile(vs,fs){
+  const mk=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);
+    if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));return sh;};
+  const p=gl.createProgram();
+  gl.attachShader(p,mk(gl.VERTEX_SHADER,vs));gl.attachShader(p,mk(gl.FRAGMENT_SHADER,fs));gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const u={}, n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);
+  for(let i=0;i<n;i++){const nm=gl.getActiveUniform(p,i).name.replace(/\[0\]$/,'');u[nm]=gl.getUniformLocation(p,nm);}
+  return {p,u};
+}
+function vao(build){const v=gl.createVertexArray();gl.bindVertexArray(v);build();gl.bindVertexArray(null);return v;}
+function buf(data,target){const b=gl.createBuffer();gl.bindBuffer(target||gl.ARRAY_BUFFER,b);gl.bufferData(target||gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);return b;}
+function attr(loc,size,stride,off,div){gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,size,gl.FLOAT,false,stride*4,off*4);if(div)gl.vertexAttribDivisor(loc,1);}
+
+function initGL(){
+  gl=canvas.getContext('webgl2',{antialias:false,alpha:false,depth:true,stencil:false,
+    powerPreference:'high-performance',preserveDrawingBuffer:false});
+  if(!gl) return false;
+  progs={world:compile(WORLD_VS,WORLD_FS),shard:compile(SHARD_VS,SHARD_FS),
+         line:compile(LINE_VS,LINE_FS),floor:compile(FLOOR_VS,FLOOR_FS)};
+  vaos={
+    world:vao(()=>{buf(worldData);attr(0,3,10,0);attr(1,3,10,3);attr(2,4,10,6);}),
+    shard:vao(()=>{buf(shardData);attr(0,3,8,0);attr(1,3,8,3);attr(2,2,8,6);}),
+    line:vao(()=>{
+      buf(new Float32Array([0,-1, 1,-1, 1,1, 0,1]));attr(0,2,2,0);
+      buf(new Uint16Array([0,1,2,0,2,3]),gl.ELEMENT_ARRAY_BUFFER);
+      buf(lineData);attr(1,4,16,0,1);attr(2,4,16,4,1);attr(3,4,16,8,1);attr(4,4,16,12,1);
+    }),
+    floor:vao(()=>{buf(new Float32Array([-XW,0,ZF, XW,0,ZF, XW,0,ZB, -XW,0,ZF, XW,0,ZB, -XW,0,ZB]));attr(0,3,3,0);}),
+  };
+  // static palette upload
+  const pal=new Float32Array(24*3);
+  for(let i=1;i<=NEX;i++) for(let k=0;k<3;k++) pal.set(EX[i].pal[k],(i*3+k)*3);
+  for(const k of ['shard','line']){gl.useProgram(progs[k].p);gl.uniform3fv(progs[k].u.uPal,pal);}
+  gl.useProgram(progs.floor.p); gl.uniform1i(progs.floor.u.uRefl,0);
+  mirror={fbo:null,tex:null,rb:null,w:0,h:0};
+  return true;
+}
+function ensureMirror(w,h){
+  if(mirror.w===w&&mirror.h===h&&mirror.fbo) return;
+  if(mirror.fbo){gl.deleteFramebuffer(mirror.fbo);gl.deleteTexture(mirror.tex);gl.deleteRenderbuffer(mirror.rb);}
+  const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  const rb=gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER,rb);
+  gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,w,h);
+  const f=gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER,f);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,rb);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+  mirror={fbo:f,tex:t,rb,w,h};
+}
+
+/* ======================================================================
+   RESOLUTION  (adaptive: trades pixels for a steady frame rate)
+   ====================================================================== */
+const DPR=window.devicePixelRatio||1, MAXRS=Math.min(DPR,2), MINRS=Math.min(.75,MAXRS);
+let rs=Math.min(DPR,1.75), cw=0, ch=0, fovY=1.2;
+function resize(){
+  const w=Math.max(1,Math.round(innerWidth*rs)), h=Math.max(1,Math.round(innerHeight*rs));
+  if(w!==cw||h!==ch){cw=canvas.width=w;ch=canvas.height=h;}
+  fovY=innerWidth<innerHeight?1.36:1.13;   // wider vertical FOV in portrait
+  if(gl) ensureMirror(Math.max(1,cw>>1),Math.max(1,ch>>1));
+}
+
+/* ======================================================================
+   CAMERA / PLAYER
+   ====================================================================== */
+const cam={x:0,z:4.2,yaw:0,pitch:-.04,tYaw:0,tPitch:-.04,vx:0,vz:0,bob:0};
+const proj=new Float32Array(16), view=new Float32Array(16), vp=new Float32Array(16);
+function perspective(m,fy,asp,n,f){m.fill(0);const t=1/Math.tan(fy/2);m[0]=t/asp;m[5]=t;m[10]=(f+n)/(n-f);m[11]=-1;m[14]=2*f*n/(n-f);}
+function mul(o,a,b){for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];}
+function viewMat(m,ex,ey,ez,yaw,pitch){
+  const cp=Math.cos(pitch), fx=-Math.sin(yaw)*cp, fy=Math.sin(pitch), fz=-Math.cos(yaw)*cp;
+  const rx=Math.cos(yaw), rz=-Math.sin(yaw);
+  const ux=-rz*fy, uy=rz*fx-rx*fz, uz=rx*fy;      // up = right × forward
+  m[0]=rx;m[4]=0;m[8]=rz;m[12]=-(rx*ex+rz*ez);
+  m[1]=ux;m[5]=uy;m[9]=uz;m[13]=-(ux*ex+uy*ey+uz*ez);
+  m[2]=-fx;m[6]=-fy;m[10]=-fz;m[14]=fx*ex+fy*ey+fz*ez;
+  m[3]=0;m[7]=0;m[11]=0;m[15]=1;
+}
+function collide(){
+  const r=.32;
+  cam.x=Math.max(-XW+1.1,Math.min(XW-1.1,cam.x));
+  cam.z=Math.max(ZB+.6,Math.min(ZF-.5,cam.z));
+  for(let i=1;i<=NEX;i++){
+    const e=EX[i], h=e.hero?1.15:e.half;
+    const qx=Math.max(e.x-h,Math.min(e.x+h,cam.x)), qz=Math.max(e.z-h,Math.min(e.z+h,cam.z));
+    const dx=cam.x-qx, dz=cam.z-qz, d=Math.hypot(dx,dz);
+    if(d<r){ if(d>1e-5){cam.x=qx+dx/d*r;cam.z=qz+dz/d*r;} else {cam.z=e.z+h+r;} }
+  }
+}
+
+/* ======================================================================
+   INPUT  (pointer events cover touch + mouse; every listener is passive —
+   #touch has touch-action:none, so the browser never needs preventDefault)
+   ====================================================================== */
+const touchEl=$('touch'), stickL=$('moveL'), stickR=$('lookR');
+const knobL=stickL.firstElementChild, knobR=stickR.firstElementChild;
+const STICK_R=52;
+const inp={moveId:-1,bx:0,by:0,jx:0,jy:0,lookId:-1,lx:0,ly:0,dYaw:0,dPitch:0};
+const keys={};
+const PASSIVE={passive:true};
+function place(el,x,y){el.style.transform=`translate3d(${x}px,${y}px,0)`;}
+function idleSticks(){
+  if(inp.moveId<0) place(stickL,Math.max(78,innerWidth*.16),innerHeight-Math.max(110,innerHeight*.17));
+  if(inp.lookId<0) place(stickR,innerWidth-Math.max(78,innerWidth*.16),innerHeight-Math.max(110,innerHeight*.17));
+}
+touchEl.addEventListener('pointerdown',e=>{
+  if(e.clientX<innerWidth*.5 && inp.moveId<0){
+    inp.moveId=e.pointerId; inp.bx=e.clientX; inp.by=e.clientY; inp.jx=inp.jy=0;
+    place(stickL,inp.bx,inp.by); knobL.style.transform=''; stickL.classList.add('on');
+  } else if(e.clientX>=innerWidth*.5 && inp.lookId<0){
+    inp.lookId=e.pointerId; inp.lx=e.clientX; inp.ly=e.clientY;
+    place(stickR,e.clientX,e.clientY); stickR.classList.add('on');
+  } else return;
+  try{touchEl.setPointerCapture(e.pointerId);}catch(_){}
+},PASSIVE);
+touchEl.addEventListener('pointermove',e=>{
+  if(e.pointerId===inp.moveId){
+    let dx=e.clientX-inp.bx, dy=e.clientY-inp.by; const d=Math.hypot(dx,dy);
+    if(d>STICK_R){dx*=STICK_R/d;dy*=STICK_R/d;}
+    knobL.style.transform=`translate3d(${dx}px,${dy}px,0)`;
+    const m=Math.min(1,d/STICK_R), dz=.12, k=m<dz?0:(m-dz)/(1-dz)/Math.max(m,1e-4);
+    inp.jx=dx/STICK_R*k; inp.jy=dy/STICK_R*k;
+  } else if(e.pointerId===inp.lookId){
+    const k=3.1/Math.max(320,Math.min(innerWidth,innerHeight)*1.6);   // rad per px, scaled to screen
+    inp.dYaw-=(e.clientX-inp.lx)*k; inp.dPitch-=(e.clientY-inp.ly)*k;
+    inp.lx=e.clientX; inp.ly=e.clientY; place(stickR,e.clientX,e.clientY);
+  }
+},PASSIVE);
+const release=e=>{
+  if(e.pointerId===inp.moveId){inp.moveId=-1;inp.jx=inp.jy=0;knobL.style.transform='';stickL.classList.remove('on');idleSticks();}
+  if(e.pointerId===inp.lookId){inp.lookId=-1;stickR.classList.remove('on');idleSticks();}
+};
+touchEl.addEventListener('pointerup',release,PASSIVE);
+touchEl.addEventListener('pointercancel',release,PASSIVE);
+addEventListener('keydown',e=>{keys[e.code]=true;},PASSIVE);
+addEventListener('keyup',e=>{keys[e.code]=false;},PASSIVE);
+addEventListener('blur',()=>{for(const k in keys) keys[k]=false;},PASSIVE);
+// iOS Safari pinch-zoom is a GestureEvent (not a touch event) and can only be stopped by cancelling it
+document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
+
+/* ======================================================================
+   HUD
+   ====================================================================== */
+const card=$('card'), cNew=$('cNew'), foundEl=$('found'), fpsEl=$('fps'), toast=$('toast');
+let active=0, dwell=0;
+const logged=new Set();
+function showCard(i){
+  const e=EX[i];
+  card.style.setProperty('--c',hex(e.pal[0]));
+  $('cCode').textContent=e.code+' · CONCEPT';
+  $('cName').textContent=e.name; $('cTag').textContent=e.tag; $('cDesc').textContent=e.desc;
+  const way=$('cWay'); way.textContent='';
+  e.way.forEach((n,k)=>{const s=document.createElement('span'),d=document.createElement('i');
+    d.style.background=hex(e.pal[k]);d.style.boxShadow='0 0 8px '+hex(e.pal[k]);s.append(d,n);way.append(s);});
+  const sp=$('cSpec'); sp.textContent='';
+  e.spec.forEach(([k,v])=>{const d=document.createElement('div'),b=document.createElement('b');b.textContent=v;d.append(k,b);sp.append(d);});
+  cNew.classList.remove('on'); card.classList.add('on');
+}
+function hideCard(){card.classList.remove('on');}
+
+/* ======================================================================
+   FRAME
+   ====================================================================== */
+const exA=new Float32Array(32), exB=new Float32Array(32), ptA=new Float32Array(32), ptC=new Float32Array(24);
+const LA=new Float32Array(24), LB=new Float32Array(24), LC=new Float32Array(18);
+[[[-XW+.1,.08,ZF],[-XW+.1,.08,ZB],P,1.0],[[XW-.1,.08,ZF],[XW-.1,.08,ZB],G,1.0],
+ [[-XW+.1,H-.08,ZF],[-XW+.1,H-.08,ZB],K,.55],[[XW-.1,H-.08,ZF],[XW-.1,H-.08,ZB],P,.55],
+ [[0,H-.6,ZF],[0,H-.6,ZB],K,.4],[[-2.7,3.4,ZB+.2],[2.7,3.4,ZB+.2],[.85,.1,.8],1.6]]
+ .forEach(([a,b,c,w],i)=>{LA.set([...a,w],i*4);LB.set([...b,0],i*4);LC.set(c,i*3);});
+ptA.set([0,2.6,ZF-.6,.5],28); ptC.set(G,21);
+
+let started=false, t=0, last=0, fpsN=0, fpsT=0, winT=0, winN=0, lastDown=-99;
+function update(dt){
+  t+=dt;
+  // look (smoothed)
+  const kr=keys.ArrowLeft?1:keys.ArrowRight?-1:0;
+  cam.tYaw+=inp.dYaw+kr*dt*1.9; cam.tPitch=Math.max(-1.2,Math.min(1.2,cam.tPitch+inp.dPitch));
+  inp.dYaw=inp.dPitch=0;
+  if(!started) cam.tYaw+=dt*.05;
+  const ks=Math.min(1,dt*16);
+  cam.yaw+=(cam.tYaw-cam.yaw)*ks; cam.pitch+=(cam.tPitch-cam.pitch)*ks;
+  // move
+  let mx=inp.jx, my=-inp.jy;
+  if(keys.KeyW||keys.ArrowUp) my+=1; if(keys.KeyS||keys.ArrowDown) my-=1;
+  if(keys.KeyD) mx+=1; if(keys.KeyA) mx-=1;
+  const ml=Math.hypot(mx,my); if(ml>1){mx/=ml;my/=ml;}
+  const sy=Math.sin(cam.yaw), cy=Math.cos(cam.yaw), SPD=3.1;
+  const tx=(cy*mx-sy*my)*SPD, tz=(-sy*mx-cy*my)*SPD, ka=Math.min(1,dt*9);
+  cam.vx+=(tx-cam.vx)*ka; cam.vz+=(tz-cam.vz)*ka;
+  cam.x+=cam.vx*dt; cam.z+=cam.vz*dt; collide();
+  const sp=Math.hypot(cam.vx,cam.vz); cam.bob+=sp*dt*2.6;
+  // exhibits
+  let best=0, bd=1e9;
+  for(let i=1;i<=NEX;i++){
+    const e=EX[i], d=Math.hypot(cam.x-e.x,cam.z-e.z);
+    if(d<(e.hero?4.4:3.1)&&d<bd){best=i;bd=d;}
+  }
+  if(best!==active){active=best;dwell=0;best?showCard(best):hideCard();}
+  if(active&&!logged.has(active)&&(dwell+=dt)>.8){
+    logged.add(active); cNew.classList.add('on');
+    foundEl.textContent=`◆ ${logged.size}/${NEX} LOGGED`;
+    if(logged.size===NEX){toast.classList.add('on');setTimeout(()=>toast.classList.remove('on'),4200);}
+  }
+  for(let i=1;i<=NEX;i++){
+    const e=EX[i];
+    e.focus+=((i===active?1:0)-e.focus)*Math.min(1,dt*3.5);
+    e.yaw+=dt*(.42-.18*e.focus);
+    e.y=e.cy+.06*Math.sin(t*1.3+i*1.9);
+    // direct writes: no per-frame allocations, so no GC hitches
+    const o=i*4, q=(i-1)*4, c=e.pal[0];
+    exA[o]=e.x; exA[o+1]=e.y; exA[o+2]=e.z; exA[o+3]=e.yaw; exB[o]=e.focus;
+    ptA[q]=e.x; ptA[q+1]=e.y; ptA[q+2]=e.z; ptA[q+3]=(e.hero?1.7:1.15)*(1+.12*Math.sin(t*2.1+i))+e.focus*1.3;
+    ptC[(i-1)*3]=c[0]; ptC[(i-1)*3+1]=c[1]; ptC[(i-1)*3+2]=c[2];
+  }
+}
+
+function setFrameUniforms(pr){
+  const u=pr.u; gl.useProgram(pr.p);
+  if(u.uTime) gl.uniform1f(u.uTime,t);
+  if(u.uVP) gl.uniformMatrix4fv(u.uVP,false,vp);
+  if(u.uEx) gl.uniform4fv(u.uEx,exA);
+  if(u.uExB) gl.uniform4fv(u.uExB,exB);
+  if(u.uLA){gl.uniform4fv(u.uLA,LA);gl.uniform4fv(u.uLB,LB);gl.uniform3fv(u.uLC,LC);
+            gl.uniform4fv(u.uPt,ptA);gl.uniform3fv(u.uPtC,ptC);}
+}
+function setPass(pr,ey,m,h){
+  const u=pr.u; gl.useProgram(pr.p);
+  gl.uniform3f(u.uEye,cam.x,ey,cam.z);
+  if(u.uMirror) gl.uniform1f(u.uMirror,m);
+  if(u.uPxK) gl.uniform1f(u.uPxK,2*Math.tan(fovY/2)/h);
+}
+function drawScene(m,ey,h){
+  const {world,shard,line}=progs;
+  setPass(world,ey,m,h); gl.enable(gl.CULL_FACE); gl.frontFace(m<0?gl.CW:gl.CCW);
+  gl.bindVertexArray(vaos.world); gl.drawArrays(gl.TRIANGLES,0,NWORLD);
+  gl.disable(gl.CULL_FACE);
+  if(m>0) drawFloor(ey);
+  setPass(shard,ey,m,h); gl.bindVertexArray(vaos.shard); gl.drawArrays(gl.TRIANGLES,0,NSHARD);
+  setPass(line,ey,m,h); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE); gl.depthMask(false);
+  gl.bindVertexArray(vaos.line); gl.drawElementsInstanced(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0,NLINE);
+  gl.depthMask(true); gl.disable(gl.BLEND);
+}
+function drawFloor(ey){
+  const f=progs.floor; setPass(f,ey,1,ch);
+  gl.uniform2f(f.u.uRes,cw,ch); gl.uniform2f(f.u.uPlayer,cam.x,cam.z);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,mirror.tex);
+  gl.bindVertexArray(vaos.floor); gl.drawArrays(gl.TRIANGLES,0,6);
+}
+function render(){
+  const ey=1.65+Math.sin(cam.bob)*.028;
+  perspective(proj,fovY,cw/ch,.05,80);
+  viewMat(view,cam.x,ey,cam.z,cam.yaw,cam.pitch);
+  mul(vp,proj,view);
+  for(const k in progs) setFrameUniforms(progs[k]);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clearColor(.04,0,.065,1);
+  // pass 1: mirrored scene at half resolution -> reflection texture for the metal floor
+  gl.bindFramebuffer(gl.FRAMEBUFFER,mirror.fbo); gl.viewport(0,0,mirror.w,mirror.h);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  drawScene(-1,-ey,mirror.h);
+  // pass 2: main scene
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.viewport(0,0,cw,ch);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  drawScene(1,ey,ch);
+  gl.bindVertexArray(null);
+}
+
+let lost=false;
+function frame(now){
+  if(lost) return;
+  requestAnimationFrame(frame);
+  const ms=last?now-last:16.7; last=now;
+  const dt=Math.min(.05,ms/1000);
+  update(dt); render();
+  // fps readout + adaptive resolution
+  fpsN++; fpsT+=ms; winN++; winT+=ms;
+  if(fpsT>=500){fpsEl.textContent=Math.round(fpsN*1000/fpsT)+' FPS';fpsN=fpsT=0;}
+  if(winT>=1000){
+    const avg=winT/winN; winN=winT=0;
+    if(avg>20.5&&rs>MINRS){rs=Math.max(MINRS,rs*.85);lastDown=t;resize();}
+    else if(avg<17.4&&rs<MAXRS&&t-lastDown>5){rs=Math.min(MAXRS,rs*1.08);resize();}
+  }
+}
+
+/* ======================================================================
+   BOOT
+   ====================================================================== */
+const intro=$('intro'), err=$('err');
+function fail(msg){err.style.display='block';err.textContent=msg;$('go').style.display='none';}
+try{
+  if(!initGL()){fail('WebGL2 is not available in this browser.');return;}
+}catch(ex){console.error(ex);fail('Graphics initialisation failed.');return;}
+resize(); idleSticks();
+addEventListener('resize',()=>{resize();idleSticks();},PASSIVE);
+canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true;});
+canvas.addEventListener('webglcontextrestored',()=>{
+  try{initGL();resize();lost=false;last=0;requestAnimationFrame(frame);}catch(ex){console.error(ex);}
+});
+$('go').addEventListener('click',()=>{
+  started=true; intro.classList.add('off');
+  const de=document.documentElement;
+  if(de.requestFullscreen&&matchMedia('(pointer:coarse)').matches) de.requestFullscreen({navigationUI:'hide'}).catch(()=>{});
+});
+requestAnimationFrame(frame);
+window.__tn={cam,EX,logged,get rs(){return rs;},stats:{world:NWORLD/3,shards:NSHARD/3,lines:NLINE}};
+})();
+</script>
+</body>
+</html>
