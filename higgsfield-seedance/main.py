@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import higgsfield_client
+import httpx
 from dotenv import load_dotenv
 
 MODEL = "bytedance/seedance-2.5/text-to-video"
@@ -24,6 +25,23 @@ def on_queue_update(status: higgsfield_client.Status) -> None:
     print(f"status: {type(status).__name__}", file=sys.stderr)
 
 
+def first_media_url(result: dict) -> str | None:
+    """Return the output URL from a completed payload.
+
+    subscribe() returns the backend JSON unchanged, and the SDK's documented
+    shape is a plural media key holding a list of objects — result["images"][0]
+    ["url"] for images, so result["videos"][0]["url"] for this text-to-video
+    model. Scan the plausible media keys instead of hard-coding one.
+    """
+    for key in ("videos", "images"):
+        items = result.get(key)
+        if isinstance(items, list) and items and isinstance(items[0], dict):
+            url = items[0].get("url")
+            if url:
+                return url
+    return None
+
+
 def main() -> int:
     try:
         result = higgsfield_client.subscribe(
@@ -38,6 +56,13 @@ def main() -> int:
     except higgsfield_client.HiggsfieldClientError as error:
         print(f"Higgsfield API error: {error}", file=sys.stderr)
         return 1
+    except httpx.HTTPError as error:
+        # The SDK wraps HTTP *status* errors into HiggsfieldClientError, but raw
+        # connect/timeout failures during the minutes-long poll loop escape
+        # unwrapped as httpx errors. Catch them so a transient blip exits 1
+        # cleanly instead of dumping a traceback.
+        print(f"Network error talking to Higgsfield: {error}", file=sys.stderr)
+        return 1
 
     # subscribe() returns the final payload for every terminal state, including
     # failed, nsfw (moderated) and canceled, so success must be checked here.
@@ -46,7 +71,7 @@ def main() -> int:
         print(f"Generation did not succeed (status: {status}).", file=sys.stderr)
         return 1
 
-    url = (result.get("video") or {}).get("url")
+    url = first_media_url(result)
     if not url:
         print(f"Completed, but no video URL in response keys: {sorted(result)}", file=sys.stderr)
         return 1
