@@ -333,6 +333,11 @@ two disagree. The CRF rules in sections 6–10 stay scoped to `crf-builder/`.
 - Tests are pytest, run from the repo root scoped to the project
   (`pytest <project>/tests -q`), and isolate state with the `tmp_path` and
   `monkeypatch` fixtures rather than touching real files.
+- A `PostToolUse` hook in `.claude/settings.json` runs a project's suite
+  (`python3 -m pytest <project>/tests -q`) after every edit to a `.py` file in
+  one of these four projects, and blocks on failure. `scripts/setup.sh`
+  installs pytest and their deps. If pytest isn't importable, the hook warns
+  and skips rather than blocking.
 
 **JavaScript projects**
 - Zero-dependency Node tools use the built-in runner: `node --test`
