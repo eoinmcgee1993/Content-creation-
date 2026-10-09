@@ -41,6 +41,12 @@
             "command": "jq -r \".tool_response.filePath // .tool_input.file_path\" | { read -r f; case \"$f\" in */substack-os/*.js) out=$(cd \"${CLAUDE_PROJECT_DIR:-.}/substack-os\" && npm test 2>&1) || { printf \"%s\\n\" \"$out\" | tail -30 >&2; exit 2; };; esac; }",
             "timeout": 120,
             "statusMessage": "Running substack-os tests"
+          },
+          {
+            "type": "command",
+            "command": "jq -r \".tool_response.filePath // .tool_input.file_path\" | { read -r f; root=\"${CLAUDE_PROJECT_DIR:-.}\"; rel=\"${f#\"$root\"/}\"; case \"$rel\" in landing/*.py|offload/*.py|audits/*.py|voice_clone/*.py) p=\"${rel%%/*}\"; python3 -c \"import pytest\" 2>/dev/null || { echo \"pytest not importable; skipping $p tests (run scripts/setup.sh)\" >&2; exit 0; }; out=$(cd \"$root\" && python3 -m pytest \"$p/tests\" -q 2>&1) || { printf \"%s\\n\" \"$out\" | tail -30 >&2; exit 2; };; esac; }",
+            "timeout": 180,
+            "statusMessage": "Running Python project tests"
           }
         ]
       }
