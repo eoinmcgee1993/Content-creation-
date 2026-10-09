@@ -10,6 +10,7 @@ HTML/CSS/JS, one file per page.
 |---|---|
 | `landing.html` | One-page site: hero with call demo, how it works, features, LINE follow-up, contact. |
 | `phitara-video-preview.html` | Preview page: phone mockup playing the call demo, a "Hear Phitara" greeting (browser Thai TTS), LINE chat mockup. |
+| `assets/portraits/phitara-portrait.jpg` | AI-generated portrait (Higgsfield, GPT Image 2.5). Caller avatar on both pages. Not a photo of a real person. |
 | `assets/video/phitara-call-demo-v2.mp4` | **Not committed yet.** Both pages play it when present and fall back to a transcript / animated call screen when it is missing. |
 
 ## Run locally

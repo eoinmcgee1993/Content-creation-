@@ -46,9 +46,8 @@
   .screen video[hidden], .fallback[hidden] { display: none; }
   .fallback { padding: 24px; }
   .avatar {
-    width: 96px; height: 96px; border-radius: 50%; margin: 0 auto 14px;
-    background: radial-gradient(circle at 35% 30%, var(--teal), #145F57);
-    display: grid; place-items: center; font-size: 2.4rem; font-weight: 700; color: var(--navy);
+    width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 14px; display: block;
+    object-fit: cover; background: var(--navy-3); box-shadow: 0 0 0 3px var(--teal);
   }
   .fallback .name { font-weight: 700; font-size: 1.2rem; }
   .fallback .status { color: var(--teal); font-size: .9rem; }
@@ -115,7 +114,7 @@
           <source src="assets/video/phitara-call-demo-v2.mp4" type="video/mp4" />
         </video>
         <div class="fallback">
-          <div class="avatar">P</div>
+          <img class="avatar" src="assets/portraits/phitara-portrait.jpg" alt="Phitara" width="120" height="120" />
           <div class="name">Phitara</div>
           <div class="status">On a call · 00:42</div>
           <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
