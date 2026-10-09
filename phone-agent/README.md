@@ -10,8 +10,8 @@ HTML/CSS/JS, one file per page.
 |---|---|
 | `landing.html` | One-page site: hero with call demo, how it works, features, LINE follow-up, contact. |
 | `phitara-video-preview.html` | Preview page: phone mockup playing the call demo, a "Hear Phitara" greeting (browser Thai TTS), LINE chat mockup. |
-| `assets/portraits/phitara-portrait.jpg` | AI-generated portrait (Higgsfield, GPT Image 2.5). Caller avatar on both pages. Not a photo of a real person. |
-| `assets/video/phitara-call-demo-v2.mp4` | **Not committed yet.** Both pages play it when present and fall back to a transcript / animated call screen when it is missing. |
+| `assets/portraits/phitara-portrait.jpg` | Phitara's portrait, cropped from her reference headshot. Caller avatar on both pages. |
+| `assets/video/phitara-call-demo-v2.mp4` | 10 s, 768×768 H.264, silent call demo. Autoplays muted on both pages; if it can't play, they fall back to a transcript / animated call screen. |
 
 ## Run locally
 ```bash
@@ -20,7 +20,6 @@ python3 -m http.server 8000 --directory phone-agent
 ```
 
 ## Before going public
-- Add `assets/video/phitara-call-demo-v2.mp4` (the original was generated outside this repo and never committed).
 - Set `CONTACT_URL` in `landing.html`. The demo button stays hidden while it is empty.
 - Have a native speaker check the Thai copy, including the Thai spelling of the name.
 - The "Hear Phitara" button uses the visitor's browser voice, not the production voice. Replace it with a recorded clip once one exists.

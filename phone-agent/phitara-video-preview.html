@@ -42,7 +42,9 @@
     background: linear-gradient(180deg, var(--navy-3), var(--navy));
     display: grid; place-items: center; text-align: center;
   }
-  .screen video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* The demo is square and she moves across the frame, so any crop into the tall phone
+     screen cut her face off at some point. Show the whole frame instead. */
+  .screen video { width: 100%; height: 100%; object-fit: contain; display: block; }
   .screen video[hidden], .fallback[hidden] { display: none; }
   .fallback { padding: 24px; }
   .avatar {
