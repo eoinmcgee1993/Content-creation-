@@ -51,5 +51,16 @@
         ]
       }
     ]
+  },
+  "extraKnownMarketplaces": {
+    "anti-slop": {
+      "source": {
+        "source": "github",
+        "repo": "miqdadbadjuber/anti-slop"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "antislop@anti-slop": true
   }
 }
