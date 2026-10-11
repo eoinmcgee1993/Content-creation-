@@ -74,3 +74,34 @@ def test_render_markdown_includes_disclaimer():
     assert "Acme Co" in md
     assert "Methodology & Limitations" in md
     assert "Executive Summary" in md
+
+
+def test_recoverable_spend_never_exceeds_spend():
+    """A loss-making account must not report recovering more than it spent.
+
+    The account-wide ROAS finding restates the same money as the campaign-level
+    findings, so summing every finding produced a figure above 100% of spend —
+    the one number a client is guaranteed to check.
+    """
+    fields = ["Campaign", "Impressions", "Clicks", "Cost", "Conversions",
+              "Conversion value"]
+    rows = [
+        {"Campaign": "A - dead", "Impressions": "100000", "Clicks": "2000",
+         "Cost": "5000", "Conversions": "0", "Conversion value": "0"},
+        {"Campaign": "B - ok", "Impressions": "50000", "Clicks": "1500",
+         "Cost": "1000", "Conversions": "10", "Conversion value": "500"},
+        {"Campaign": "C - ok", "Impressions": "50000", "Clicks": "1500",
+         "Cost": "1000", "Conversions": "10", "Conversion value": "500"},
+        {"Campaign": "D - outlier", "Impressions": "50000", "Clicks": "1500",
+         "Cost": "1000", "Conversions": "1", "Conversion value": "200"},
+    ]
+    result = run_ads_audit(fields, rows)
+
+    # All three leakage findings fire on this account.
+    assert result.summary["account_roas"] < 1
+    assert any(f.scope == "account" for f in result.findings)
+    assert any(f.scope == "campaign" and f.estimated_monthly_leakage > 0
+               for f in result.findings)
+
+    assert result.total_leakage <= result.summary["total_spend"]
+

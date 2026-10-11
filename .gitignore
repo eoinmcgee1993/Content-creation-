@@ -8,6 +8,9 @@ build/
 .env
 .atlas-skill/
 
+# Installed Node dependencies (gridstrike-core, soi-dog-pro, trading-dashboard)
+node_modules/
+
 # Captured leads contain personal data — never commit
 landing/leads.csv
 offload/signups.csv
