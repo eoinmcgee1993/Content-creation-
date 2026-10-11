@@ -50,6 +50,7 @@
     background: var(--navy-2); border: 1px solid var(--line); border-radius: 20px; padding: 18px;
   }
   .call-bar { display: flex; align-items: center; gap: 10px; font-size: .9rem; color: var(--muted); }
+  .call-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--teal); }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); animation: pulse 1.6s infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
   .hero-video { width: 100%; border-radius: var(--radius); display: block; margin-top: 18px; background: #000; }
@@ -138,7 +139,7 @@
       </div>
 
       <div class="hero-media" aria-label="Example call">
-        <div class="call-bar"><span class="dot"></span> Incoming call · answered by Phitara</div>
+        <div class="call-bar"><img class="call-avatar" src="assets/portraits/phitara-portrait.jpg" alt="" width="40" height="40" /><span class="dot"></span> Incoming call · answered by Phitara</div>
 
         <video class="hero-video" autoplay loop muted playsinline hidden>
           <source src="assets/video/phitara-call-demo-v2.mp4" type="video/mp4" />
