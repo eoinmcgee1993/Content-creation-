@@ -6,6 +6,15 @@
       "env": {
         "AGENTPHONE_API_KEY": "${AGENTPHONE_API_KEY}"
       }
+    },
+    "MiniMax": {
+      "command": "uvx",
+      "args": ["minimax-mcp"],
+      "env": {
+        "MINIMAX_API_KEY": "${MINIMAX_API_KEY}",
+        "MINIMAX_API_HOST": "https://api.minimax.io",
+        "MINIMAX_API_RESOURCE_MODE": "url"
+      }
     }
   }
 }
