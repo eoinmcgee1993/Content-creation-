@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Four Prompt Tricks</title>
+<style>
+:root{--bg:#f6f4ef;--fg:#1d1d1f;--mute:#5d5d63;--card:#fff;--line:#dcd8cf;--accent:#c4421a;--accent2:#1f5f8b}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#ececee;--mute:#a3a3aa;--card:#1e1e22;--line:#34343a;--accent:#ff7a4d;--accent2:#6bb6ea}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.55 Georgia,serif}
+main{max-width:760px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 8px}
+h2{font-size:1.35rem;margin:0 0 8px}
+p.lead,.mute{color:var(--mute)}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin:24px 0}
+.num{color:var(--accent);font-family:system-ui,sans-serif;font-weight:700;font-size:.8rem;letter-spacing:.08em}
+button,label,input,select{font-family:system-ui,sans-serif}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.seg button{border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:.9rem}
+.seg button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.out{border-left:3px solid var(--accent);padding:6px 12px;margin:8px 0;min-height:3.2em}
+.row{display:grid;grid-template-columns:140px 1fr 90px;gap:10px;align-items:center;margin:10px 0;font-size:.95rem}
+.row input[type=range]{width:100%}
+.row output{text-align:right;font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;font-family:system-ui,sans-serif}
+.stats div{background:var(--bg);border-radius:8px;padding:8px;font-size:.8rem;color:var(--mute)}
+.stats b{display:block;color:var(--fg);font-size:1.05rem}
+svg{width:100%;height:auto;display:block}
+svg text{fill:var(--fg);font:13px system-ui,sans-serif}
+.box{fill:var(--bg);stroke:var(--line);stroke-width:1.5}
+.arrow{stroke:var(--accent2);stroke-width:2;fill:none}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+td,th{border-bottom:1px solid var(--line);padding:6px;text-align:left;vertical-align:top}
+@media (max-width:520px){.row{grid-template-columns:1fr 70px}.row input{grid-column:1/3}.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>Four prompt tricks</h1>
+<p class="lead">Based on a summary of "Unlock AI Mastery with ASDSTE-100" by Felix Reed (AI News &amp; Chips). Examples below are written for this page, not model output.</p>
+
+<section id="ste">
+  <div class="num">1 · ASD-STE100</div>
+  <h2>Clear text, "about 80%"</h2>
+  <p class="mute">ASD-STE100 is Simplified Technical English. Pick a level to see the same instruction rewritten.</p>
+  <div class="seg" role="group" aria-label="Writing level">
+    <button type="button" data-lvl="0" aria-pressed="true">Original</button>
+    <button type="button" data-lvl="1" aria-pressed="false">About 80%</button>
+    <button type="button" data-lvl="2" aria-pressed="false">Strict</button>
+  </div>
+  <div class="seg" role="group" aria-label="Example">
+    <button type="button" data-ex="0" aria-pressed="true">Power</button>
+    <button type="button" data-ex="1" aria-pressed="false">Lubricant</button>
+  </div>
+  <p class="out" id="steOut" aria-live="polite"></p>
+  <p class="mute" id="steCount"></p>
+</section>
+
+<section id="diagram">
+  <div class="num">2 · DIAGRAMS</div>
+  <h2>Ask for a picture, not paragraphs</h2>
+  <svg viewBox="0 0 700 120" role="img" aria-label="Flow: rough idea, prompt with a format request, AI output, review">
+    <rect class="box" x="10" y="35" width="130" height="50" rx="8"/><text x="75" y="65" text-anchor="middle">Rough idea</text>
+    <rect class="box" x="190" y="35" width="150" height="50" rx="8"/><text x="265" y="65" text-anchor="middle">Prompt + format</text>
+    <rect class="box" x="390" y="35" width="130" height="50" rx="8"/><text x="455" y="65" text-anchor="middle">AI output</text>
+    <rect class="box" x="570" y="35" width="120" height="50" rx="8"/><text x="630" y="65" text-anchor="middle">You review</text>
+    <path class="arrow" d="M140 60H190M340 60H390M520 60H570"/>
+    <text x="265" y="25" text-anchor="middle">"as a diagram"</text>
+  </svg>
+  <p class="mute">The format request is the trick. Name the format: diagram, table, page or script.</p>
+</section>
+
+<section id="calc">
+  <div class="num">3 · INTERACTIVE PAGE</div>
+  <h2>SIP calculator</h2>
+  <p class="mute">Illustration only, not financial advice. Assumes a fixed annual return, invested at the start of each month.</p>
+  <div class="row"><label for="mo">Monthly amount</label><input id="mo" type="range" min="500" max="50000" step="500" value="10000"><output id="moO"></output></div>
+  <div class="row"><label for="rt">Annual return %</label><input id="rt" type="range" min="1" max="20" step="0.5" value="12"><output id="rtO"></output></div>
+  <div class="row"><label for="yr">Years</label><input id="yr" type="range" min="1" max="40" step="1" value="15"><output id="yrO"></output></div>
+  <div class="stats">
+    <div>Invested<b id="inv"></b></div><div>Gain<b id="gain"></b></div><div>Total value<b id="tot"></b></div>
+  </div>
+  <svg id="chart" viewBox="0 0 700 260" role="img" aria-label="Invested amount versus total value by year"></svg>
+  <p class="mute">Formula: value = P × ((1+i)<sup>n</sup> − 1) / i × (1+i), with i = annual rate ÷ 12 and n = months.</p>
+</section>
+
+<section id="video">
+  <div class="num">4 · EXPLAINER VIDEO</div>
+  <h2>Script, then voice</h2>
+  <p class="mute">Ask for a time / visual / narration table, then send the narration to a text-to-speech tool. No video or voice has been generated for this page.</p>
+  <table>
+    <tr><th>Time</th><th>Visual</th><th>Narration</th></tr>
+    <tr><td>0–15 s</td><td>Long sentence shrinks</td><td>Aerospace uses ASD-STE100. Short sentences. Simple words.</td></tr>
+    <tr><td>15–35 s</td><td>Text turns into a diagram</td><td>Ask for a diagram. A process is easier to see.</td></tr>
+    <tr><td>35–60 s</td><td>Sliders and chart</td><td>Ask for a page. Add a voice. Share it.</td></tr>
+  </table>
+</section>
+
+<p class="mute">Source: <a href="https://www.youtube.com/watch?v=g_pnwXpvzI8" rel="noopener">Felix Reed, AI News &amp; Chips</a>. See FACTCHECK.md in the project folder.</p>
+</main>
+<script>
+(function(){
+  var EX=[
+    ["Prior to commencing installation, it is imperative that the operator ensures the power supply has been disconnected.",
+     "Before you start, make sure the power is off.",
+     "Disconnect the power."],
+    ["The utilization of a lubricant is recommended in order to facilitate the removal of the component.",
+     "Use lubricant. It makes the part easier to remove.",
+     "Apply lubricant. This makes it easier to remove the part."]
+  ];
+  var lvl=0,ex=0;
+  var out=document.getElementById('steOut'),cnt=document.getElementById('steCount');
+  function steRender(){
+    var t=EX[ex][lvl];
+    out.textContent=t;
+    cnt.textContent=t.split(/\s+/).length+' words';
+  }
+  function bind(attr,setter){
+    var bs=document.querySelectorAll('['+attr+']');
+    bs.forEach(function(b){b.addEventListener('click',function(){
+      bs.forEach(function(x){x.setAttribute('aria-pressed',x===b)});
+      setter(+b.getAttribute(attr)); steRender();
+    })});
+  }
+  bind('data-lvl',function(v){lvl=v});
+  bind('data-ex',function(v){ex=v});
+  steRender();
+
+  var fmt=new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
+  var $=function(id){return document.getElementById(id)};
+  function fv(P,annual,months){
+    var i=annual/100/12;
+    if(i===0) return P*months;
+    return P*((Math.pow(1+i,months)-1)/i)*(1+i);
+  }
+  function calc(){
+    var P=+$('mo').value,r=+$('rt').value,y=+$('yr').value;
+    $('moO').textContent=fmt.format(P);$('rtO').textContent=r+'%';$('yrO').textContent=y;
+    var inv=P*y*12,tot=fv(P,r,y*12);
+    $('inv').textContent=fmt.format(inv);$('gain').textContent=fmt.format(tot-inv);$('tot').textContent=fmt.format(tot);
+    var W=700,H=260,pl=10,pb=24,pt=10,max=tot||1,pts=[],ip=[];
+    for(var k=0;k<=y;k++){
+      var x=pl+(W-2*pl)*k/y;
+      pts.push(x.toFixed(1)+','+(H-pb-(H-pb-pt)*fv(P,r,k*12)/max).toFixed(1));
+      ip.push(x.toFixed(1)+','+(H-pb-(H-pb-pt)*(P*k*12)/max).toFixed(1));
+    }
+    var base=(pl)+','+(H-pb)+' ',end=(W-pl)+','+(H-pb);
+    $('chart').innerHTML=
+      '<polygon points="'+base+pts.join(' ')+' '+end+'" fill="var(--accent)" opacity=".18"/>'+
+      '<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--accent)" stroke-width="3"/>'+
+      '<polyline points="'+ip.join(' ')+'" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-dasharray="5 4"/>'+
+      '<text x="14" y="'+(H-6)+'">Year 0</text><text x="'+(W-14)+'" y="'+(H-6)+'" text-anchor="end">Year '+y+'</text>'+
+      '<text x="16" y="24" style="fill:var(--accent)">— Total value</text><text x="130" y="24" style="fill:var(--accent2)">- - Invested</text>';
+  }
+  ['mo','rt','yr'].forEach(function(id){$(id).addEventListener('input',calc)});
+  calc();
+})();
+</script>
+</body>
+</html>
