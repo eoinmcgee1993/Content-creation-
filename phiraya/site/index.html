@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phiraya — Every Client Connection, Handled.</title>
+<meta name="description" content="Professional agent and secretary support for clinics, premium services and growing businesses, bridging Thailand and Western markets 24/7.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F1EEE7; --arch:#E2DFD8; --ink:#232320; --muted:#5D5A55;
+    --accent:#C8694A; --accent-ink:#A9512F; --card:#FAF8F3; --line:#D9D5CC;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "DM Sans",system-ui,sans-serif}
+  h1,h2,h3{font-family:Newsreader,Georgia,serif;font-weight:400;line-height:1.15;margin:0 0 .5em}
+  h1{font-size:clamp(2.4rem,6vw,4.4rem)} h2{font-size:clamp(1.8rem,3.6vw,2.6rem)} h3{font-size:1.35rem}
+  p{margin:0 0 1em}
+  a{color:inherit}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  section{padding:72px 0}
+  header.top{position:sticky;top:0;z-index:5;background:rgba(241,238,231,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{font-family:Newsreader,Georgia,serif;font-size:1.5rem;text-decoration:none}
+  nav a{margin-left:22px;text-decoration:none;font-size:.95rem;color:var(--muted)}
+  nav a:hover{color:var(--ink)}
+  .btn{display:inline-block;padding:12px 26px;border-radius:999px;background:var(--accent-ink);color:#fff;text-decoration:none;font-weight:600;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;border:0;cursor:pointer}
+  .btn:hover{background:#8f4326}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+  .btn.ghost:hover{background:var(--ink);color:var(--bg)}
+  .hero{position:relative;overflow:hidden;padding:96px 0 88px}
+  .hero::before{content:"";position:absolute;right:6%;top:-40px;width:340px;height:520px;background:var(--arch);border-radius:170px 170px 0 0;z-index:0}
+  .hero .wrap{position:relative;z-index:1}
+  .eyebrow{color:var(--accent-ink);font-size:.9rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:18px}
+  .hero p.lead{max-width:540px;font-size:1.15rem;color:var(--muted)}
+  .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+  .stamp{display:inline-block;margin-top:34px;padding:8px 14px;background:var(--card);border:1.5px solid var(--ink);box-shadow:3px 3px 0 var(--accent);font-family:Newsreader,Georgia,serif;font-size:.95rem}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;counter-reset:s;padding:0;list-style:none}
+  .steps li{counter-increment:s;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px}
+  .steps li::before{content:counter(s,decimal-leading-zero);font-family:Newsreader,Georgia,serif;font-size:2rem;color:var(--accent)}
+  .steps b{display:block;font-family:Newsreader,Georgia,serif;font-size:1.25rem;font-weight:500;margin:4px 0 6px}
+  .steps span{color:var(--muted);font-size:.97rem}
+  .alt{background:#EAE6DD}
+  .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px}
+  .card ul{margin:0;padding-left:1.1em;color:var(--muted)} .card li{margin-bottom:.5em}
+  .tag{display:inline-block;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:10px}
+  .tone{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none}
+  .tone li{padding:6px 16px;border:1px solid var(--ink);border-radius:999px;font-size:.92rem}
+  video{width:100%;border-radius:16px;background:#000;display:block}
+  .cta{text-align:center}
+  .cta p{max-width:520px;margin:0 auto 1.4em;color:var(--muted)}
+  .contact{margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  footer{padding:36px 0;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem;text-align:center}
+  @media (max-width:640px){nav a:not(.keep){display:none}.hero::before{right:-80px;opacity:.7}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top">Phiraya</a>
+    <nav><a href="#how">How it works</a><a href="#who">Who it's for</a><a href="#why">Why Phiraya</a><a class="keep" href="#contact">Get started</a></nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Bridging the gap</div>
+      <h1>Every Client Connection,<br>Handled.</h1>
+      <p class="lead">Professional agent support for clinics, premium services and growing businesses. We bridge Thailand and Western markets with clear, respectful, 24/7 communication.</p>
+      <div class="actions">
+        <a class="btn" href="#contact">Get started</a>
+        <a class="btn ghost" href="#how">Learn how it works</a>
+      </div>
+      <div class="stamp">Outreach · Cold calls · Booking · Coordination</div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><b>Outreach &amp; first contact</b><span>We make the first call or message in the right tone for each culture.</span></li>
+        <li><b>Clear communication</b><span>We translate not just language, but intent and expectation.</span></li>
+        <li><b>Booking &amp; coordination</b><span>Times, details and confirmations handled smoothly on both sides.</span></li>
+        <li><b>Ongoing follow-through</b><span>Nothing falls through the cracks.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="alt">
+    <div class="wrap">
+      <h2>See Phiraya in 30 seconds</h2>
+      <video controls preload="metadata" poster="assets/poster.jpg" playsinline>
+        <source src="assets/phiraya-intro.mp4" type="video/mp4">
+        Your browser can't play this video.
+      </video>
+    </div>
+  </section>
+
+  <section id="who">
+    <div class="wrap">
+      <h2>Who it's for</h2>
+      <div class="two">
+        <div class="card"><div class="tag">For Thai business owners</div>
+          <ul><li>Reach Western clients with confidence</li><li>Professional English communication without the cultural friction</li><li>Someone who understands both sides and protects relationships</li></ul></div>
+        <div class="card"><div class="tag">For Western business owners</div>
+          <ul><li>Reliable local coordination in Thailand</li><li>Clear, professional communication with Thai partners and clients</li><li>A trusted bridge that understands hierarchy, timing and face</li></ul></div>
+      </div>
+      <p style="margin-top:24px;color:var(--muted)">Clinics and premium service providers · Medium-sized businesses with international clients · Owners and managers who need reliable cross-border coordination.</p>
+    </div>
+  </section>
+
+  <section id="why" class="alt">
+    <div class="wrap">
+      <h2>Why Phiraya</h2>
+      <div class="two">
+        <div class="card"><h3>Both cultures, fluently</h3><p style="color:var(--muted)">Thai clients value relationship and face. Western clients value clarity and speed. We speak both languages.</p></div>
+        <div class="card"><h3>Warm yet professional</h3><p style="color:var(--muted)">Discreet, professional follow-through that protects relationships while getting results.</p></div>
+        <div class="card"><h3>Available around the clock</h3><p style="color:var(--muted)">First contact to follow-through, handled.</p></div>
+      </div>
+      <ul class="tone" style="margin-top:28px"><li>Warm</li><li>Capable</li><li>Discreet</li><li>Responsive</li><li>Internationally minded</li></ul>
+    </div>
+  </section>
+
+  <section id="contact" class="cta">
+    <div class="wrap">
+      <h2>Let's connect</h2>
+      <p>Tell us about the clients you want to reach, and we'll take it from there.</p>
+      <div class="contact" id="contact-links"></div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">Phiraya · Professional Agent Support | Thailand ↔ West · Every Client Connection, Handled.</div></footer>
+
+<script>
+  // Contact details were not in the source documents (the signature template is still
+  // "[Phone] | [LINE / WhatsApp] | [Email]"), so nothing is invented here. Fill these in
+  // and the buttons appear; until then the section says so rather than linking nowhere.
+  var CONTACT = { email: "", line: "", whatsapp: "" };
+
+  (function () {
+    var box = document.getElementById("contact-links");
+    var links = [];
+    if (CONTACT.email) links.push(["Email us", "mailto:" + CONTACT.email]);
+    if (CONTACT.line) links.push(["LINE", CONTACT.line]);
+    if (CONTACT.whatsapp) links.push(["WhatsApp", "https://wa.me/" + CONTACT.whatsapp.replace(/\D/g, "")]);
+    if (!links.length) {
+      box.textContent = "Contact details coming soon.";
+      return;
+    }
+    links.forEach(function (l) {
+      var a = document.createElement("a");
+      a.className = "btn";
+      a.textContent = l[0];
+      a.href = l[1];
+      box.appendChild(a);
+    });
+  })();
+</script>
+</body>
+</html>

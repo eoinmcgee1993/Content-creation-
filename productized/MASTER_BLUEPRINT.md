@@ -386,7 +386,10 @@ change a claim in one, change it in the other.
 - **Instagram handle.** The carousels say *Link in bio* and name no handle.
 - **Whether to spend about 21 Higgsfield credits** on the gallery images in
   §5.
-- **Whether EdgeVault's "extracted from a system that has taken real,
-  live-mode Stripe payments" line stays.** It's true (see
-  `docs/crf/SYSTEM.md`) and it's the strongest trust line in the set. It
-  also points at the source system, if anyone asks which one.
+- **EdgeVault's trust line.** It used to say the source system "has taken
+  real, live-mode Stripe payments". It hasn't: `docs/crf/SYSTEM.md` shows a
+  live-mode payment link, and as of 2026-09-30 that link had recorded no
+  purchase. The line now says "wired to a live-mode Stripe payment link".
+  Restore the stronger wording only after a real purchase clears, and
+  re-render the EdgeVault images first: the committed PNGs still carry the
+  old line.

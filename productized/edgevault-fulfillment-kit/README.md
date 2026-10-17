@@ -8,9 +8,8 @@ framework, no bundler, no build step on the client. Six Supabase Edge
 Functions and one migration do all of the trusted work; your page does none
 of it.
 
-Extracted from a system that has taken real, live-mode Stripe payments in
-production — not a tutorial project. See `AUDIT.md` in the parent folder for
-the evidence.
+Extracted from a deployed system wired to a live-mode Stripe payment link —
+not a tutorial project. See `AUDIT.md` in the parent folder for the evidence.
 
 ---
 

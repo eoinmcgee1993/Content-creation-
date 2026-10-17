@@ -8,6 +8,9 @@ build/
 .env
 .atlas-skill/
 
+# Installed Node dependencies (gridstrike-core, soi-dog-pro, trading-dashboard)
+node_modules/
+
 # Captured leads contain personal data — never commit
 landing/leads.csv
 offload/signups.csv
@@ -20,3 +23,6 @@ downloads/
 
 # Local secrets (e.g. higgsfield-seedance HF_KEY) — never commit
 .env.local
+
+# Voice-clone recordings: enough for anyone to clone the voice, never commit
+voice_clone/takes/

@@ -1,0 +1,24 @@
+{
+  "name": "content-creation",
+  "version": "0.1.0",
+  "description": "Subagents (architecture validation, bug investigation, code review, docs) and skills (Higgsfield generation, Open.Video, productizing code assets) from the Content-creation- repo.",
+  "author": {
+    "name": "eoinmcgee1993"
+  },
+  "repository": "https://github.com/eoinmcgee1993/Content-creation-",
+  "agents": [
+    "./.claude/agents/architecture-validator.md",
+    "./.claude/agents/bug-investigator.md",
+    "./.claude/agents/code-reviewer.md",
+    "./.claude/agents/doc-writer.md"
+  ],
+  "skills": [
+    "./.claude/skills/higgsfield-generate",
+    "./.claude/skills/higgsfield-marketplace-cards",
+    "./.claude/skills/higgsfield-product-photoshoot",
+    "./.claude/skills/higgsfield-soul-id",
+    "./.claude/skills/higgsfield-websites",
+    "./.claude/skills/open-video",
+    "./.claude/skills/productize-code-asset"
+  ]
+}
