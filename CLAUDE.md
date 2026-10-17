@@ -88,29 +88,14 @@ no root `pytest.ini`/`conftest.py`):
 - `thai-id/` — PHP generator of checksum-valid Thai citizen IDs, for test data:
   `php thai-id/tests/run.php`. No PHPUnit and no Composer install; `composer.json`
   only maps the `ThaiId\` autoload for projects that require it.
-- `voice_clone/` — recording kit for an ElevenLabs Professional Voice Clone; its
-  checker grades takes against ElevenLabs' audio targets:
-  `pytest voice_clone/tests -q` (needs `pip install -r voice_clone/requirements.txt`).
+- `secret-codes/` — AI command registry + generated system prompt and Claude
+  skill: `pytest secret-codes/tests -q`. Edit `registry.json`/`router.md`, then
+  run `python secret-codes/build.py`; never hand-edit `system-prompt.md` or
+  `skill/`.
 
 The first three also run in CI (`.github/workflows/{landing,offload,audits}.yml`,
 path-filtered to their own directory) — `kdp-compiler/`, `substack-os/`,
-`thai-id/` and `voice_clone/` do not yet.
-
-**Projects with a build step rather than tests:**
-- `trading-dashboard/` — React 19 + Vite: `npm ci && npm run build`, `npm run lint`
-  (from inside the directory). Deployed by `.github/workflows/netlify-deploy.yml`
-  using its own `NETLIFY_TRADING_DASHBOARD_SITE_ID` secret — never reuse the
-  shared `NETLIFY_SITE_ID`, which belongs to a different site.
-- `degen-diaries/` — Next.js + Drizzle (Postgres): `npm run typecheck` and
-  `npm run build` are the CI gates (`degen-diaries-build.yml`). It carries its
-  own `ARCHITECTURE.md`, `DEPLOYMENT.md`, `PRODUCT.md` and `STRIPE.md`; read
-  those first.
-- `phiraya/` — no build, no tests; see "Phiraya" below.
-
-**Stale CI to be aware of:** `.github/workflows/deploy-ecu-app.yml` ("Deploy CRF
-Builder site to Netlify") is `workflow_dispatch`-only — its push trigger is
-commented out because the Netlify token was revoked, and CRF has since moved to
-Vercel. Do not re-enable it without checking `docs/crf/DEPLOYMENT.md`.
+`thai-id/` and `secret-codes/` do not yet.
 
 **Deploy targets, and the cross-cutting traps to know about:**
 - `render.yaml` is one Render blueprint provisioning `landing/` (service
