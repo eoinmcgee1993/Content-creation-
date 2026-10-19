@@ -42,9 +42,10 @@
     background: linear-gradient(180deg, var(--navy-3), var(--navy));
     display: grid; place-items: center; text-align: center;
   }
-  /* The demo is square and she moves across the frame, so any crop into the tall phone
-     screen cut her face off at some point. Show the whole frame instead. */
-  .screen video { width: 100%; height: 100%; object-fit: contain; display: block; }
+  /* The vertical demo is 9:16, close to the screen's shape, and she stays centred, so
+     filling the screen only trims the edges. The old square clip needed contain because
+     she moved across the frame and any crop cut her face off. */
+  .screen video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .screen video[hidden], .fallback[hidden] { display: none; }
   .fallback { padding: 24px; }
   .avatar {
@@ -113,7 +114,7 @@
     <div class="phone" aria-label="Phitara call demo">
       <div class="screen">
         <video autoplay loop muted playsinline hidden>
-          <source src="assets/video/phitara-call-demo-v2.mp4" type="video/mp4" />
+          <source src="assets/video/phitara-call-demo-vertical.mp4" type="video/mp4" />
         </video>
         <div class="fallback">
           <img class="avatar" src="assets/portraits/phitara-portrait.jpg" alt="Phitara" width="120" height="120" />
