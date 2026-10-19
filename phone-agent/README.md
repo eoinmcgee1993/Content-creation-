@@ -11,7 +11,9 @@ HTML/CSS/JS, one file per page.
 | `landing.html` | One-page site: hero with call demo, how it works, features, LINE follow-up, contact. |
 | `phitara-video-preview.html` | Preview page: phone mockup playing the call demo, a "Hear Phitara" greeting (browser Thai TTS), LINE chat mockup. |
 | `assets/portraits/phitara-portrait.jpg` | Phitara's portrait, cropped from her reference headshot. Caller avatar on both pages. |
-| `assets/video/phitara-call-demo-v2.mp4` | 10 s, 768×768 H.264, silent call demo. Autoplays muted on both pages; if it can't play, they fall back to a transcript / animated call screen. |
+| `assets/video/phitara-call-demo-v2.mp4` | 10 s, 768×768 H.264, silent call demo. Autoplays muted on `landing.html`; if it can't play, they fall back to a transcript / animated call screen. |
+| `assets/portraits/phitara-vertical-first-frame.jpg` | 720×1280 crop of her half-length reference image; the start frame for the vertical demo. |
+| `assets/video/phitara-call-demo-vertical.mp4` | 10 s, 768×1344 H.264, silent. Made with MiniMax H3 Max (via ElevenLabs) from the first frame above. Fills the phone screen on `phitara-video-preview.html`. |
 
 ## Run locally
 ```bash
