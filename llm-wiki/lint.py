@@ -94,7 +94,7 @@ def main(argv):
     for pid, text in pages.items():
         for target, anchor in LINK.findall(INLINE.sub("", FENCED.sub("", text))):
             links += 1
-            target = target.strip().rstrip("\\")
+            target = target.strip().rstrip("\\") or pid  # [[#Heading]] is this page
             if target not in pages:
                 errors.append(f"{pid}: broken link [[{target}]]")
             elif anchor and norm(anchor) not in headings[target]:

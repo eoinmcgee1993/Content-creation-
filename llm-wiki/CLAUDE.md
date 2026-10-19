@@ -66,7 +66,8 @@ ingested: 2026-09-29
 
 - `files`: repo-relative paths. Separate several with commas; globs work
   (`.github/workflows/*.yml`).
-- `commit`: the commit whose content the ingest read.
+- `commit`: the commit checked out when the ingest ran. For a repository
+  document, that is the version that was read.
 - `sha256`: the output of `python3 llm-wiki/lint.py --digest '<files value>'`.
 - `ingested`: the date of the ingest.
 
@@ -105,7 +106,9 @@ that renders both on GitHub and in Obsidian:
 - **Gap.** A question the sources can't answer. Name the source that would
   answer it, and use `[!NOTE]` instead of `[!WARNING]`.
 
-To resolve a flag, fix the claim, delete the callout and log it. Never
+Put each flag once, on the page about its subject. Other pages link to that
+section instead of repeating the callout, so the flag report counts each issue
+once. To resolve a flag, fix the claim, delete the callout and log it. Never
 drop a flag silently.
 
 ## Workflows

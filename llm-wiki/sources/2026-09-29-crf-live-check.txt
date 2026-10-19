@@ -1,0 +1,37 @@
+# CRF live check, captured 2026-09-29T20:35:26Z from a Claude Code cloud session.
+# Status: curl -s -o /dev/null -w '%{http_code}' https://<host>/<path>, retried on 000.
+# Routes: root CLAUDE.md section 9 and docs/crf/DEPLOYMENT.md 'Verification', plus privacy, terms
+# and one path that should not exist (to show the host has no catch-all).
+
+## Status codes
+crf-garage.netlify.app                     /                   404
+crf-garage.netlify.app                     /apparel            404
+crf-garage.netlify.app                     /ecu                404
+crf-garage.netlify.app                     /mods               404
+crf-garage.netlify.app                     /approve            404
+crf-garage.netlify.app                     /desk               404
+crf-garage.netlify.app                     /privacy            404
+crf-garage.netlify.app                     /terms              404
+crf-garage.netlify.app                     /no-such-page-7f3a  404
+crf-eoins-projects-99ff5888.vercel.app     /                   200
+crf-eoins-projects-99ff5888.vercel.app     /apparel            200
+crf-eoins-projects-99ff5888.vercel.app     /ecu                200
+crf-eoins-projects-99ff5888.vercel.app     /mods               200
+crf-eoins-projects-99ff5888.vercel.app     /approve            200
+crf-eoins-projects-99ff5888.vercel.app     /desk               200
+crf-eoins-projects-99ff5888.vercel.app     /privacy            200
+crf-eoins-projects-99ff5888.vercel.app     /terms              200
+crf-eoins-projects-99ff5888.vercel.app     /no-such-page-7f3a  404
+
+## Page titles on crf-eoins-projects-99ff5888.vercel.app
+/                   StreetSweeperCustoms — CRF250L Kit Builder
+/privacy            StreetSweeperCustoms — Privacy Policy
+/terms              StreetSweeperCustoms — Terms of Sale
+/no-such-page-7f3a  v0 App
+
+## legal-details.js on crf-eoins-projects-99ff5888.vercel.app
+# Which of the four legal facts hold a non-empty value. Values are deliberately not recorded.
+entity   set
+address  set
+email    set
+law      set
