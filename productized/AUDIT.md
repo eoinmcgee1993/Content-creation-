@@ -29,8 +29,8 @@ below is graded against what it actually does, not what its README claims.
 1. **Micro-SaaS / API Wrapper → the CRF order-fulfillment backend.** A
    Stripe-to-Supabase digital-fulfillment engine with no server to run,
    security-reviewed across ~10 dedicated hardening commits, and **live in
-   production on real, live-mode Stripe payments** right now. This is the
-   asset. Fully packaged below.
+   production on a live-mode Stripe payment link** (no purchase recorded as
+   of 2026-09-30). This is the asset. Fully packaged below.
 2. **Developer/Automation Template → the n8n pipeline pack.** Three
    non-trivial AI-agent automation graphs (76 nodes combined) plus a shared
    Postgres schema. Real, but shipped once and never iterated — see caveats.
@@ -70,8 +70,9 @@ the kit's single migration from there.
 
 **Why it clears the 70% bar, with evidence, not vibes:**
 
-- It's not a demo. `https://crf-garage.netlify.app` has taken real, live-mode
-  Stripe payments — this shipped and got paid, not "should work."
+- It's not a demo. `https://crf-garage.netlify.app` shipped on a live-mode
+  Stripe payment link. As of 2026-09-30 that link had recorded no purchase,
+  so "shipped" is proven and "got paid" is not.
 - 10 of the 32 recent commits are dedicated security-narrowing passes, not
   feature work: *"Narrow the browser's database grants, and drop the testing
   panel," "Harden CRF racewear order flow," "Withhold the kit file until

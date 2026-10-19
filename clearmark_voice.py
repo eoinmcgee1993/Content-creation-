@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Place AgentPhone voice calls to UK/IE practices — the spoken counterpart to clearmark_outreach.py.
 
-Reads the same lead CSVs (practices_uk_ie.csv / batch_00_live.csv), builds a per-practice
-call agent from the `observation` field, and places outbound calls via the AgentPhone SDK.
+Reads the same lead CSVs (practices_uk_ie.csv / batch_00_live.csv), briefs each call from
+the practice's `observation` field, and places outbound calls via the AgentPhone SDK.
 
 Safe by default: runs a dry-run that prints what it *would* dial. Pass --live to actually call.
 
@@ -46,12 +46,18 @@ def _system_prompt(first: str, practice: str, platform: str, observation: str) -
         f"You are a friendly, concise outreach caller for Clearmark. You are calling {first} "
         f"at {practice}. {angle} Offer {offer}. Keep it under 60 seconds, be respectful of their "
         f"time, and if they're interested, ask for the best email to send the sample report. "
-        f"If they're busy or not interested, thank them and end the call politely."
+        f"If they're busy or not interested, thank them and end the call politely. "
+        f"You are an AI: if they ask, say so plainly, and never claim to be a person."
     )
 
 
 def _greeting(first: str) -> str:
-    return f"Hi, is this {first}? I'll keep this really quick."
+    # These calls reach practices in Ireland, where the EU AI Act (Article 50,
+    # in force since August 2026) requires saying up front that the caller is an AI.
+    return (
+        f"Hi, is this {first}? I'm an AI assistant calling for Clearmark. "
+        f"I'll keep this really quick."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -78,7 +84,7 @@ def run(in_path: Path, limit: int | None, live: bool) -> None:
         sys.exit(1)
 
     client = None
-    number = None
+    agent = None
     if live:
         api_key = os.environ.get("AGENTPHONE_API_KEY")
         if not api_key:
@@ -112,16 +118,19 @@ def run(in_path: Path, limit: int | None, live: bool) -> None:
             placed += 1
             continue
 
-        agent = client.agents.create(
-            name=f"Clearmark — {practice}",
-            voice_mode="hosted",
+        # One agent and one number, set up on the first live call, serve the whole
+        # run. A call's caller ID is a number attached to its agent, so a fresh
+        # agent per practice left every call after the first with nothing to dial
+        # from. Each practice's brief and greeting travel with its call instead.
+        if agent is None:
+            agent = client.agents.create(name="Clearmark outreach", voice_mode="hosted")
+            client.numbers.buy(agent_id=agent.id)
+        call = client.calls.make(
+            agent_id=agent.id,
+            to_number=to_number,
             system_prompt=prompt,
-            greeting=_greeting(first),
+            initial_greeting=_greeting(first),
         )
-        # Buy a single shared number on the first live call and reuse it.
-        if number is None:
-            number = client.numbers.buy(agent_id=agent.id)
-        call = client.calls.create(agent_id=agent.id, to_number=to_number)
         print(f"  ✓ calling {practice} ({first}) at {to_number} — call {call.id}")
         placed += 1
 

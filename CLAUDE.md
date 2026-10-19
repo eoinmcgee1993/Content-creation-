@@ -85,13 +85,17 @@ no root `pytest.ini`/`conftest.py`):
 - `substack-os/` — Substack analytics engine: `npm test` (from inside the directory).
   No install step and no dependencies; `package.json` exists only to name the
   command and mark the directory as ESM.
-- `digital-renaissance/money-machine/` — tests and 3D-model build for the Money
-  Machine page, which lives in `digital-renaissance/site/money-machine/`:
-  `npm test` (from inside the directory; tests need no install).
+- `thai-id/` — PHP generator of checksum-valid Thai citizen IDs, for test data:
+  `php thai-id/tests/run.php`. No PHPUnit and no Composer install; `composer.json`
+  only maps the `ThaiId\` autoload for projects that require it.
+- `secret-codes/` — AI command registry + generated system prompt and Claude
+  skill: `pytest secret-codes/tests -q`. Edit `registry.json`/`router.md`, then
+  run `python secret-codes/build.py`; never hand-edit `system-prompt.md` or
+  `skill/`.
 
 The first three also run in CI (`.github/workflows/{landing,offload,audits}.yml`,
-path-filtered to their own directory) — `kdp-compiler/`, `substack-os/` and the
-Money Machine do not yet.
+path-filtered to their own directory) — `kdp-compiler/`, `substack-os/`,
+`thai-id/` and `secret-codes/` do not yet.
 
 **Deploy targets, and the cross-cutting traps to know about:**
 - `render.yaml` is one Render blueprint provisioning `landing/` (service
@@ -99,11 +103,14 @@ Money Machine do not yet.
   (`mediafetch`) as separate services.
 - `landing/` *also* deploys to Vercel independently, via `api/index.py` +
   root `vercel.json` — two live deploy targets for one app.
-- The root `netlify.toml` publishes **`digital-renaissance/site`**. Any
-  other static project connected to this repo's Netlify site (rather than
-  deployed by its own upload/GitHub Action) would be silently overridden by
-  that config — this has already shaped how `crf-builder/` and
-  `trading-dashboard/` deploy (see their own docs/workflows).
+- The root `netlify.toml` builds and publishes **`trading-dashboard/`**. Any
+  other static project connected to a Netlify site that builds from this repo
+  (rather than deployed by its own upload/GitHub Action) would be silently
+  overridden by that config — this has already shaped how `crf-builder/`
+  deploys (see its own docs).
+- The Digital Renaissance site (digital-renaissance.tech) no longer lives here:
+  it is its own repository, `eoinmcgee1993/DigitalRenaissanceNew`, which the
+  Netlify project `digitalrenaissancearchitect` builds from.
 - A single `supabase/` project's migrations serve multiple unrelated apps
   (`crf-builder/`'s racewear/ECU tables, `mediafetch/`'s subscriptions) in
   one shared Postgres schema — check existing migration numbering and table
@@ -111,8 +118,45 @@ Money Machine do not yet.
 
 Everything else in the repo (`digikim/`, `gates-unbound/`, `launchwhere/`,
 `local-downloader/`, `sales/`, `plugins/`, `trading/`, `gridstrike-core/`,
-and more) is a standalone script, static page, or experiment with no shared
-build or test process — read its own `README.md` before touching it.
+`phiraya/`, `phone-agent/`, and more) is a standalone script, static page, or
+experiment with no shared build or test process — read its own `README.md`
+before touching it.
+
+The conventions every project shares (commits, secrets, personal data, CI,
+new-project layout) are in **section 11**, after the CRF sections.
+
+### Phiraya (`phiraya/`)
+
+Cross-cultural agent and secretary service bridging Thailand and Western
+markets. Tagline **"Every Client Connection, Handled."** Read `phiraya/README.md`
+and `phiraya/REVIEW.md` first. Layout: `training/` (merged internal guide and
+proposed additions), `site/` (plain-HTML one-pager plus the brand intro video),
+`social/` (content kit).
+
+- **Spelling is "Phiraya".** The brand video's captions read "Firaya"; that is
+  an unresolved discrepancy, not a variant. Don't copy it.
+- **No invented facts.** Contact details are deliberately empty (`CONTACT` in
+  `site/index.html`); pricing, coverage hours and privacy practice don't exist
+  in any source document. Leave them blank or marked `[Added]` / "owner to fill
+  in" rather than guessing.
+- **Don't publish the open claims.** "24/7", "discreet" for clinics and the
+  cross-border cold-calling scripts are listed as blockers in `REVIEW.md`
+  section A. Resolve those before the site goes live.
+- **The merged guide is the source of truth**, not the PDF/DOCX digest, which
+  has dropped several scripts. Mark anything that reconciles two sources
+  `[Reconciled]` and anything new `[Added]`; proposals live in
+  `training/PROPOSED_ADDITIONS.md` until approved.
+- **No Thai-language copy exists.** Don't machine-write Thai scripts for live
+  calls without review by a native speaker.
+- **Plain HTML/CSS/JS only, one file per page, no bundler.** Palette from the
+  brand video: background `#F1EEE7`, terracotta accent, near-black serif
+  headings; tone is warm, capable, discreet, responsive, internationally minded.
+- **Not deployed anywhere, and the training material is currently public.**
+  `training/` and `REVIEW.md` were merged into this public repo (PR #125); the
+  decision to move them to a private repo is still open with the owner. Don't
+  add more internal or confidential Phiraya material here until it is settled.
+  The root `netlify.toml` publishes `trading-dashboard/`, so deploy
+  `phiraya/site/` by upload or from its own site.
 
 **Knowledge base:** `llm-wiki/` is a Markdown wiki about these projects,
 with every claim cited back to the document it came from. It covers what
@@ -132,12 +176,14 @@ while working on CRF.
 CRF250L / CRF300L — a print-ready graphics-kit SVG, custom club racewear, and a
 free ECU tune template. No accounts, no server, no build step.
 
-**Stack:** Netlify (static hosting, deployed by upload) · Supabase Postgres +
-Edge Functions (Deno) · Stripe Payment Links · Resend for email, when a sending
-domain exists.
+**Stack:** Vercel (hosting) · Supabase Postgres + Edge Functions (Deno) ·
+Stripe Payment Links · Resend for email, when a sending domain exists.
 
-**Live at:** https://crf-garage.netlify.app — `/`, `/apparel`, `/ecu`, `/mods`,
-`/approve`, `/desk`. "CRF Garage" is a prototype name, not a trading name.
+**Live at:** https://crf-eoins-projects-99ff5888.vercel.app — `/`, `/apparel`,
+`/ecu`, `/mods`, `/approve`, `/desk`. "CRF Garage" is a prototype name, not a
+trading name. The old `crf-garage.netlify.app` now answers 404 everywhere; that
+is expected, not an outage. Hosting facts come from `docs/crf/DEPLOYMENT.md`
+(Phase 3) — if this section and that file disagree, that file wins.
 
 **Current focus:** the trading name. It blocks the domain, the legal pages, the
 email sending domain, and the Stripe merchant name a buyer sees at checkout.
@@ -195,7 +241,7 @@ replaces them:
 
 # 2. Every live route answers.
 for p in "" apparel ecu mods approve desk; do
-  curl -s -o /dev/null -w "$p %{http_code}\n" "https://crf-garage.netlify.app/$p"
+  curl -s -o /dev/null -w "$p %{http_code}\n" "https://crf-eoins-projects-99ff5888.vercel.app/$p"
 done   # privacy and terms must stay 404 until their four facts exist
 
 # 3. anon holds INSERT and nothing else.
@@ -222,9 +268,118 @@ Work toward one milestone at a time.
 Governing rule: ship before build. A working, shipped, smaller version beats an
 unshipped larger one.
 
-**Deploying:** the site is published by uploading `crf-builder/`, and
-`crf-garage` is deliberately **not** connected to this repository. The root
-`netlify.toml` publishes `digital-renaissance/site`, so linking the site would
-make its next build serve a different project on this domain. Deploy an
-explicit list of files, never the folder — `privacy.html`, `terms.html` and
-`legal-details.js` sit in it and must not ship until their four facts exist.
+**Deploying:** per `docs/crf/DEPLOYMENT.md`, the live site deploys
+automatically on push to `main` of a *separate* repository,
+`eoinmcgee1993/crf-builder` — merging here does not publish it. The root
+`netlify.toml` publishes `trading-dashboard/`, so never link a Netlify site
+that builds from this repo for CRF. The legal drafts (`privacy.html`,
+`terms.html`, `legal-details.js`) live in `docs/crf/legal-drafts/`, outside any
+publish root; moving them into a served `public/` directory is the deliberate
+act that publishes them, and must not happen until their four facts exist.
+Never copy them back into `crf-builder/`.
+
+## 11. Repo-wide conventions (every project)
+
+These came out of the repo itself (CI, hooks, `.gitignore`, git history and
+the existing projects). A project's own `README.md` overrides them where the
+two disagree. The CRF rules in sections 6–10 stay scoped to `crf-builder/`.
+
+**General**
+- **This repository is public.** Anything committed is world-readable. Never
+  commit secrets, personal data, or documents marked confidential; internal
+  material belongs in a private repository.
+- **Claims are verified against source, not asserted.** History includes fixes
+  for copy that overstated what a system had done ("Stop claiming EdgeVault's
+  source system has taken live payments"). Don't write "live", "24/7",
+  "verified" or "discreet" into customer-facing copy unless the code or a
+  document in the repo supports it; list unsupported claims in the project's
+  gaps file instead.
+- **Shared state:** `supabase/` migrations, the root `requirements.txt` and the
+  root `netlify.toml` / `vercel.json` affect unrelated projects. Change them
+  only when the task is about them, and say so.
+- Netlify deploy previews run on every PR, even for unrelated projects. A green
+  preview is not a passing test suite.
+
+**Starting a new project**
+- Give it its own top-level directory and a `README.md` covering: what it is,
+  a table of its paths, how to run it locally, and how it deploys or why it
+  doesn't yet. `phiraya/` and `phone-agent/` are the template.
+- Keep it standalone: no imports from sibling projects, and its own
+  `requirements.txt` / `package.json` where it needs dependencies. Add to the
+  root `requirements.txt` only for deps the session needs for everything.
+- Static sites are plain HTML/CSS/JS, one file per page, no build step, and
+  are deployed **by upload**. Never connect a Netlify site that builds from
+  this repo (see section 5). Write "Not deployed" in the README until a site is.
+- If a page depends on an asset that isn't committed yet (generated video,
+  portrait), make it degrade visibly and gracefully (show a fallback, not a
+  black box) and list the missing asset in the README.
+- If a placeholder must be filled before launch (a contact URL, legal facts),
+  hide the UI it drives until it's filled. Never ship a dead link.
+
+**Python projects** (`landing/`, `offload/`, `audits/`, `voice_clone/`)
+- Python 3.11 (pinned in CI and `render.yaml`).
+- Flask apps use an app factory (`create_app()`), start modules with
+  `from __future__ import annotations`, and read config from `os.environ.get`
+  with a safe default. File paths are overridable by env var (`LEADS_PATH`,
+  `SIGNUPS_PATH`, `FREEBIE_OUT`) so tests and serverless hosts can redirect them.
+- Tests are pytest, run from the repo root scoped to the project
+  (`pytest <project>/tests -q`), and isolate state with the `tmp_path` and
+  `monkeypatch` fixtures rather than touching real files.
+- A `PostToolUse` hook in `.claude/settings.json` runs a project's suite
+  (`python3 -m pytest <project>/tests -q`) after every edit to a `.py` file in
+  one of these four projects, and blocks on failure. `scripts/setup.sh`
+  installs pytest and their deps. If pytest isn't importable, the hook warns
+  and skips rather than blocking.
+
+**JavaScript projects**
+- Zero-dependency Node tools use the built-in runner: `node --test`
+  (`kdp-compiler/`, `substack-os/`), with `"type": "module"` where ESM.
+- Next.js projects (`degen-diaries/`, `gridstrike-core/apps/web`) ship
+  `typecheck`/`lint` scripts. Run them before pushing. `degen-diaries` CI runs
+  `typecheck` before `build`.
+- A `PostToolUse` hook in `.claude/settings.json` runs `substack-os` tests
+  after every edit to `substack-os/*.js` and blocks on failure. Fix the
+  failure; don't route around the hook.
+
+**CI** (`.github/workflows/`)
+- One workflow per project, path-filtered to that project's directory plus
+  the workflow file itself, so unrelated changes don't trigger it.
+- Pin actions to a full commit SHA with the version as a comment
+  (`actions/checkout@11bd…683 # v4.2.2`). Two workflows still use `@v4`
+  tags; match the pinned style in anything new.
+
+**Secrets and personal data**
+- Secrets never enter the repo. Locally they go in `.env` / `.env.local`
+  (both gitignored). On Render they're declared with `sync: false`. CRF
+  is the exception: secrets live in `public.crf_config` (section 7).
+- Personal data is gitignored at the source: captured leads
+  (`landing/leads.csv`), signups (`offload/signups.csv`) and voice recordings
+  (`voice_clone/takes/`). Any new project that captures people's data adds its
+  output path to `.gitignore` in the same commit.
+- Log lines carry no email addresses, user IDs or request bodies. The
+  existing apps log only the provider's error detail.
+
+**Database** (`supabase/migrations/`)
+- Migrations are numbered with three zero-padded digits (`004_…`). Take the
+  next free number, and prefix the file name and table names with the owning
+  project (`crf_`, `mediafetch_`), because the schema is shared.
+
+**Vendored code** (`.claude/skills/higgsfield-*`, `ai-marketing/`)
+- Vendor upstream unmodified in its own commit, then make local changes in
+  separate commits, so a re-vendor shows exactly what was ours. For the
+  Higgsfield skills, re-vendor and bump the version in
+  `.claude/skills/README.md` instead of editing them.
+
+**Commits and PRs**
+- Commit subjects are a plain imperative sentence that says what changed
+  and, where it matters, why: "Fix the Clearmark dialer's live calls and have
+  it say it's an AI". No `feat:`-style prefixes. A `project:` prefix is fine
+  when it adds clarity.
+- Work on a branch and open a PR. PRs are merged with merge commits.
+
+**Claude tooling in this repo**
+- `scripts/setup.sh` runs on every session start (Python deps, `ffmpeg`,
+  Higgsfield CLI). Keep it idempotent and non-fatal for optional tools.
+- Project subagents live in `.claude/agents/` (`code-reviewer`,
+  `bug-investigator`, `architecture-validator`, `doc-writer`). Project skills
+  live in `.claude/skills/` (see its README).
