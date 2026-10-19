@@ -95,9 +95,10 @@ The state table (L14–31) includes:
 - "The Stripe account is **Clearmark**." Buyers see *Clearmark* at checkout and
   on their statements, and unrecognised descriptors cause chargebacks.
   (L211–220)
-- "**Nobody has ever completed a purchase.** One checkout session exists
-  against the kit link, from 8 Aug. It expired unpaid. **The payment path has
-  never run end to end with real money**". (L222–226)
+- Under the heading "Nobody has ever completed a purchase" (L222): "One
+  checkout session exists against the kit link, from 8 Aug. It expired
+  unpaid. **The payment path has never run end to end with real money**".
+  (L224–226)
 - What is left (L228–239):
   - "Point the domain at Netlify" (L230)
   - fix the merchant identity (L232)
