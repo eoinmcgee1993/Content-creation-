@@ -23,7 +23,7 @@ python3 -m http.server 8000 --directory phone-agent
 
 ## Before going public
 - Set `CONTACT_URL` in `landing.html`. The demo button stays hidden while it is empty.
-- Have a native speaker check the Thai copy, including the Thai spelling of the name.
+- Have a native speaker check the Thai copy, including the Thai spelling of the name. Every Thai line is listed in `THAI_REVIEW.md`, ready to be ticked off or corrected.
 - The "Hear Phitara" button uses the visitor's browser voice, not the production voice. Replace it with a recorded clip once one exists.
 
 ## Deploying
