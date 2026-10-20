@@ -1,7 +1,11 @@
 # Thai copy review
 
 Every line of Thai text on the Phitara pages, for a native speaker to check
-before the site goes live. None of it has been checked yet.
+before the site goes live.
+
+**Status: reviewed.** The owner reports a native speaker checked every line
+and asked for no changes. The Thai spelling of her name was not supplied, so
+the pages keep only "Phitara".
 
 **How to review:** for each line, tick **OK** or write the corrected Thai in
 **Correction**. The English column is what the line is meant to say. It is
