@@ -36,6 +36,9 @@
   .btn-primary:hover { filter: brightness(1.08); }
   .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
   .btn-ghost:hover { border-color: var(--teal); }
+  /* .btn sets display, which beats the hidden attribute; without this the contact
+     button showed while CONTACT_URL was empty and linked back to itself. */
+  .btn[hidden] { display: none; }
 
   /* Hero */
   .hero { padding: 72px 0 56px; }
@@ -90,7 +93,8 @@
   .chat-head { font-weight: 700; font-size: .9rem; padding-bottom: 10px; border-bottom: 1px solid #CED6DD; margin-bottom: 12px; }
   .bubble { padding: 9px 13px; border-radius: 16px; margin: 6px 0; max-width: 85%; font-size: .92rem; }
   .bubble.in { background: #fff; }
-  .bubble.out { background: #06C755; color: #fff; margin-left: auto; }
+  /* Darker than LINE's #06C755: white text on that green is only 2.3:1. This is 4.8:1. */
+  .bubble.out { background: #00843D; color: #fff; margin-left: auto; }
   ul.checks { list-style: none; padding: 0; margin: 0; }
   ul.checks li { padding-left: 28px; position: relative; margin-bottom: 12px; color: var(--muted); }
   ul.checks li::before { content: "✓"; position: absolute; left: 0; color: var(--teal); font-weight: 700; }
@@ -100,6 +104,11 @@
   .cta .sub { margin-left: auto; margin-right: auto; }
 
   footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted); font-size: .9rem; }
+
+  /* Respect the OS "reduce motion" setting: stop the looping pulse/bars. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; scroll-behavior: auto !important; }
+  }
 
   @media (max-width: 860px) {
     .hero-grid, .line-grid { grid-template-columns: 1fr; gap: 32px; }
@@ -138,7 +147,7 @@
         </div>
       </div>
 
-      <div class="hero-media" aria-label="Example call">
+      <div class="hero-media" role="group" aria-label="Example call">
         <div class="call-bar"><img class="call-avatar" src="assets/portraits/phitara-portrait.jpg" alt="" width="40" height="40" /><span class="dot"></span> Incoming call · answered by Phitara</div>
 
         <video class="hero-video" autoplay loop muted playsinline hidden>
@@ -147,13 +156,13 @@
 
         <div class="transcript">
           <div class="line agent"><small>Phitara</small>
-            <span class="th">สวัสดีค่ะ ขอบคุณที่โทรหาคลินิกค่ะ ให้ดิฉันช่วยเรื่องอะไรดีคะ</span>
+            <span class="th" lang="th">สวัสดีค่ะ ขอบคุณที่โทรหาคลินิกค่ะ ให้ดิฉันช่วยเรื่องอะไรดีคะ</span>
             <span class="en">Hello, thank you for calling the clinic. How can I help?</span></div>
           <div class="line caller"><small>Caller</small>
-            <span class="th">อยากนัดตรวจวันเสาร์นี้ค่ะ</span>
+            <span class="th" lang="th">อยากนัดตรวจวันเสาร์นี้ค่ะ</span>
             <span class="en">I'd like an appointment this Saturday.</span></div>
           <div class="line agent"><small>Phitara</small>
-            <span class="th">วันเสาร์มีคิวว่างตอน 10 โมงกับบ่ายสองค่ะ สะดวกช่วงไหนคะ</span>
+            <span class="th" lang="th">วันเสาร์มีคิวว่างตอน 10 โมงกับบ่ายสองค่ะ สะดวกช่วงไหนคะ</span>
             <span class="en">Saturday has 10am or 2pm free. Which suits you?</span></div>
         </div>
       </div>
@@ -177,9 +186,9 @@
       <h2>Built for a busy front desk</h2>
       <p class="sub">The receptionists stay. Phitara takes the calls they miss.</p>
       <div class="features">
-        <div class="feature"><div class="icon">🌙</div><h3>After-hours cover</h3><p>Evenings, weekends and lunch breaks get answered instead of going to voicemail.</p></div>
-        <div class="feature"><div class="icon">🗣️</div><h3>Thai and English</h3><p>She answers in the caller's language, so international patients get the same service as local ones.</p></div>
-        <div class="feature"><div class="icon">🧑‍⚕️</div><h3>Hands off to a person</h3><p>Anything medical, urgent or unclear goes to your staff. She doesn't guess.</p></div>
+        <div class="feature"><div class="icon" aria-hidden="true">🌙</div><h3>After-hours cover</h3><p>Evenings, weekends and lunch breaks get answered instead of going to voicemail.</p></div>
+        <div class="feature"><div class="icon" aria-hidden="true">🗣️</div><h3>Thai and English</h3><p>She answers in the caller's language, so international patients get the same service as local ones.</p></div>
+        <div class="feature"><div class="icon" aria-hidden="true">🧑‍⚕️</div><h3>Hands off to a person</h3><p>Anything medical, urgent or unclear goes to your staff. She doesn't guess.</p></div>
       </div>
     </div>
   </section>
@@ -195,11 +204,11 @@
           <li><strong>Reschedule</strong>: the patient replies and Phitara handles it.</li>
         </ul>
       </div>
-      <div class="chat" aria-label="Example LINE chat">
+      <div class="chat" role="group" aria-label="Example LINE chat">
         <div class="chat-head">Clinic · LINE Official Account</div>
-        <div class="bubble out">ยืนยันนัดหมาย ✅<br>วันเสาร์ 10:00 น.<br>แล้วพบกันนะคะ</div>
-        <div class="bubble in">ขอบคุณค่ะ ขอเลื่อนเป็นบ่ายสองได้ไหมคะ</div>
-        <div class="bubble out">ได้ค่ะ เปลี่ยนเป็นวันเสาร์ 14:00 น. เรียบร้อยค่ะ</div>
+        <div class="bubble out" lang="th">ยืนยันนัดหมาย ✅<br>วันเสาร์ 10:00 น.<br>แล้วพบกันนะคะ</div>
+        <div class="bubble in" lang="th">ขอบคุณค่ะ ขอเลื่อนเป็นบ่ายสองได้ไหมคะ</div>
+        <div class="bubble out" lang="th">ได้ค่ะ เปลี่ยนเป็นวันเสาร์ 14:00 น. เรียบร้อยค่ะ</div>
       </div>
     </div>
   </section>
@@ -239,6 +248,11 @@
     video.hidden = false;
     document.querySelector(".hero-media .transcript").hidden = true;
   });
+  // A muted loop with no controls would play forever for people who asked for less motion.
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    video.removeAttribute("autoplay");
+    video.pause();
+  }
 </script>
 </body>
 </html>
