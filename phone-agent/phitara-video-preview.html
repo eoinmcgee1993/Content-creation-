@@ -64,7 +64,8 @@
   .fallback .name { font-weight: 700; font-size: 1.2rem; }
   .fallback .status { color: var(--teal); font-size: .9rem; }
   .bars { display: flex; gap: 4px; justify-content: center; margin-top: 18px; height: 28px; align-items: end; }
-  .bars i { width: 5px; background: var(--teal); border-radius: 3px; animation: eq 1s infinite ease-in-out; }
+  /* A few cycles then stop: WCAG 2.2.2 bars looping motion with no pause control. */
+  .bars i { width: 5px; background: var(--teal); border-radius: 3px; animation: eq 1s 4 ease-in-out; }
   .bars i:nth-child(2) { animation-delay: .15s } .bars i:nth-child(3) { animation-delay: .3s }
   .bars i:nth-child(4) { animation-delay: .45s } .bars i:nth-child(5) { animation-delay: .6s }
   @keyframes eq { 0%,100% { height: 6px } 50% { height: 28px } }
@@ -102,6 +103,7 @@
   footer { border-top: 1px solid var(--line); padding: 40px 0; text-align: center; }
   footer h2 { margin-bottom: 8px; }
   footer p { color: var(--muted); margin: 0 0 20px; }
+  .btn[hidden], #book-pending[hidden] { display: none; }
   .btn {
     display: inline-block; padding: 12px 22px; border-radius: 999px; font-weight: 600;
     text-decoration: none; background: var(--amber); color: var(--navy);
@@ -188,10 +190,20 @@
 <footer>
   <h2>Want Phitara on your clinic's line?</h2>
   <p>We set her up with your clinic's details, and you call her yourself before anything goes live.</p>
-  <a class="btn" href="landing.html#contact">Book a demo</a>
+  <a class="btn" id="book-btn" href="landing.html#contact" hidden>Book a demo</a>
+  <p id="book-pending">Booking opens soon.</p>
 </footer>
 
 <script>
+  // Must match CONTACT_URL in landing.html. While it is empty the "Book a demo"
+  // button stays hidden, because landing.html has nothing to book with either.
+  const CONTACT_URL = "";
+  if (CONTACT_URL) {
+    document.getElementById("book-btn").href = CONTACT_URL;
+    document.getElementById("book-btn").hidden = false;
+    document.getElementById("book-pending").hidden = true;
+  }
+
   // Show the demo video only once it really loads; otherwise the animated call screen stays.
   const video = document.querySelector(".screen video");
   video.addEventListener("loadeddata", () => {
@@ -207,7 +219,11 @@
   };
   video.addEventListener("play", syncToggle);
   video.addEventListener("pause", syncToggle);
-  toggle.addEventListener("click", () => { video.paused ? video.play() : video.pause(); });
+  toggle.addEventListener("click", () => {
+    // play() rejects if the browser blocks it (e.g. Low Power Mode); the label already shows "Play".
+    if (video.paused) video.play().catch(() => {});
+    else video.pause();
+  });
   syncToggle();
   // A muted loop with no controls would play forever for people who asked for less motion.
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) {

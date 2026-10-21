@@ -61,7 +61,8 @@
   }
   .call-bar { display: flex; align-items: center; gap: 10px; font-size: .9rem; color: var(--muted); }
   .call-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--teal); }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); animation: pulse 1.6s infinite; }
+  /* A few cycles then stop: WCAG 2.2.2 bars looping motion with no pause control. */
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); animation: pulse 1.6s 3; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
   .hero-video { width: 100%; border-radius: var(--radius); display: block; margin-top: 18px; background: #000; }
   /* The video stays hidden until it actually loads; the transcript below is the fallback. */
@@ -270,7 +271,11 @@
   };
   video.addEventListener("play", syncToggle);
   video.addEventListener("pause", syncToggle);
-  toggle.addEventListener("click", () => { video.paused ? video.play() : video.pause(); });
+  toggle.addEventListener("click", () => {
+    // play() rejects if the browser blocks it (e.g. Low Power Mode); the label already shows "Play".
+    if (video.paused) video.play().catch(() => {});
+    else video.pause();
+  });
   syncToggle();
   // A muted loop with no controls would play forever for people who asked for less motion.
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
