@@ -22,13 +22,13 @@ python3 -m http.server 8000 --directory phone-agent
 ```
 
 ## Before going public
-- Set `CONTACT_URL` in `landing.html`. The demo button stays hidden while it is empty.
+- Set `CONTACT_URL` in both `landing.html` and `phitara-video-preview.html` (same value). The demo buttons stay hidden while it is empty.
 - ~~Have a native speaker check the Thai copy.~~ Done: the owner reports the native-speaker review in `THAI_REVIEW.md` came back with no changes.
 - The "Hear Phitara" button uses the visitor's browser voice, not the production voice. Replace it with a recorded clip once one exists.
 
 ## Deploying
-Deployed to Vercel as its own project, `phitara`, with **Root Directory**
-`phone-agent`. `vercel.json` in this folder serves `landing.html` at `/` and
+Not deployed yet. It is meant for its own Vercel project, `phitara`, with
+**Root Directory** `phone-agent`; update this line with the URL once it exists. `vercel.json` in this folder serves `landing.html` at `/` and
 drops the `.html` from URLs. It only applies when this folder is the root
 directory, so it does not affect the root `vercel.json` used by `landing/`.
 
