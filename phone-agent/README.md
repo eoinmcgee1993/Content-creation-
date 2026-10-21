@@ -27,5 +27,10 @@ python3 -m http.server 8000 --directory phone-agent
 - The "Hear Phitara" button uses the visitor's browser voice, not the production voice. Replace it with a recorded clip once one exists.
 
 ## Deploying
-Not deployed. The root `netlify.toml` publishes `trading-dashboard/`, so don't
-connect a Netlify site that builds from this repo. Deploy `phone-agent/` by upload.
+Deployed to Vercel as its own project, `phitara`, with **Root Directory**
+`phone-agent`. `vercel.json` in this folder serves `landing.html` at `/` and
+drops the `.html` from URLs. It only applies when this folder is the root
+directory, so it does not affect the root `vercel.json` used by `landing/`.
+
+The root `netlify.toml` publishes `trading-dashboard/`, so don't connect a
+Netlify site that builds from this repo for these pages.
