@@ -36,6 +36,9 @@
   .btn-primary:hover { filter: brightness(1.08); }
   .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
   .btn-ghost:hover { border-color: var(--teal); }
+  /* .btn sets display, which beats the hidden attribute; without this the contact
+     button showed while CONTACT_URL was empty and linked back to itself. */
+  .btn[hidden] { display: none; }
 
   /* Hero */
   .hero { padding: 72px 0 56px; }
@@ -46,8 +49,15 @@
   .lede { color: var(--muted); font-size: 1.1rem; max-width: 34em; }
   .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
 
+  /* WCAG 2.2.2: anything that moves for more than 5 s needs a way to stop it. */
+  .vid-toggle {
+    position: absolute; z-index: 3; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line);
+    background: rgba(11,22,38,.8); color: var(--text); font: inherit; font-size: .8rem; cursor: pointer;
+  }
+  .vid-toggle[hidden] { display: none; }
+
   .hero-media {
-    background: var(--navy-2); border: 1px solid var(--line); border-radius: 20px; padding: 18px;
+    position: relative; background: var(--navy-2); border: 1px solid var(--line); border-radius: 20px; padding: 18px;
   }
   .call-bar { display: flex; align-items: center; gap: 10px; font-size: .9rem; color: var(--muted); }
   .call-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--teal); }
@@ -56,6 +66,7 @@
   .hero-video { width: 100%; border-radius: var(--radius); display: block; margin-top: 18px; background: #000; }
   /* The video stays hidden until it actually loads; the transcript below is the fallback. */
   .hero-video[hidden] { display: none; }
+  .hero-media .vid-toggle { right: 30px; top: 92px; }
   .transcript { margin-top: 18px; display: grid; gap: 10px; }
   .transcript[hidden] { display: none; }
   .line { padding: 10px 14px; border-radius: 12px; max-width: 88%; font-size: .95rem; }
@@ -90,7 +101,8 @@
   .chat-head { font-weight: 700; font-size: .9rem; padding-bottom: 10px; border-bottom: 1px solid #CED6DD; margin-bottom: 12px; }
   .bubble { padding: 9px 13px; border-radius: 16px; margin: 6px 0; max-width: 85%; font-size: .92rem; }
   .bubble.in { background: #fff; }
-  .bubble.out { background: #06C755; color: #fff; margin-left: auto; }
+  /* Darker than LINE's #06C755: white text on that green is only 2.3:1. This is 4.8:1. */
+  .bubble.out { background: #00843D; color: #fff; margin-left: auto; }
   ul.checks { list-style: none; padding: 0; margin: 0; }
   ul.checks li { padding-left: 28px; position: relative; margin-bottom: 12px; color: var(--muted); }
   ul.checks li::before { content: "✓"; position: absolute; left: 0; color: var(--teal); font-weight: 700; }
@@ -100,6 +112,11 @@
   .cta .sub { margin-left: auto; margin-right: auto; }
 
   footer { border-top: 1px solid var(--line); padding: 28px 0; color: var(--muted); font-size: .9rem; }
+
+  /* Respect the OS "reduce motion" setting: stop the looping pulse/bars. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; scroll-behavior: auto !important; }
+  }
 
   @media (max-width: 860px) {
     .hero-grid, .line-grid { grid-template-columns: 1fr; gap: 32px; }
@@ -133,27 +150,28 @@
           common questions, books the appointment, and sends a confirmation on LINE. Anything she
           can't handle goes to your staff.</p>
         <div class="hero-ctas">
-          <a class="btn btn-primary" href="#contact">Book a demo</a>
-          <a class="btn btn-ghost" href="phitara-video-preview.html">Hear Phitara</a>
+          <a class="btn btn-primary" id="hero-book" href="#contact">Book a demo</a>
+          <a class="btn btn-ghost" id="hero-hear" href="phitara-video-preview.html">Hear Phitara</a>
         </div>
       </div>
 
-      <div class="hero-media" aria-label="Example call">
+      <div class="hero-media" role="group" aria-label="Example call">
         <div class="call-bar"><img class="call-avatar" src="assets/portraits/phitara-portrait.jpg" alt="" width="40" height="40" /><span class="dot"></span> Incoming call · answered by Phitara</div>
 
         <video class="hero-video" autoplay loop muted playsinline hidden>
           <source src="assets/video/phitara-call-demo-v2.mp4" type="video/mp4" />
         </video>
+        <button class="vid-toggle" type="button" hidden>Pause</button>
 
         <div class="transcript">
           <div class="line agent"><small>Phitara</small>
-            <span class="th">สวัสดีค่ะ ขอบคุณที่โทรหาคลินิกค่ะ ให้ดิฉันช่วยเรื่องอะไรดีคะ</span>
+            <span class="th" lang="th">สวัสดีค่ะ ขอบคุณที่โทรหาคลินิกค่ะ ให้ดิฉันช่วยเรื่องอะไรดีคะ</span>
             <span class="en">Hello, thank you for calling the clinic. How can I help?</span></div>
           <div class="line caller"><small>Caller</small>
-            <span class="th">อยากนัดตรวจวันเสาร์นี้ค่ะ</span>
+            <span class="th" lang="th">อยากนัดตรวจวันเสาร์นี้ค่ะ</span>
             <span class="en">I'd like an appointment this Saturday.</span></div>
           <div class="line agent"><small>Phitara</small>
-            <span class="th">วันเสาร์มีคิวว่างตอน 10 โมงกับบ่ายสองค่ะ สะดวกช่วงไหนคะ</span>
+            <span class="th" lang="th">วันเสาร์มีคิวว่างตอน 10 โมงกับบ่ายสองค่ะ สะดวกช่วงไหนคะ</span>
             <span class="en">Saturday has 10am or 2pm free. Which suits you?</span></div>
         </div>
       </div>
@@ -166,7 +184,7 @@
       <p class="sub">Calls still come to your clinic's number. Phitara answers the ones your team can't get to.</p>
       <div class="steps">
         <div class="step"><h3>She answers</h3><p>Calls to your number that go unanswered, or come in after hours, go to Phitara. She speaks Thai or English, whichever the caller uses.</p></div>
-        <div class="step"><h3>She books or answers</h3><p>She answers questions from your clinic's own information (hours, location, services) and books into your open slots.</p></div>
+        <div class="step"><h3>She answers and books</h3><p>She answers questions from your clinic's own information (hours, location, services) and books into your open slots.</p></div>
         <div class="step"><h3>She follows up</h3><p>The patient gets a confirmation on LINE. Your team gets a summary of every call, and anything urgent is flagged for a person.</p></div>
       </div>
     </div>
@@ -177,9 +195,9 @@
       <h2>Built for a busy front desk</h2>
       <p class="sub">The receptionists stay. Phitara takes the calls they miss.</p>
       <div class="features">
-        <div class="feature"><div class="icon">🌙</div><h3>After-hours cover</h3><p>Evenings, weekends and lunch breaks get answered instead of going to voicemail.</p></div>
-        <div class="feature"><div class="icon">🗣️</div><h3>Thai and English</h3><p>She answers in the caller's language, so international patients get the same service as local ones.</p></div>
-        <div class="feature"><div class="icon">🧑‍⚕️</div><h3>Hands off to a person</h3><p>Anything medical, urgent or unclear goes to your staff. She doesn't guess.</p></div>
+        <div class="feature"><div class="icon" aria-hidden="true">🌙</div><h3>After-hours cover</h3><p>Evenings, weekends and lunch breaks get answered instead of going to voicemail.</p></div>
+        <div class="feature"><div class="icon" aria-hidden="true">🗣️</div><h3>Thai and English</h3><p>She answers in the caller's language, so international patients get the same service as local ones.</p></div>
+        <div class="feature"><div class="icon" aria-hidden="true">🧑‍⚕️</div><h3>Hands off to a person</h3><p>Anything medical, urgent or unclear goes to your staff. She doesn't guess.</p></div>
       </div>
     </div>
   </section>
@@ -191,25 +209,25 @@
         <p class="sub">Patients in Thailand already use LINE. Phitara sends the booking there, so they get a reminder and can reply in the same chat.</p>
         <ul class="checks">
           <li><strong>Confirmation</strong>: date, time and location, sent right after the call.</li>
-          <li><strong>Reminder</strong>: before the visit, cutting no-shows.</li>
+          <li><strong>Reminder</strong>: sent before the visit, so fewer patients miss it.</li>
           <li><strong>Reschedule</strong>: the patient replies and Phitara handles it.</li>
         </ul>
       </div>
-      <div class="chat" aria-label="Example LINE chat">
+      <div class="chat" role="group" aria-label="Example LINE chat">
         <div class="chat-head">Clinic · LINE Official Account</div>
-        <div class="bubble out">ยืนยันนัดหมาย ✅<br>วันเสาร์ 10:00 น.<br>แล้วพบกันนะคะ</div>
-        <div class="bubble in">ขอบคุณค่ะ ขอเลื่อนเป็นบ่ายสองได้ไหมคะ</div>
-        <div class="bubble out">ได้ค่ะ เปลี่ยนเป็นวันเสาร์ 14:00 น. เรียบร้อยค่ะ</div>
+        <div class="bubble out" lang="th">ยืนยันนัดหมาย ✅<br>วันเสาร์ 10:00 น.<br>แล้วพบกันนะคะ</div>
+        <div class="bubble in" lang="th">ขอบคุณค่ะ ขอเลื่อนเป็นบ่ายสองได้ไหมคะ</div>
+        <div class="bubble out" lang="th">ได้ค่ะ เปลี่ยนเป็นวันเสาร์ 14:00 น. เรียบร้อยค่ะ</div>
       </div>
     </div>
   </section>
 
   <section id="contact" class="cta">
     <div class="wrap">
-      <h2>Hear her on a call</h2>
+      <h2>Try Phitara with your clinic's details</h2>
       <p class="sub">We'll set Phitara up with your clinic's details and you can call her yourself before anything goes live.</p>
       <a class="btn btn-primary" id="contact-btn" href="#contact" hidden>Book a demo</a>
-      <p id="contact-pending" class="sub">Contact details coming soon.</p>
+      <p id="contact-pending" class="sub">Booking opens soon. <a href="phitara-video-preview.html">Hear her now →</a></p>
     </div>
   </section>
 </main>
@@ -230,6 +248,10 @@
     btn.href = CONTACT_URL;
     btn.hidden = false;
     document.getElementById("contact-pending").hidden = true;
+  } else {
+    // No booking yet: don't lead with a button that can't book anything.
+    document.getElementById("hero-book").hidden = true;
+    document.getElementById("hero-hear").className = "btn btn-primary";
   }
 
   // Swap the transcript for the demo video only once the video has really loaded,
@@ -239,6 +261,22 @@
     video.hidden = false;
     document.querySelector(".hero-media .transcript").hidden = true;
   });
+  // Pause/play control, shown only once the video is actually on screen.
+  const toggle = document.querySelector(".vid-toggle");
+  video.addEventListener("loadeddata", () => { toggle.hidden = false; });
+  const syncToggle = () => {
+    toggle.textContent = video.paused ? "Play" : "Pause";
+    toggle.setAttribute("aria-label", video.paused ? "Play demo video" : "Pause demo video");
+  };
+  video.addEventListener("play", syncToggle);
+  video.addEventListener("pause", syncToggle);
+  toggle.addEventListener("click", () => { video.paused ? video.play() : video.pause(); });
+  syncToggle();
+  // A muted loop with no controls would play forever for people who asked for less motion.
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    video.removeAttribute("autoplay");
+    video.pause();
+  }
 </script>
 </body>
 </html>
