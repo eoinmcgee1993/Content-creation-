@@ -1,11 +1,11 @@
 # Thai copy review
 
-Every line of Thai text on the Phitara pages, for a native speaker to check
+Every line of Thai text on the Phiraya pages, for a native speaker to check
 before the site goes live.
 
 **Status: reviewed.** The owner reports a native speaker checked every line
 and asked for no changes. The Thai spelling of her name was not supplied, so
-the pages keep only "Phitara".
+the pages keep only "Phiraya".
 
 **How to review:** for each line, tick **OK** or write the corrected Thai in
 **Correction**. The English column is what the line is meant to say. It is
@@ -21,9 +21,9 @@ Things to check on every line:
 
 | # | Speaker | Thai | Meant to say | OK | Correction |
 |---|---|---|---|---|---|
-| 1 | Phitara | สวัสดีค่ะ ขอบคุณที่โทรหาคลินิกค่ะ ให้ดิฉันช่วยเรื่องอะไรดีคะ | Hello, thank you for calling the clinic. How can I help? | ☐ | |
+| 1 | Phiraya | สวัสดีค่ะ ขอบคุณที่โทรหาคลินิกค่ะ ให้ดิฉันช่วยเรื่องอะไรดีคะ | Hello, thank you for calling the clinic. How can I help? | ☐ | |
 | 2 | Caller | อยากนัดตรวจวันเสาร์นี้ค่ะ | I'd like an appointment this Saturday. | ☐ | |
-| 3 | Phitara | วันเสาร์มีคิวว่างตอน 10 โมงกับบ่ายสองค่ะ สะดวกช่วงไหนคะ | Saturday has 10am or 2pm free. Which suits you? | ☐ | |
+| 3 | Phiraya | วันเสาร์มีคิวว่างตอน 10 โมงกับบ่ายสองค่ะ สะดวกช่วงไหนคะ | Saturday has 10am or 2pm free. Which suits you? | ☐ | |
 
 ## `landing.html`: LINE chat mockup (Thai only)
 
@@ -33,15 +33,15 @@ Things to check on every line:
 | 5 | Patient | ขอบคุณค่ะ ขอเลื่อนเป็นบ่ายสองได้ไหมคะ | Thank you. Could I move it to 2pm? | ☐ | |
 | 6 | Clinic | ได้ค่ะ เปลี่ยนเป็นวันเสาร์ 14:00 น. เรียบร้อยค่ะ | Sure, changed to Saturday 14:00. All set. | ☐ | |
 
-## `phitara-video-preview.html`: spoken greeting (shown with English)
+## `phiraya-video-preview.html`: spoken greeting (shown with English)
 
-The "Hear Phitara" button reads this line aloud with the visitor's browser voice.
+The "Hear Phiraya" button reads this line aloud with the visitor's browser voice.
 
 | # | Speaker | Thai | Meant to say | OK | Correction |
 |---|---|---|---|---|---|
-| 7 | Phitara | สวัสดีค่ะ ขอบคุณที่โทรหาคลินิกค่ะ วันนี้ให้ดิฉันช่วยนัดหมาย หรือสอบถามข้อมูลเรื่องไหนดีคะ | Hello, thank you for calling the clinic. Would you like to book an appointment, or is there something I can help you find out? | ☐ | |
+| 7 | Phiraya | สวัสดีค่ะ ขอบคุณที่โทรหาคลินิกค่ะ วันนี้ให้ดิฉันช่วยนัดหมาย หรือสอบถามข้อมูลเรื่องไหนดีคะ | Hello, thank you for calling the clinic. Would you like to book an appointment, or is there something I can help you find out? | ☐ | |
 
-## `phitara-video-preview.html`: LINE chat mockup (Thai only)
+## `phiraya-video-preview.html`: LINE chat mockup (Thai only)
 
 | # | From | Thai | Meant to say | OK | Correction |
 |---|---|---|---|---|---|
@@ -51,5 +51,5 @@ The "Hear Phitara" button reads this line aloud with the visitor's browser voice
 
 ## Not on the pages yet
 
-- **Her name in Thai.** The pages only spell it "Phitara". If it should also
+- **Her name in Thai.** The pages only spell it "Phiraya". If it should also
   appear in Thai script, write the spelling here: ________
