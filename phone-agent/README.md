@@ -1,6 +1,6 @@
-# Phitara (phone-agent)
+# Phiraya (phone-agent)
 
-Marketing pages for Phitara, an AI phone agent that answers clinic calls in Thai
+Marketing pages for Phiraya, an AI phone agent that answers clinic calls in Thai
 and English, books appointments, and follows up on LINE.
 
 This folder is a standalone project with no build step and no tests: plain
@@ -9,11 +9,11 @@ HTML/CSS/JS, one file per page.
 | Path | What it is |
 |---|---|
 | `landing.html` | One-page site: hero with call demo, how it works, features, LINE follow-up, contact. |
-| `phitara-video-preview.html` | Preview page: phone mockup playing the call demo, a "Hear Phitara" greeting (browser Thai TTS), LINE chat mockup. |
-| `assets/portraits/phitara-portrait.jpg` | Phitara's portrait, cropped from her reference headshot. Caller avatar on both pages. |
-| `assets/video/phitara-call-demo-v2.mp4` | 10 s, 768×768 H.264, silent call demo. Autoplays muted on `landing.html`; if it can't play, they fall back to a transcript / animated call screen. |
-| `assets/portraits/phitara-vertical-first-frame.jpg` | 720×1280 crop of her half-length reference image; the start frame for the vertical demo. |
-| `assets/video/phitara-call-demo-vertical.mp4` | 10 s, 768×1344 H.264, silent. Made with MiniMax H3 Max (via ElevenLabs) from the first frame above. Fills the phone screen on `phitara-video-preview.html`. |
+| `phiraya-video-preview.html` | Preview page: phone mockup playing the call demo, a "Hear Phiraya" greeting (browser Thai TTS), LINE chat mockup. |
+| `assets/portraits/phiraya-portrait.jpg` | Phiraya's portrait, cropped from her reference headshot. Caller avatar on both pages. |
+| `assets/video/phiraya-call-demo-v2.mp4` | 10 s, 768×768 H.264, silent call demo. Autoplays muted on `landing.html`; if it can't play, they fall back to a transcript / animated call screen. |
+| `assets/portraits/phiraya-vertical-first-frame.jpg` | 720×1280 crop of her half-length reference image; the start frame for the vertical demo. |
+| `assets/video/phiraya-call-demo-vertical.mp4` | 10 s, 768×1344 H.264, silent. Made with MiniMax H3 Max (via ElevenLabs) from the first frame above. Fills the phone screen on `phiraya-video-preview.html`. |
 
 ## Run locally
 ```bash
@@ -22,12 +22,12 @@ python3 -m http.server 8000 --directory phone-agent
 ```
 
 ## Before going public
-- Set `CONTACT_URL` in both `landing.html` and `phitara-video-preview.html` (same value). The demo buttons stay hidden while it is empty.
+- Set `CONTACT_URL` in both `landing.html` and `phiraya-video-preview.html` (same value). The demo buttons stay hidden while it is empty.
 - ~~Have a native speaker check the Thai copy.~~ Done: the owner reports the native-speaker review in `THAI_REVIEW.md` came back with no changes.
-- The "Hear Phitara" button uses the visitor's browser voice, not the production voice. Replace it with a recorded clip once one exists.
+- The "Hear Phiraya" button uses the visitor's browser voice, not the production voice. Replace it with a recorded clip once one exists.
 
 ## Deploying
-Not deployed yet. It is meant for its own Vercel project, `phitara`, with
+Not deployed yet. It is meant for its own Vercel project, `phiraya`, with
 **Root Directory** `phone-agent`; update this line with the URL once it exists. `vercel.json` in this folder serves `landing.html` at `/` and
 drops the `.html` from URLs. It only applies when this folder is the root
 directory, so it does not affect the root `vercel.json` used by `landing/`.
