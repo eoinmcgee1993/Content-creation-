@@ -27,10 +27,13 @@ python3 -m http.server 8000 --directory phone-agent
 - The "Hear Phiraya" button uses the visitor's browser voice, not the production voice. Replace it with a recorded clip once one exists.
 
 ## Deploying
-Not deployed yet. It is meant for its own Vercel project, `phiraya`, with
-**Root Directory** `phone-agent`; update this line with the URL once it exists. `vercel.json` in this folder serves `landing.html` at `/` and
-drops the `.html` from URLs. It only applies when this folder is the root
-directory, so it does not affect the root `vercel.json` used by `landing/`.
+Live at **https://phiraya.netlify.app**, a Netlify site deployed by upload
+(Netlify Drop), not connected to this repo. It does not update when `main`
+changes: to redeploy, drag a folder holding `landing.html`,
+`phiraya-video-preview.html`, `assets/` and a `_redirects` file containing
+`/  /landing.html  200` onto the site's **Deploys** page.
 
 The root `netlify.toml` publishes `trading-dashboard/`, so don't connect a
-Netlify site that builds from this repo for these pages.
+Netlify site that builds from this repo for these pages. `vercel.json` here is
+only for a Vercel project with Root Directory `phone-agent`, if one is set up
+later.
