@@ -27,11 +27,16 @@ python3 -m http.server 8000 --directory phone-agent
 - The "Hear Phiraya" button uses the visitor's browser voice, not the production voice. Replace it with a recorded clip once one exists.
 
 ## Deploying
-Live at **https://phiraya.netlify.app**, a Netlify site deployed by upload
-(Netlify Drop), not connected to this repo. It does not update when `main`
-changes: to redeploy, drag a folder holding `landing.html`,
-`phiraya-video-preview.html`, `assets/` and a `_redirects` file containing
-`/  /landing.html  200` onto the site's **Deploys** page.
+Live at **https://phiraya-k26cvg.v2.appdeploy.ai** (AppDeploy app
+`phiraya-k26cvg`, free plan, which adds AppDeploy's small share/badge overlay).
+On AppDeploy the pages live in `public/` and the images and videos in
+`public/resources/`, so the deployed copies use `resources/...` paths instead
+of `assets/...`; the root `index.html` redirects to `landing.html`. It does not
+update when `main` changes: redeploy through AppDeploy.
+
+A second copy was uploaded to Netlify (`phiraya.netlify.app`, Netlify Drop), but
+that Netlify team is currently restricted, so every site on it answers 404/429
+until the account is sorted out.
 
 The root `netlify.toml` publishes `trading-dashboard/`, so don't connect a
 Netlify site that builds from this repo for these pages. `vercel.json` here is
