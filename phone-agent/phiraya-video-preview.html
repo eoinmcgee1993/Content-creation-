@@ -84,6 +84,7 @@
   .player .th { font-size: 1rem; }
   .player .en { color: var(--muted); font-size: .85rem; }
   .note { color: var(--muted); font-size: .8rem; margin: 10px 0 0; }
+  .live { margin-top: 16px; }
 
   section { padding: 56px 0; border-top: 1px solid var(--line); }
   h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin: 0 0 24px; }
@@ -159,6 +160,9 @@
         </div>
         <p class="note" id="voice-note">Played with your browser's built-in Thai voice. This is a preview, not Phiraya's production voice.</p>
       </div>
+      <!-- Anam blocks iframes (X-Frame-Options: DENY), so the live call opens in a new tab. -->
+      <a class="btn live" href="https://lab.anam.ai/share/y0xHG1aUxoVxC911eIqtY" target="_blank" rel="noopener">Talk to her live on video ↗</a>
+      <p class="note">Opens a live AI video call in a new tab. Your browser may ask to use your microphone.</p>
     </div>
   </div>
 
