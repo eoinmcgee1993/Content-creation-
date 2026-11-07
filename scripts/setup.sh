@@ -4,6 +4,11 @@
 set -e
 cd "$(dirname "$0")/.."
 
+# The container's Debian-packaged blinker has no RECORD file, so pip cannot
+# upgrade it for Flask and aborts the whole install (and, under set -e, every
+# step below). Installing over it sidesteps the uninstall.
+pip install -q --ignore-installed blinker || true
+
 pip install -q -r requirements.txt
 
 # pytest plus each Python project's own deps, so the PostToolUse hook in
